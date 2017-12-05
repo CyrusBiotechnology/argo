@@ -20,6 +20,12 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
+  name = "github.com/argoproj/argo"
+  packages = [".","api/workflow/v1alpha1","cmd/argo/commands","cmd/argoexec/commands","errors","util/cmd","workflow/artifacts","workflow/artifacts/git","workflow/artifacts/http","workflow/artifacts/s3","workflow/client","workflow/common","workflow/controller","workflow/executor"]
+  revision = "0e67b8616444cf637d5b68e58eb6e068b721d34c"
+  version = "v2.0.0-alpha2"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -334,6 +340,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d88d04abf40902c38a8af161ff9af4b73f8ff14d96aeef5111972926f414f6d8"
+  inputs-digest = "9856f108334fe90f040258001d8378d5cb0b14c5775c6b8e8fee777bda4bcea0"
   solver-name = "gps-cdcl"
   solver-version = 1
