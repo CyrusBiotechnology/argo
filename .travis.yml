@@ -6,5 +6,6 @@ go:
   - 1.7.x
   - master
 script:
+  dep ensure
   go test ./...
 
