@@ -133,8 +133,10 @@ func (wfc *WorkflowController) Run(ctx context.Context) error {
 	for {
 		if i%100 == 0 {
 			// periodically print the channel sizes
-			i += 1
+			i = 0
 			log.Infof("wfChan=%d/%d podChan=%d/%d", len(wfc.wfUpdates), cap(wfc.wfUpdates), len(wfc.podUpdates), cap(wfc.podUpdates))
+		} else {
+			i += 1
 		}
 		select {
 		case wf := <-wfc.wfUpdates:
@@ -144,8 +146,9 @@ func (wfc *WorkflowController) Run(ctx context.Context) error {
 		}
 	}
 
-	<-ctx.Done()
-	return ctx.Err()
+	// TODO this is unreachable
+	//<-ctx.Done()
+	//return ctx.Err()
 }
 
 // ResyncConfig reloads the controller config from the configmap
