@@ -13,7 +13,7 @@ install:
   - pwd | grep -q "github.com/argoproj/argo"
     || target="$(pwd | sed 's/\(github.com\/\)[0-9a-zA-Z_-]*/\1argoproj/g')"
       && mkdir -p "$(dirname "$target")"
-      && ln -s "$(pwd)"  "$target"
+      && cp -r "$(pwd)"  "$target"
 script:
   - printenv
   - go test -coverprofile=coverage.out -v github.com/argoproj/argo/workflow/... github.com/argoproj/argo/util/... github.com/argoproj/argo/cmd/...
