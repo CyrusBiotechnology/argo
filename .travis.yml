@@ -14,7 +14,7 @@ install:
     || target="$(pwd | sed 's/\(github.com\/\)[0-9a-zA-Z_-]*/\1argoproj/g')"
       && mkdir -p "$(dirname "$target")"
       && cp -r "$(pwd)"  "$target"
-  - dep install
+  - godep install
 script:
   - printenv
   - go test -coverprofile=coverage.out -v github.com/argoproj/argo/workflow/... github.com/argoproj/argo/util/... github.com/argoproj/argo/cmd/...
