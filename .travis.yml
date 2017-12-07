@@ -7,7 +7,7 @@ before_script:
   - go vet github.com/argoproj/argo
 install:
   # Add Godeps dependencies to GOPATH and PATH
-  - export GOPATH="${TRAVIS_BUILD_DIR}/Godeps/_workspace:$GOPATH"
+  - export GOPATH="$(pwd)/vendor:${TRAVIS_BUILD_DIR}/Godeps/_workspace:$GOPATH"
   - export PATH="${TRAVIS_BUILD_DIR}/Godeps/_workspace/bin:$PATH"
   # Rename the repo to fix imports (/my/path/github.com/other-owner/argo -> /my/path/github.com/argoproj/argo)
   - pwd | grep -q "github.com/argoproj/argo"
