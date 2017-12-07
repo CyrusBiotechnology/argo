@@ -4,7 +4,7 @@ go:
 # - 1.x
   - master
 before_script:
-  - go vet github.com/CyrusBiotechnology/argo
+  - go vet github.com/argoproj/argo
 install:
   # Add Godeps dependencies to GOPATH and PATH
   - export GOPATH="${TRAVIS_BUILD_DIR}/Godeps/_workspace:$GOPATH"
@@ -15,4 +15,4 @@ install:
       && mkdir -p "$(dirname "$target")"
       && ln -s "$(pwd)"  "$target"
 script:
-  - go test -coverprofile=coverage.out -v github.com/CyrusBiotechnology/argo/workflow/... github.com/CyrusBiotechnology/argo/util/... github.com/CyrusBiotechnology/argo/cmd/...
+  - go test -coverprofile=coverage.out -v github.com/argoproj/argo/workflow/... github.com/argoproj/argo/util/... github.com/argoproj/argo/cmd/...
