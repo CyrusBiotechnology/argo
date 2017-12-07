@@ -15,4 +15,5 @@ install:
       && mkdir -p "$(dirname "$target")"
       && ln -s "$(pwd)"  "$target"
 script:
+  - printenv
   - go test -coverprofile=coverage.out -v github.com/argoproj/argo/workflow/... github.com/argoproj/argo/util/... github.com/argoproj/argo/cmd/...
