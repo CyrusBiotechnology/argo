@@ -1,0 +1,13 @@
+language: go
+
+go:
+# - 1.x
+  - master
+before_script:
+  - go vet github.com/argoproj/argo
+install:
+  # Add Godeps dependencies to GOPATH and PATH
+  - export GOPATH="${TRAVIS_BUILD_DIR}/Godeps/_workspace:$GOPATH"
+  - export PATH="${TRAVIS_BUILD_DIR}/Godeps/_workspace/bin:$PATH"
+script:
+  go test -coverprofile=coverage.out -v github.com/argoproj/argo/workflow/... github.com/argoproj/argo/util/... github.com/argoproj/argo/cmd/...
