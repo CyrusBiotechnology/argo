@@ -13,6 +13,6 @@ install:
   - pwd | grep -q "github.com/argoproj/argo"
     || target="$(pwd | sed 's/\(github.com\/\)[0-9a-zA-Z_-]*/\1argoproj/g')"
       && mkdir -p "$(dirname "$target")"
-      && ln -s "$(pwd)"  "$target" '
+      && ln -s "$(pwd)"  "$target"
 script:
   - go test -coverprofile=coverage.out -v github.com/CyrusBiotechnology/argo/workflow/... github.com/CyrusBiotechnology/argo/util/... github.com/CyrusBiotechnology/argo/cmd/...
