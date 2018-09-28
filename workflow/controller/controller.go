@@ -64,6 +64,34 @@ const (
 	podResyncPeriod             = 30 * time.Minute
 )
 
+// ArtifactRepository represents a artifact repository in which a controller will store its artifacts
+type ArtifactRepository struct {
+	S3 *S3ArtifactRepository `json:"s3,omitempty"`
+	// Future artifact repository support here
+	Artifactory *ArtifactoryArtifactRepository `json:"artifactory,omitempty"`
+	GCS         *GCSArtifactRepository         `json:"gcs,omitempty"`
+}
+
+// S3ArtifactRepository defines the controller configuration for an S3 artifact repository
+type S3ArtifactRepository struct {
+	wfv1.S3Bucket `json:",inline"`
+
+	// KeyPrefix is prefix used as part of the bucket key in which the controller will store artifacts.
+	KeyPrefix string `json:"keyPrefix,omitempty"`
+}
+
+// ArtifactoryArtifactRepository defines the controller configuration for an artifactory artifact repository
+type ArtifactoryArtifactRepository struct {
+	wfv1.ArtifactoryAuth `json:",inline"`
+	// RepoURL is the url for artifactory repo.
+	RepoURL string `json:"repoURL,omitempty"`
+}
+
+// GCSArtifactRepository defines the controller configuration for a GCS artifact repository
+type GCSArtifactRepository struct {
+	wfv1.GCSBucket `json:",inline"`
+}
+
 // NewWorkflowController instantiates a new WorkflowController
 func NewWorkflowController(
 	restConfig *rest.Config,
