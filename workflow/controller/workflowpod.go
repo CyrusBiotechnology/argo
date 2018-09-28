@@ -502,6 +502,13 @@ func (woc *wfOperationCtx) addArchiveLocation(pod *apiv1.Pod, tmpl *wfv1.Templat
 			ArtifactoryAuth: woc.controller.Config.ArtifactRepository.Artifactory.ArtifactoryAuth,
 			URL:             artURL,
 		}
+	} else if woc.controller.Config.ArtifactRepository.GCS != nil {
+		log.Debugf("Setting GCS artifact repository information")
+		artLocationKey := fmt.Sprintf("%s/%s", woc.wf.ObjectMeta.Name, pod.ObjectMeta.Name)
+		tmpl.ArchiveLocation.GCS = &wfv1.GCSArtifact{
+			GCSBucket: woc.controller.Config.ArtifactRepository.GCS.GCSBucket,
+			Key:       artLocationKey,
+		}
 	} else {
 		for _, art := range tmpl.Outputs.Artifacts {
 			if !art.HasLocation() {

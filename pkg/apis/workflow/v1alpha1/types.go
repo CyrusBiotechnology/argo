@@ -555,6 +555,10 @@ type GCSArtifact struct {
 	Key       string `json:"key"`
 }
 
+func (s *GCSArtifact) String() string {
+	return fmt.Sprintf("gs://%s/%s", s.Bucket, s.Key)
+}
+
 // GitArtifact is the location of an git artifact
 type GitArtifact struct {
 	// Repo is the git repository

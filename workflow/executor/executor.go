@@ -226,6 +226,10 @@ func (we *WorkflowExecutor) SaveArtifacts() error {
 				}
 				artifactoryURL.Path = path.Join(artifactoryURL.Path, fileName)
 				art.Artifactory.URL = artifactoryURL.String()
+			} else if we.Template.ArchiveLocation.GCS != nil {
+				shallowCopy := *we.Template.ArchiveLocation.GCS
+				art.GCS = &shallowCopy
+				art.GCS.Key = path.Join(art.GCS.Key, fileName)
 			} else {
 				return errors.Errorf(errors.CodeBadRequest, "Unable to determine path to store %s. Archive location provided no information", art.Name)
 			}
