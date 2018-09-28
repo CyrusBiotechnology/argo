@@ -23,6 +23,7 @@ import (
 	"github.com/argoproj/argo/util/retry"
 	artifact "github.com/argoproj/argo/workflow/artifacts"
 	"github.com/argoproj/argo/workflow/artifacts/artifactory"
+	"github.com/argoproj/argo/workflow/artifacts/gcs"
 	"github.com/argoproj/argo/workflow/artifacts/git"
 	"github.com/argoproj/argo/workflow/artifacts/http"
 	"github.com/argoproj/argo/workflow/artifacts/raw"
@@ -313,6 +314,10 @@ func (we *WorkflowExecutor) InitDriver(art wfv1.Artifact) (artifact.ArtifactDriv
 			Secure:    art.S3.Insecure == nil || *art.S3.Insecure == false,
 			Region:    art.S3.Region,
 		}
+		return &driver, nil
+	}
+	if art.GCS != nil {
+		driver := gcs.GCSArtifactDriver{}
 		return &driver, nil
 	}
 	if art.HTTP != nil {
