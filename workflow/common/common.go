@@ -1,6 +1,7 @@
 package common
 
 import (
+	"os"
 	"time"
 
 	"github.com/argoproj/argo/pkg/apis/workflow"
@@ -37,6 +38,11 @@ const (
 	DockerLibHostPath = "/var/lib/docker"
 	// DockerSockVolumeName is the volume name for the /var/run/docker.sock host path volume
 	DockerSockVolumeName = "docker-sock"
+
+	// GoogleSecretVolumeName is the volume name for the /var/secrets/google volume
+	GoogleSecretVolumeName = "google-cloud-key"
+	// EvnVarGoogleSecret contains the name of the google credentials file used fro GCS access
+	EnvVarGoogleSecret = "GOOGLE_CREDENTIALS_SECRET"
 
 	// AnnotationKeyNodeName is the pod metadata annotation key containing the workflow node name
 	AnnotationKeyNodeName = workflow.FullName + "/node-name"
@@ -98,6 +104,10 @@ const (
 	GlobalVarWorkflowUID = "workflow.uid"
 	// GlobalVarWorkflowStatus is a global workflow variable referencing the workflow's status.phase field
 	GlobalVarWorkflowStatus = "workflow.status"
+)
+
+var (
+	GoogleSecretName = os.Getenv(EnvVarGoogleSecret)
 )
 
 // ExecutionControl contains execution control parameters for executor to decide how to execute the container

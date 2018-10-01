@@ -25,7 +25,11 @@ func (gcsDriver *GCSArtifactDriver) newGcsClient() (client *storage.Client, err 
 
 }
 
-func writeToFile(r *storage.Reader, filePath string) error {
+func (gcsDriver *GCSArtifactDriver) saveToFile(inputArtifact *wfv1.Artifact, filePath string) error {
+
+	log.Infof("Loading from GCS (gs://%s/%s) to %s",
+		inputArtifact.GCS.Bucket, inputArtifact.GCS.Key, filePath)
+
 	stat, err := os.Stat(filePath)
 	if err == nil {
 		if stat.IsDir() {
@@ -44,69 +48,82 @@ func writeToFile(r *storage.Reader, filePath string) error {
 		return err
 	}
 
-	_, err = io.Copy(outputFile, r)
-	if err != nil {
-		return err
-	}
-	outputFile.Close()
-	return nil
-}
-
-func readFromFile(w *storage.Writer, filePath string) error {
-	inputFile, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-
-	_, err = io.Copy(w, inputFile)
-	if err != nil {
-		return err
-	}
-
-	inputFile.Close()
-	return nil
-
-}
-
-func (gcsDriver *GCSArtifactDriver) Load(inputArtifact *wfv1.Artifact, path string) error {
 	gcsClient, err := gcsDriver.newGcsClient()
 	if err != nil {
 		return err
 	}
 
 	bucket := gcsClient.Bucket(inputArtifact.GCS.Bucket)
-	log.Infof("Loading from GCS (bucket: %s, key: %s) to %s",
-		inputArtifact.GCS.Bucket, inputArtifact.GCS.Key, path)
-
 	object := bucket.Object(inputArtifact.GCS.Key)
+
 	r, err := object.NewReader(gcsDriver.Context)
 	if err != nil {
 		return err
 	}
-	err = writeToFile(r, path)
+	defer r.Close()
+
+	_, err = io.Copy(outputFile, r)
+	if err != nil {
+		return err
+	}
+
+	err = outputFile.Close()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (gcsDriver *GCSArtifactDriver) Save(path string, outputArtifact *wfv1.Artifact) error {
+func (gcsDriver *GCSArtifactDriver) saveToGCS(outputArtifact *wfv1.Artifact, filePath string) error {
+
+	log.Infof("Saving to GCS (gs://%s/%s)",
+		outputArtifact.GCS.Bucket, outputArtifact.GCS.Key)
+
 	gcsClient, err := gcsDriver.newGcsClient()
 	if err != nil {
 		return err
 	}
 
-	log.Infof("Loading from GCS (bucket: %s, key: %s)",
-		outputArtifact.GCS.Bucket, outputArtifact.GCS.Key)
-
-	bucket := gcsClient.Bucket(outputArtifact.GCS.Bucket)
-	object := bucket.Object(outputArtifact.GCS.Key)
-	w := object.NewWriter(gcsDriver.Context)
-
-	err = readFromFile(w, path)
+	inputFile, err := os.Open(filePath)
 	if err != nil {
 		return err
 	}
+	defer inputFile.Close()
+
+	bucket := gcsClient.Bucket(outputArtifact.GCS.Bucket)
+	object := bucket.Object(outputArtifact.GCS.Key)
+
+	w := object.NewWriter(gcsDriver.Context)
+	_, err = io.Copy(w, inputFile)
+	if err != nil {
+		return err
+	}
+
+	err = w.Close()
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func (gcsDriver *GCSArtifactDriver) Load(inputArtifact *wfv1.Artifact, path string) error {
+
+	err := gcsDriver.saveToFile(inputArtifact, path)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (gcsDriver *GCSArtifactDriver) Save(path string, outputArtifact *wfv1.Artifact) error {
+
+	err := gcsDriver.saveToGCS(outputArtifact, path)
+	if err != nil {
+		return err
+	}
+
 	return nil
 
 }
