@@ -111,6 +111,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RawArtifact"),
 							},
 						},
+						"gcs": {
+							SchemaProps: spec.SchemaProps{
+								Description: "GCS contains GCS artifact location details",
+								Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSArtifact"),
+							},
+						},
 						"globalName": {
 							SchemaProps: spec.SchemaProps{
 								Description: "GlobalName exports an output artifact to the global scope, making it available as '{{workflow.outputs.artifacts.XXXX}} and in workflow.status.outputs.artifacts",
@@ -123,7 +129,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GitArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RawArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.S3Artifact"},
+				"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GitArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RawArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.S3Artifact"},
 		},
 		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation": {
 			Schema: spec.Schema{
@@ -160,11 +166,17 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RawArtifact"),
 							},
 						},
+						"gcs": {
+							SchemaProps: spec.SchemaProps{
+								Description: "GCS contains GCS artifact location details",
+								Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSArtifact"),
+							},
+						},
 					},
 				},
 			},
 			Dependencies: []string{
-				"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GitArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RawArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.S3Artifact"},
+				"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GitArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RawArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.S3Artifact"},
 		},
 		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact": {
 			Schema: spec.Schema{
@@ -297,6 +309,46 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{
 				"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.DAGTask"},
+		},
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSArtifact": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "GCSArtifact is the location of a GCS artifact",
+					Properties: map[string]spec.Schema{
+						"bucket": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+						"key": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+					},
+					Required: []string{"bucket", "key"},
+				},
+			},
+			Dependencies: []string{},
+		},
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSBucket": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "GCSBucket contains the access information required for acting with a GCS bucket",
+					Properties: map[string]spec.Schema{
+						"bucket": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+					},
+					Required: []string{"bucket"},
+				},
+			},
+			Dependencies: []string{},
 		},
 		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GitArtifact": {
 			Schema: spec.Schema{
