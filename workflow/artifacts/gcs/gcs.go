@@ -31,19 +31,15 @@ func (gcsDriver *GCSArtifactDriver) saveToFile(inputArtifact *wfv1.Artifact, fil
 		inputArtifact.GCS.Bucket, inputArtifact.GCS.Key, filePath)
 
 	stat, err := os.Stat(filePath)
-	if err == nil {
-		if stat.IsDir() {
-			return errors.New("output artifact path is a directory")
-		}
+	if err != nil && !os.IsNotExist(err) {
+		return err
 	}
 
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
+	if stat.IsDir() {
+		return errors.New("output artifact path is a directory")
 	}
 
-	outputFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	outputFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
 		return err
 	}
@@ -88,6 +84,16 @@ func (gcsDriver *GCSArtifactDriver) saveToGCS(outputArtifact *wfv1.Artifact, fil
 	if err != nil {
 		return err
 	}
+
+	stat, err := os.Stat(filePath)
+	if err != nil {
+		return err
+	}
+
+	if stat.IsDir() {
+		return errors.New("only single files can be saved to GCS, not entire directories")
+	}
+
 	defer inputFile.Close()
 
 	bucket := gcsClient.Bucket(outputArtifact.GCS.Bucket)
@@ -110,20 +116,11 @@ func (gcsDriver *GCSArtifactDriver) saveToGCS(outputArtifact *wfv1.Artifact, fil
 func (gcsDriver *GCSArtifactDriver) Load(inputArtifact *wfv1.Artifact, path string) error {
 
 	err := gcsDriver.saveToFile(inputArtifact, path)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (gcsDriver *GCSArtifactDriver) Save(path string, outputArtifact *wfv1.Artifact) error {
 
 	err := gcsDriver.saveToGCS(outputArtifact, path)
-	if err != nil {
-		return err
-	}
-
-	return nil
-
+	return err
 }

@@ -602,7 +602,7 @@ type GCSBucket struct {
 	Bucket string `json:"bucket"`
 }
 
-// GCSBucket is the location of a GCS artifact
+// GCSArtifact is the location of a GCS artifact
 type GCSArtifact struct {
 	GCSBucket `json:",inline"`
 	Key       string `json:"key"`
