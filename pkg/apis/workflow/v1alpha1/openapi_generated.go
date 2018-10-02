@@ -313,7 +313,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSArtifact": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "GCSBucket is the location of a GCS artifact",
+					Description: "GCSArtifact is the location of a GCS artifact",
 					Properties: map[string]spec.Schema{
 						"bucket": {
 							SchemaProps: spec.SchemaProps{
