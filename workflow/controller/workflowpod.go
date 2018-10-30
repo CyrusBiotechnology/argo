@@ -291,7 +291,8 @@ func (woc *wfOperationCtx) newWaitContainer(tmpl *wfv1.Template) (*apiv1.Contain
 	ctr := woc.newExecContainer(common.WaitContainerName, false)
 	ctr.Command = []string{"argoexec"}
 	ctr.Args = []string{"wait"}
-	ctr.VolumeMounts = woc.createVolumeMounts()
+	ctr.VolumeMounts = append(ctr.VolumeMounts, volumeMountPodMetadata)
+
 	return ctr, nil
 }
 
@@ -333,7 +334,7 @@ func (woc *wfOperationCtx) createVolumeMounts() []apiv1.VolumeMount {
 	case common.ContainerRuntimeExecutorKubelet:
 		return volumeMounts
 	default:
-		return append(volumeMounts, volumePodMetadata, volumeMountDockerLib, volumeMountDockerSock)
+		return append(volumeMounts, volumeMountDockerLib, volumeMountDockerSock)
 	}
 }
 
