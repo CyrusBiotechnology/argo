@@ -291,7 +291,7 @@ func (woc *wfOperationCtx) newWaitContainer(tmpl *wfv1.Template) (*apiv1.Contain
 	ctr := woc.newExecContainer(common.WaitContainerName, false)
 	ctr.Command = []string{"argoexec"}
 	ctr.Args = []string{"wait"}
-	ctr.VolumeMounts = append(ctr.VolumeMounts, volumeMountPodMetadata)
+	ctr.VolumeMounts = append(ctr.VolumeMounts, woc.createVolumeMounts()...)
 
 	return ctr, nil
 }
