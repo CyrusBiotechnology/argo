@@ -10,9 +10,17 @@ def NAMESPACE = ''
 def runUtilityCommand(buildCommand) {
     // Run an arbitrary command inside the docker builder image
     sh "docker run --rm " +
-       "-v ${pwd()}/dist/pkg:/root/go/pkg " +
-       "-v ${pwd()}:/root/go/src/github.com/CyrusBiotechnology/argo " +
-       "-w /root/go/src/github.com/CyrusBiotechnology/argo argo-builder ${buildCommand}"
+       "-v ${pwd()}:/root/go/src/github.com/argoproj/argo " +
+       "-w /root/go/src/github.com/argoproj/argo argo-builder ${buildCommand}"
+}
+
+def dockerPush(dockerImageTag) {
+    // login to GCS and push a docker container
+
+    sh "${gcloud.selectSecretSH(env.GCR_IMAGE_PROJECT_KEY)};" +
+    "export DOCKER_CONFIG=/tmp/gcloud-image-project-docker/;" +
+    "gcloud auth configure-docker --quiet;" +
+    "docker --config /tmp/gcloud-image-project-docker/ push ${dockerImageTag}"
 }
 
 pipeline {
@@ -30,11 +38,11 @@ pipeline {
                     IMAGE_TAG=IMAGE_REF.split(':').last()
                     GIT_BRANCH = env.BRANCH_NAME.replace('/', '').replace('_', '').replace('-', '')
 
-                    def baseVersionTag = readFile "VERSION"
-                    baseVersionTag = baseVersionTag.trim();
-                    VERSION = "${baseVersionTag}-cyrus-${GIT_BRANCH}"
-
-                    println "Version tag for this build is ${VERSION}"
+                    if (env.BRANCH_NAME == 'master') {
+                        VERSION = env.BUILD_ID}
+                    else {
+                        VERSION = env.BUILD_ID +  GIT_BRANCH
+                    }
                 }
             }
         }
@@ -54,14 +62,14 @@ pipeline {
         stage('build controller') {
             steps {
                 runUtilityCommand("make controller")
-                sh "docker build -t workflow-controller:${VERSION} -f Dockerfile-workflow-controller ."
+                sh "docker build -t gcr.io/cyrus-containers/workflow-controller:${VERSION} -f Dockerfile-workflow-controller ."
             }
         }
 
         stage('build executor') {
             steps {
                 runUtilityCommand("make executor")
-                sh "docker build -t argoexec:${VERSION} -f Dockerfile-argoexec ."
+                sh "docker build -t gcr.io/cyrus-containers/argoexec:${VERSION} -f Dockerfile-argoexec ."
             }
         }
 
@@ -73,35 +81,21 @@ pipeline {
         }
 
         stage('push containers to GCR') {
-
             steps {
-                script { docker2.push("workflow-controller:${VERSION}", ["workflow-controller:${VERSION}"]) }
-                script { docker2.push("argoexec:${VERSION}", ["argoexec:${VERSION}"]) }
-
+                dockerPush("gcr.io/cyrus-containers/argoexec:${VERSION}")
+                dockerPush("gcr.io/cyrus-containers/workflow-controller:${VERSION}")
             }
-
         }
 
         stage('push CLI to artifactory') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'Artifactory', usernameVariable: 'ARTI_NAME', passwordVariable: 'ARTI_PASS')]) {
-                    runUtilityCommand("curl -u ${ARTI_NAME}:${ARTI_PASS} -T /root/go/src/github.com/CyrusBiotechnology/argo/dist/argo-darwin-amd64 https://cyrusbio.jfrog.io/cyrusbio/argo-cli/argo-mac-${VERSION}")
-                    runUtilityCommand("curl -u ${ARTI_NAME}:${ARTI_PASS} -T /root/go/src/github.com/CyrusBiotechnology/argo/dist/argo-linux-amd64 https://cyrusbio.jfrog.io/cyrusbio/argo-cli/argo-linux-${VERSION}")
+                    runUtilityCommand("curl -u ${ARTI_NAME}:${ARTI_PASS} -T /root/go/src/github.com/argoproj/argo/dist/argo-darwin-amd64 https://cyrusbio.jfrog.io/cyrusbio/argo-cli/argo-mac-${VERSION}")
+                    runUtilityCommand("curl -u ${ARTI_NAME}:${ARTI_PASS} -T /root/go/src/github.com/argoproj/argo/dist/argo-linux-amd64 https://cyrusbio.jfrog.io/cyrusbio/argo-cli/argo-linux-${VERSION}")
                 }
             }
         }
 
-        stage('Deploy') {
-            steps {
-                script {
-                    if (GIT_BRANCH in ['rc', 'release', 'master_engineering']) {
-                        NAMESPACE = k8s.getNamespaceFromBranch(GIT_BRANCH) ?: 'development'
-                        k8s.updateImageTag(NAMESPACE, VERSION, 'gcr.io/cyrus-containers/argoexec', GIT_BRANCH)
-                        k8s.updateImageTag(NAMESPACE, VERSION, 'gcr.io/cyrus-containers/workflow-controller', GIT_BRANCH)
-                    }
-                }
-            }
-        }
 
     }
  }
