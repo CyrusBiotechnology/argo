@@ -74,10 +74,12 @@ pipeline {
 
         stage('push containers to GCR') {
 
-            def tasks = [:]
-            tasks["Push controller"] = docker2.pushToGCRClosure("workflow-controller:${VERSION}", "workflow-controller:${VERSION}")
-            tasks["Push argoexec"] = docker2.pushToGCRClosure("argoexec:${VERSION}", "argoexec:${VERSION}")
-            parallel tasks
+            steps {
+                def tasks = [:]
+                tasks["Push controller"] = docker2.pushToGCRClosure("workflow-controller:${VERSION}", "workflow-controller:${VERSION}")
+                tasks["Push argoexec"] = docker2.pushToGCRClosure("argoexec:${VERSION}", "argoexec:${VERSION}")
+                parallel tasks
+            }
 
         }
 
