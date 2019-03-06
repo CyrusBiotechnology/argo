@@ -75,8 +75,8 @@ pipeline {
         stage('push containers to GCR') {
 
             steps {
-                docker2.pushToGCRClosure("workflow-controller:${VERSION}", "workflow-controller:${VERSION}")()
-                docker2.pushToGCRClosure("argoexec:${VERSION}", "argoexec:${VERSION}")()
+                docker2.push("workflow-controller:${VERSION}", ["workflow-controller:${VERSION}"])
+                docker2.push("argoexec:${VERSION}", ["argoexec:${VERSION}"])
 
             }
 
