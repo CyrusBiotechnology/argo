@@ -10,13 +10,13 @@ def NAMESPACE = ''
 def runUtilityCommand(buildCommand) {
     // Run an arbitrary command inside the docker builder image
     sh "docker run --rm " +
+       "-v ${pwd()}/dist/pkg:/root/go/pkg " +
        "-v ${pwd()}:/root/go/src/github.com/argoproj/argo " +
        "-w /root/go/src/github.com/argoproj/argo argo-builder ${buildCommand}"
 }
 
 def dockerPush(dockerImageTag) {
     // login to GCS and push a docker container
-
     sh "${gcloud.selectSecretSH(env.GCR_IMAGE_PROJECT_KEY)};" +
     "export DOCKER_CONFIG=/tmp/gcloud-image-project-docker/;" +
     "gcloud auth configure-docker --quiet;" +
