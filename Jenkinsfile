@@ -15,14 +15,6 @@ def runUtilityCommand(buildCommand) {
        "-w /root/go/src/github.com/argoproj/argo argo-builder ${buildCommand}"
 }
 
-def dockerPush(dockerImageTag) {
-    // login to GCS and push a docker container
-    sh "${gcloud.selectSecretSH(env.GCR_IMAGE_PROJECT_KEY)};" +
-    "export DOCKER_CONFIG=/tmp/gcloud-image-project-docker/;" +
-    "gcloud auth configure-docker --quiet;" +
-    "docker --config /tmp/gcloud-image-project-docker/ push ${dockerImageTag}"
-}
-
 pipeline {
     agent any
     stages {
@@ -62,14 +54,14 @@ pipeline {
         stage('build controller') {
             steps {
                 runUtilityCommand("make controller")
-                sh "docker build -t gcr.io/cyrus-containers/workflow-controller:${VERSION} -f Dockerfile-workflow-controller ."
+                sh "docker build -t workflow-controller:${VERSION} -f Dockerfile-workflow-controller ."
             }
         }
 
         stage('build executor') {
             steps {
                 runUtilityCommand("make executor")
-                sh "docker build -t gcr.io/cyrus-containers/argoexec:${VERSION} -f Dockerfile-argoexec ."
+                sh "docker build -t argoexec:${VERSION} -f Dockerfile-argoexec ."
             }
         }
 
@@ -81,10 +73,12 @@ pipeline {
         }
 
         stage('push containers to GCR') {
-            steps {
-                dockerPush("gcr.io/cyrus-containers/argoexec:${VERSION}")
-                dockerPush("gcr.io/cyrus-containers/workflow-controller:${VERSION}")
-            }
+
+            def tasks = [:]
+            tasks["Push controller"] = docker2.pushToGCRClosure("workflow-controller:${VERSION}", "workflow-controller:${VERSION}")
+            tasks["Push argoexec"] = docker2.pushToGCRClosure("argoexec:${VERSION}", "argoexec:${VERSION}")
+            parallel tasks
+
         }
 
         stage('push CLI to artifactory') {
