@@ -4,7 +4,7 @@
 
 ## News
 
-We are excited to welcome [Adobe](https://www.adobe.com/) and [BlackRock](https://www.blackrock.com/) as the latest corporate members of the Argo Community! We are also thrilled that BlackRock has developed an eventing framework for Argo and has decided to contribute it to the Argo Community. Please check out the new repo and try [Argo Events](https://github.com/argoproj/argo-events)!
+We are excited to welcome [Adobe](https://www.adobe.com/) and [BlackRock](https://www.blackrock.com/) as the latest corporate members of the Argo Community! We are also thrilled that BlackRock has developed an eventing framework for Argo and has decided to contribute it to the Argo Community. Please check out the new repo and try [Argo Events](https://github.com/CyrusBiotechnology/argo-events)!
 
 If you actively use Argo in your organization and believe that your organization may be interested in actively participating in the Argo Community, please ask a representative to contact saradhi_sreegiriraju@intuit.com for additional information.
 
@@ -22,9 +22,9 @@ Argo is an open source container-native workflow engine for getting work done on
 * Argo with Kubernetes puts a cloud-scale supercomputer at your fingertips.
 
 ## Documentation
-* [Get started here](https://github.com/argoproj/argo/blob/master/demo.md)
-* [How to write Argo workflow specs](https://github.com/argoproj/argo/blob/master/examples/README.md)
-* [How to configure your artifact repository](https://github.com/argoproj/argo/blob/master/ARTIFACT_REPO.md)
+* [Get started here](https://github.com/CyrusBiotechnology/argo/blob/master/demo.md)
+* [How to write Argo workflow specs](https://github.com/CyrusBiotechnology/argo/blob/master/examples/README.md)
+* [How to configure your artifact repository](https://github.com/CyrusBiotechnology/argo/blob/master/ARTIFACT_REPO.md)
 
 ## Features
 * DAG or Steps based declaration of workflows

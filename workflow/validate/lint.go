@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/argoproj/argo/errors"
-	"github.com/argoproj/argo/pkg/apis/workflow"
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/argoproj/argo/workflow/common"
+	"github.com/CyrusBiotechnology/argo/errors"
+	"github.com/CyrusBiotechnology/argo/pkg/apis/workflow"
+	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/CyrusBiotechnology/argo/workflow/common"
 	"github.com/argoproj/pkg/json"
 )
 

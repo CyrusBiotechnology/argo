@@ -5,7 +5,7 @@ import (
 	argos3 "github.com/argoproj/pkg/s3"
 	log "github.com/sirupsen/logrus"
 
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
 )
 
 // S3ArtifactDriver is a driver for AWS S3

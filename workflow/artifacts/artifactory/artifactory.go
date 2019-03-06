@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/argoproj/argo/errors"
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/CyrusBiotechnology/argo/errors"
+	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
 )
 
 type ArtifactoryArtifactDriver struct {

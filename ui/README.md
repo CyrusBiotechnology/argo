@@ -1,3 +1,3 @@
 # Argo UI
 
-Moved to https://github.com/argoproj/argo-ui
+Moved to https://github.com/CyrusBiotechnology/argo-ui
