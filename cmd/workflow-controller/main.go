@@ -16,9 +16,9 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/client-go/tools/clientcmd"
 
-	wfclientset "github.com/argoproj/argo/pkg/client/clientset/versioned"
-	cmdutil "github.com/argoproj/argo/util/cmd"
-	"github.com/argoproj/argo/workflow/controller"
+	wfclientset "github.com/CyrusBiotechnology/argo/pkg/client/clientset/versioned"
+	cmdutil "github.com/CyrusBiotechnology/argo/util/cmd"
+	"github.com/CyrusBiotechnology/argo/workflow/controller"
 )
 
 const (

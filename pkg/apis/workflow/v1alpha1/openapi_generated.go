@@ -13,40 +13,40 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArchiveStrategy":     schema_pkg_apis_workflow_v1alpha1_ArchiveStrategy(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments":           schema_pkg_apis_workflow_v1alpha1_Arguments(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Artifact":            schema_pkg_apis_workflow_v1alpha1_Artifact(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation":    schema_pkg_apis_workflow_v1alpha1_ArtifactLocation(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact": schema_pkg_apis_workflow_v1alpha1_ArtifactoryArtifact(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryAuth":     schema_pkg_apis_workflow_v1alpha1_ArtifactoryAuth(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.DAGTask":             schema_pkg_apis_workflow_v1alpha1_DAGTask(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.DAGTemplate":         schema_pkg_apis_workflow_v1alpha1_DAGTemplate(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSArtifact":         schema_pkg_apis_workflow_v1alpha1_GCSArtifact(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSBucket":           schema_pkg_apis_workflow_v1alpha1_GCSBucket(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GitArtifact":         schema_pkg_apis_workflow_v1alpha1_GitArtifact(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact":        schema_pkg_apis_workflow_v1alpha1_HTTPArtifact(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Inputs":              schema_pkg_apis_workflow_v1alpha1_Inputs(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Item":                schema_pkg_apis_workflow_v1alpha1_Item(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Metadata":            schema_pkg_apis_workflow_v1alpha1_Metadata(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.NoneStrategy":        schema_pkg_apis_workflow_v1alpha1_NoneStrategy(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Outputs":             schema_pkg_apis_workflow_v1alpha1_Outputs(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Parameter":           schema_pkg_apis_workflow_v1alpha1_Parameter(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RawArtifact":         schema_pkg_apis_workflow_v1alpha1_RawArtifact(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ResourceTemplate":    schema_pkg_apis_workflow_v1alpha1_ResourceTemplate(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RetryStrategy":       schema_pkg_apis_workflow_v1alpha1_RetryStrategy(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.S3Artifact":          schema_pkg_apis_workflow_v1alpha1_S3Artifact(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.S3Bucket":            schema_pkg_apis_workflow_v1alpha1_S3Bucket(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ScriptTemplate":      schema_pkg_apis_workflow_v1alpha1_ScriptTemplate(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Sequence":            schema_pkg_apis_workflow_v1alpha1_Sequence(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Sidecar":             schema_pkg_apis_workflow_v1alpha1_Sidecar(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.SuspendTemplate":     schema_pkg_apis_workflow_v1alpha1_SuspendTemplate(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TarStrategy":         schema_pkg_apis_workflow_v1alpha1_TarStrategy(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Template":            schema_pkg_apis_workflow_v1alpha1_Template(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ValueFrom":           schema_pkg_apis_workflow_v1alpha1_ValueFrom(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Workflow":            schema_pkg_apis_workflow_v1alpha1_Workflow(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowList":        schema_pkg_apis_workflow_v1alpha1_WorkflowList(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowSpec":        schema_pkg_apis_workflow_v1alpha1_WorkflowSpec(ref),
-		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowStep":        schema_pkg_apis_workflow_v1alpha1_WorkflowStep(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ArchiveStrategy":     schema_pkg_apis_workflow_v1alpha1_ArchiveStrategy(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments":           schema_pkg_apis_workflow_v1alpha1_Arguments(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Artifact":            schema_pkg_apis_workflow_v1alpha1_Artifact(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation":    schema_pkg_apis_workflow_v1alpha1_ArtifactLocation(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact": schema_pkg_apis_workflow_v1alpha1_ArtifactoryArtifact(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactoryAuth":     schema_pkg_apis_workflow_v1alpha1_ArtifactoryAuth(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTask":             schema_pkg_apis_workflow_v1alpha1_DAGTask(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTemplate":         schema_pkg_apis_workflow_v1alpha1_DAGTemplate(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.GCSArtifact":         schema_pkg_apis_workflow_v1alpha1_GCSArtifact(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.GCSBucket":           schema_pkg_apis_workflow_v1alpha1_GCSBucket(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.GitArtifact":         schema_pkg_apis_workflow_v1alpha1_GitArtifact(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact":        schema_pkg_apis_workflow_v1alpha1_HTTPArtifact(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Inputs":              schema_pkg_apis_workflow_v1alpha1_Inputs(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Item":                schema_pkg_apis_workflow_v1alpha1_Item(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Metadata":            schema_pkg_apis_workflow_v1alpha1_Metadata(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.NoneStrategy":        schema_pkg_apis_workflow_v1alpha1_NoneStrategy(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Outputs":             schema_pkg_apis_workflow_v1alpha1_Outputs(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Parameter":           schema_pkg_apis_workflow_v1alpha1_Parameter(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.RawArtifact":         schema_pkg_apis_workflow_v1alpha1_RawArtifact(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ResourceTemplate":    schema_pkg_apis_workflow_v1alpha1_ResourceTemplate(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.RetryStrategy":       schema_pkg_apis_workflow_v1alpha1_RetryStrategy(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.S3Artifact":          schema_pkg_apis_workflow_v1alpha1_S3Artifact(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.S3Bucket":            schema_pkg_apis_workflow_v1alpha1_S3Bucket(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ScriptTemplate":      schema_pkg_apis_workflow_v1alpha1_ScriptTemplate(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Sequence":            schema_pkg_apis_workflow_v1alpha1_Sequence(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Sidecar":             schema_pkg_apis_workflow_v1alpha1_Sidecar(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.SuspendTemplate":     schema_pkg_apis_workflow_v1alpha1_SuspendTemplate(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.TarStrategy":         schema_pkg_apis_workflow_v1alpha1_TarStrategy(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Template":            schema_pkg_apis_workflow_v1alpha1_Template(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ValueFrom":           schema_pkg_apis_workflow_v1alpha1_ValueFrom(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Workflow":            schema_pkg_apis_workflow_v1alpha1_Workflow(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowList":        schema_pkg_apis_workflow_v1alpha1_WorkflowList(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowSpec":        schema_pkg_apis_workflow_v1alpha1_WorkflowSpec(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowStep":        schema_pkg_apis_workflow_v1alpha1_WorkflowStep(ref),
 	}
 }
 
@@ -58,19 +58,19 @@ func schema_pkg_apis_workflow_v1alpha1_ArchiveStrategy(ref common.ReferenceCallb
 				Properties: map[string]spec.Schema{
 					"tar": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TarStrategy"),
+							Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.TarStrategy"),
 						},
 					},
 					"none": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.NoneStrategy"),
+							Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.NoneStrategy"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.NoneStrategy", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TarStrategy"},
+			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.NoneStrategy", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.TarStrategy"},
 	}
 }
 
@@ -87,7 +87,7 @@ func schema_pkg_apis_workflow_v1alpha1_Arguments(ref common.ReferenceCallback) c
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Parameter"),
+										Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Parameter"),
 									},
 								},
 							},
@@ -100,7 +100,7 @@ func schema_pkg_apis_workflow_v1alpha1_Arguments(ref common.ReferenceCallback) c
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Artifact"),
+										Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Artifact"),
 									},
 								},
 							},
@@ -110,7 +110,7 @@ func schema_pkg_apis_workflow_v1alpha1_Arguments(ref common.ReferenceCallback) c
 			},
 		},
 		Dependencies: []string{
-			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Artifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Parameter"},
+			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Artifact", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Parameter"},
 	}
 }
 
@@ -158,37 +158,37 @@ func schema_pkg_apis_workflow_v1alpha1_Artifact(ref common.ReferenceCallback) co
 					"s3": {
 						SchemaProps: spec.SchemaProps{
 							Description: "S3 contains S3 artifact location details",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.S3Artifact"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.S3Artifact"),
 						},
 					},
 					"git": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Git contains git artifact location details",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GitArtifact"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.GitArtifact"),
 						},
 					},
 					"http": {
 						SchemaProps: spec.SchemaProps{
 							Description: "HTTP contains HTTP artifact location details",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact"),
 						},
 					},
 					"artifactory": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Artifactory contains artifactory artifact location details",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact"),
 						},
 					},
 					"raw": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Raw contains raw artifact location details",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RawArtifact"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.RawArtifact"),
 						},
 					},
 					"gcs": {
 						SchemaProps: spec.SchemaProps{
 							Description: "GCS contains GCS artifact location details",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSArtifact"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.GCSArtifact"),
 						},
 					},
 					"globalName": {
@@ -201,7 +201,7 @@ func schema_pkg_apis_workflow_v1alpha1_Artifact(ref common.ReferenceCallback) co
 					"archive": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Archive controls how the artifact will be saved to the artifact repository.",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArchiveStrategy"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ArchiveStrategy"),
 						},
 					},
 				},
@@ -209,7 +209,7 @@ func schema_pkg_apis_workflow_v1alpha1_Artifact(ref common.ReferenceCallback) co
 			},
 		},
 		Dependencies: []string{
-			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArchiveStrategy", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GitArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RawArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.S3Artifact"},
+			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ArchiveStrategy", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.GCSArtifact", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.GitArtifact", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.RawArtifact", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.S3Artifact"},
 	}
 }
 
@@ -229,44 +229,44 @@ func schema_pkg_apis_workflow_v1alpha1_ArtifactLocation(ref common.ReferenceCall
 					"s3": {
 						SchemaProps: spec.SchemaProps{
 							Description: "S3 contains S3 artifact location details",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.S3Artifact"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.S3Artifact"),
 						},
 					},
 					"git": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Git contains git artifact location details",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GitArtifact"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.GitArtifact"),
 						},
 					},
 					"http": {
 						SchemaProps: spec.SchemaProps{
 							Description: "HTTP contains HTTP artifact location details",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact"),
 						},
 					},
 					"artifactory": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Artifactory contains artifactory artifact location details",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact"),
 						},
 					},
 					"raw": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Raw contains raw artifact location details",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RawArtifact"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.RawArtifact"),
 						},
 					},
 					"gcs": {
 						SchemaProps: spec.SchemaProps{
 							Description: "GCS contains GCS artifact location details",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSArtifact"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.GCSArtifact"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GitArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RawArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.S3Artifact"},
+			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.GCSArtifact", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.GitArtifact", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.RawArtifact", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.S3Artifact"},
 	}
 }
 
@@ -353,7 +353,7 @@ func schema_pkg_apis_workflow_v1alpha1_DAGTask(ref common.ReferenceCallback) com
 					"arguments": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Arguments are the parameter and artifact arguments to the template",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments"),
 						},
 					},
 					"dependencies": {
@@ -377,7 +377,7 @@ func schema_pkg_apis_workflow_v1alpha1_DAGTask(ref common.ReferenceCallback) com
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Item"),
+										Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Item"),
 									},
 								},
 							},
@@ -393,7 +393,7 @@ func schema_pkg_apis_workflow_v1alpha1_DAGTask(ref common.ReferenceCallback) com
 					"withSequence": {
 						SchemaProps: spec.SchemaProps{
 							Description: "WithSequence expands a task into a numeric sequence",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Sequence"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Sequence"),
 						},
 					},
 					"when": {
@@ -408,7 +408,7 @@ func schema_pkg_apis_workflow_v1alpha1_DAGTask(ref common.ReferenceCallback) com
 			},
 		},
 		Dependencies: []string{
-			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Item", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Sequence"},
+			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Item", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Sequence"},
 	}
 }
 
@@ -432,7 +432,7 @@ func schema_pkg_apis_workflow_v1alpha1_DAGTemplate(ref common.ReferenceCallback)
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.DAGTask"),
+										Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTask"),
 									},
 								},
 							},
@@ -443,7 +443,7 @@ func schema_pkg_apis_workflow_v1alpha1_DAGTemplate(ref common.ReferenceCallback)
 			},
 		},
 		Dependencies: []string{
-			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.DAGTask"},
+			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTask"},
 	}
 }
 
@@ -574,7 +574,7 @@ func schema_pkg_apis_workflow_v1alpha1_Inputs(ref common.ReferenceCallback) comm
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Parameter"),
+										Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Parameter"),
 									},
 								},
 							},
@@ -587,7 +587,7 @@ func schema_pkg_apis_workflow_v1alpha1_Inputs(ref common.ReferenceCallback) comm
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Artifact"),
+										Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Artifact"),
 									},
 								},
 							},
@@ -597,7 +597,7 @@ func schema_pkg_apis_workflow_v1alpha1_Inputs(ref common.ReferenceCallback) comm
 			},
 		},
 		Dependencies: []string{
-			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Artifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Parameter"},
+			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Artifact", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Parameter"},
 	}
 }
 
@@ -677,7 +677,7 @@ func schema_pkg_apis_workflow_v1alpha1_Outputs(ref common.ReferenceCallback) com
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Parameter"),
+										Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Parameter"),
 									},
 								},
 							},
@@ -690,7 +690,7 @@ func schema_pkg_apis_workflow_v1alpha1_Outputs(ref common.ReferenceCallback) com
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Artifact"),
+										Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Artifact"),
 									},
 								},
 							},
@@ -707,7 +707,7 @@ func schema_pkg_apis_workflow_v1alpha1_Outputs(ref common.ReferenceCallback) com
 			},
 		},
 		Dependencies: []string{
-			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Artifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Parameter"},
+			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Artifact", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Parameter"},
 	}
 }
 
@@ -741,7 +741,7 @@ func schema_pkg_apis_workflow_v1alpha1_Parameter(ref common.ReferenceCallback) c
 					"valueFrom": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ValueFrom is the source for the output parameter's value",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ValueFrom"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ValueFrom"),
 						},
 					},
 					"globalName": {
@@ -756,7 +756,7 @@ func schema_pkg_apis_workflow_v1alpha1_Parameter(ref common.ReferenceCallback) c
 			},
 		},
 		Dependencies: []string{
-			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ValueFrom"},
+			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ValueFrom"},
 	}
 }
 
@@ -1505,13 +1505,13 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 					"inputs": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Inputs describe what inputs parameters and artifacts are supplied to this template",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Inputs"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Inputs"),
 						},
 					},
 					"outputs": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Outputs describe the parameters and artifacts that this template produces",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Outputs"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Outputs"),
 						},
 					},
 					"nodeSelector": {
@@ -1537,7 +1537,7 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Metdata sets the pods's metadata, i.e. annotations and labels",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Metadata"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Metadata"),
 						},
 					},
 					"daemon": {
@@ -1558,7 +1558,7 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 										Items: &spec.SchemaOrArray{
 											Schema: &spec.Schema{
 												SchemaProps: spec.SchemaProps{
-													Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowStep"),
+													Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowStep"),
 												},
 											},
 										},
@@ -1576,25 +1576,25 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 					"script": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Script runs a portion of code against an interpreter",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ScriptTemplate"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ScriptTemplate"),
 						},
 					},
 					"resource": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Resource template subtype which can run k8s resources",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ResourceTemplate"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ResourceTemplate"),
 						},
 					},
 					"dag": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DAG template subtype which runs a DAG",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.DAGTemplate"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTemplate"),
 						},
 					},
 					"suspend": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Suspend template subtype which can suspend a workflow when reaching the step",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.SuspendTemplate"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.SuspendTemplate"),
 						},
 					},
 					"sidecars": {
@@ -1604,7 +1604,7 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Sidecar"),
+										Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Sidecar"),
 									},
 								},
 							},
@@ -1613,7 +1613,7 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 					"archiveLocation": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Location in which all files related to the step will be stored (logs, artifacts, etc...). Can be overridden by individual items in Outputs. If omitted, will use the default artifact repository location configured in the controller, appended with the <workflowname>/<nodename> in the key.",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation"),
 						},
 					},
 					"activeDeadlineSeconds": {
@@ -1626,7 +1626,7 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 					"retryStrategy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RetryStrategy describes how to retry a template when it fails",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RetryStrategy"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.RetryStrategy"),
 						},
 					},
 					"parallelism": {
@@ -1654,7 +1654,7 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 			},
 		},
 		Dependencies: []string{
-			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.DAGTemplate", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Inputs", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Metadata", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Outputs", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ResourceTemplate", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RetryStrategy", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ScriptTemplate", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Sidecar", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.SuspendTemplate", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowStep", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.Toleration"},
+			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTemplate", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Inputs", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Metadata", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Outputs", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ResourceTemplate", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.RetryStrategy", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ScriptTemplate", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Sidecar", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.SuspendTemplate", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowStep", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.Toleration"},
 	}
 }
 
@@ -1726,12 +1726,12 @@ func schema_pkg_apis_workflow_v1alpha1_Workflow(ref common.ReferenceCallback) co
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowSpec"),
+							Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowStatus"),
+							Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowStatus"),
 						},
 					},
 				},
@@ -1739,7 +1739,7 @@ func schema_pkg_apis_workflow_v1alpha1_Workflow(ref common.ReferenceCallback) co
 			},
 		},
 		Dependencies: []string{
-			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowSpec", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowSpec", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -1774,7 +1774,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowList(ref common.ReferenceCallback
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Workflow"),
+										Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Workflow"),
 									},
 								},
 							},
@@ -1785,7 +1785,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowList(ref common.ReferenceCallback
 			},
 		},
 		Dependencies: []string{
-			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Workflow", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Workflow", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -1802,7 +1802,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowSpec(ref common.ReferenceCallback
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Template"),
+										Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Template"),
 									},
 								},
 							},
@@ -1818,7 +1818,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowSpec(ref common.ReferenceCallback
 					"arguments": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Arguments contain the parameters and artifacts sent to the workflow entrypoint Parameters are referencable globally using the 'workflow' variable prefix. e.g. {{workflow.parameters.myparam}}",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments"),
 						},
 					},
 					"serviceAccountName": {
@@ -1940,7 +1940,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowSpec(ref common.ReferenceCallback
 			},
 		},
 		Dependencies: []string{
-			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Template", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaim", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.Volume"},
+			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Template", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaim", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.Volume"},
 	}
 }
 
@@ -1967,7 +1967,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowStep(ref common.ReferenceCallback
 					"arguments": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Arguments hold arguments to the template",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments"),
 						},
 					},
 					"withItems": {
@@ -1977,7 +1977,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowStep(ref common.ReferenceCallback
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Item"),
+										Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Item"),
 									},
 								},
 							},
@@ -1993,7 +1993,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowStep(ref common.ReferenceCallback
 					"withSequence": {
 						SchemaProps: spec.SchemaProps{
 							Description: "WithSequence expands a step into a numeric sequence",
-							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Sequence"),
+							Ref:         ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Sequence"),
 						},
 					},
 					"when": {
@@ -2007,6 +2007,6 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowStep(ref common.ReferenceCallback
 			},
 		},
 		Dependencies: []string{
-			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Item", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Sequence"},
+			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Item", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Sequence"},
 	}
 }

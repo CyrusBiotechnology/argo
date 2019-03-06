@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/argoproj/argo/util"
+	"github.com/CyrusBiotechnology/argo/util"
 
-	"github.com/argoproj/argo/errors"
-	"github.com/argoproj/argo/workflow/common"
+	"github.com/CyrusBiotechnology/argo/errors"
+	"github.com/CyrusBiotechnology/argo/workflow/common"
 	log "github.com/sirupsen/logrus"
 )
 
