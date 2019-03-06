@@ -11,8 +11,8 @@ def runUtilityCommand(buildCommand) {
     // Run an arbitrary command inside the docker builder image
     sh "docker run --rm " +
        "-v ${pwd()}/dist/pkg:/root/go/pkg " +
-       "-v ${pwd()}:/root/go/src/github.com/argoproj/argo " +
-       "-w /root/go/src/github.com/argoproj/argo argo-builder ${buildCommand}"
+       "-v ${pwd()}:/root/go/src/github.com/CyrusBiotechnology/argo " +
+       "-w /root/go/src/github.com/CyrusBiotechnology/argo argo-builder ${buildCommand}"
 }
 
 pipeline {
@@ -85,8 +85,8 @@ pipeline {
         stage('push CLI to artifactory') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'Artifactory', usernameVariable: 'ARTI_NAME', passwordVariable: 'ARTI_PASS')]) {
-                    runUtilityCommand("curl -u ${ARTI_NAME}:${ARTI_PASS} -T /root/go/src/github.com/argoproj/argo/dist/argo-darwin-amd64 https://cyrusbio.jfrog.io/cyrusbio/argo-cli/argo-mac-${VERSION}")
-                    runUtilityCommand("curl -u ${ARTI_NAME}:${ARTI_PASS} -T /root/go/src/github.com/argoproj/argo/dist/argo-linux-amd64 https://cyrusbio.jfrog.io/cyrusbio/argo-cli/argo-linux-${VERSION}")
+                    runUtilityCommand("curl -u ${ARTI_NAME}:${ARTI_PASS} -T /root/go/src/github.com/CyrusBiotechnology/argo/dist/argo-darwin-amd64 https://cyrusbio.jfrog.io/cyrusbio/argo-cli/argo-mac-${VERSION}")
+                    runUtilityCommand("curl -u ${ARTI_NAME}:${ARTI_PASS} -T /root/go/src/github.com/CyrusBiotechnology/argo/dist/argo-linux-amd64 https://cyrusbio.jfrog.io/cyrusbio/argo-cli/argo-linux-${VERSION}")
                 }
             }
         }
