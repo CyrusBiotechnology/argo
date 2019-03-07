@@ -36,6 +36,8 @@ type WorkflowController struct {
 	namespace string
 	// configMap is the name of the config map in which to derive configuration of the controller from
 	configMap string
+	// configFile is the path to a configuration file
+	configFile string
 	// Config is the workflow controller's configuration
 	Config WorkflowControllerConfig
 
@@ -73,12 +75,15 @@ func NewWorkflowController(
 	executorImage,
 	executorImagePullPolicy,
 	configMap string,
+	configFile string,
 ) *WorkflowController {
+
 	wfc := WorkflowController{
 		restConfig:                 restConfig,
 		kubeclientset:              kubeclientset,
 		wfclientset:                wfclientset,
 		configMap:                  configMap,
+		configFile:                 configFile,
 		namespace:                  namespace,
 		cliExecutorImage:           executorImage,
 		cliExecutorImagePullPolicy: executorImagePullPolicy,
@@ -128,11 +133,16 @@ func (wfc *WorkflowController) Run(ctx context.Context, wfWorkers, podWorkers in
 
 	log.Infof("Workflow Controller (version: %s) starting", argo.GetVersion())
 	log.Infof("Workers: workflow: %d, pod: %d", wfWorkers, podWorkers)
-	log.Info("Watch Workflow controller config map updates")
-	_, err := wfc.watchControllerConfigMap(ctx)
-	if err != nil {
-		log.Errorf("Failed to register watch for controller config map: %v", err)
-		return
+
+	if wfc.configFile != "" {
+		log.Info("A config file was specified. Ignoring the k8s configmap resource")
+	} else {
+		log.Info("Watch Workflow controller config map updates")
+		_, err := wfc.watchControllerConfigMap(ctx)
+		if err != nil {
+			log.Errorf("Failed to register watch for controller config map: %v", err)
+			return
+		}
 	}
 
 	wfc.wfInformer = util.NewWorkflowInformer(wfc.restConfig, wfc.Config.Namespace, workflowResyncPeriod, wfc.tweakWorkflowlist)
