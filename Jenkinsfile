@@ -30,11 +30,11 @@ pipeline {
                     IMAGE_TAG=IMAGE_REF.split(':').last()
                     GIT_BRANCH = env.BRANCH_NAME.replace('/', '').replace('_', '').replace('-', '')
 
-                    if (env.BRANCH_NAME == 'master') {
-                        VERSION = env.BUILD_ID}
-                    else {
-                        VERSION = env.BUILD_ID +  GIT_BRANCH
-                    }
+                    def baseVersionTag = readFile "VERSION"
+                    baseVersionTag = baseVersionTag.trim();
+                    VERSION = "${baseVersionTag}-cyrus-${GIT_BRANCH}"
+
+                    println "Version tag for this build is ${VERSION}"
                 }
             }
         }
