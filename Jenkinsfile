@@ -91,6 +91,16 @@ pipeline {
             }
         }
 
+        stage('Deploy') {
+            steps {
+                script {
+                    if (GIT_BRANCH in ['rc', 'release', 'master_engineering']) {
+                        NAMESPACE = k8s.getNamespaceFromBranch(GIT_BRANCH) ?: 'development'
+                        k8s.updateImageTag(NAMESPACE, docker2.imageTag(), 'gcr.io/cyrus-containers/argo-rest', GIT_BRANCH)
+                    }
+                }
+            }
+        }
 
     }
  }
