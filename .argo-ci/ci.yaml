@@ -9,7 +9,7 @@ spec:
     - name: revision
       value: master
     - name: repo
-      value: https://github.com/argoproj/argo.git
+      value: https://github.com/CyrusBiotechnology/argo.git
 
   templates:
   - name: argo-ci
@@ -39,7 +39,7 @@ spec:
       - name: cmd
       artifacts:
       - name: code
-        path: /go/src/github.com/argoproj/argo
+        path: /go/src/github.com/CyrusBiotechnology/argo
         git:
           repo: "{{workflow.parameters.repo}}"
           revision: "{{workflow.parameters.revision}}"
@@ -47,7 +47,7 @@ spec:
       image: argoproj/argo-ci-builder:latest
       command: [sh, -c]
       args: ["{{inputs.parameters.cmd}}"]
-      workingDir: /go/src/github.com/argoproj/argo
+      workingDir: /go/src/github.com/CyrusBiotechnology/argo
 
   - name: ci-dind
     inputs:
@@ -55,7 +55,7 @@ spec:
       - name: cmd
       artifacts:
       - name: code
-        path: /go/src/github.com/argoproj/argo
+        path: /go/src/github.com/CyrusBiotechnology/argo
         git:
           repo: "{{workflow.parameters.repo}}"
           revision: "{{workflow.parameters.revision}}"
@@ -63,7 +63,7 @@ spec:
       image: argoproj/argo-ci-builder:latest
       command: [sh, -c]
       args: ["until docker ps; do sleep 3; done && {{inputs.parameters.cmd}}"]
-      workingDir: /go/src/github.com/argoproj/argo
+      workingDir: /go/src/github.com/CyrusBiotechnology/argo
       env:
       - name: DOCKER_HOST
         value: 127.0.0.1

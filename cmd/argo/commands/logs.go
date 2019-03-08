@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	wfclientset "github.com/argoproj/argo/pkg/client/clientset/versioned"
-	wfinformers "github.com/argoproj/argo/pkg/client/informers/externalversions"
+	"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	wfclientset "github.com/CyrusBiotechnology/argo/pkg/client/clientset/versioned"
+	wfinformers "github.com/CyrusBiotechnology/argo/pkg/client/informers/externalversions"
 	"github.com/argoproj/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"

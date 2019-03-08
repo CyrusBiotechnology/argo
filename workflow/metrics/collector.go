@@ -7,8 +7,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/client-go/tools/cache"
 
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/argoproj/argo/workflow/util"
+	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/CyrusBiotechnology/argo/workflow/util"
 )
 
 var (
