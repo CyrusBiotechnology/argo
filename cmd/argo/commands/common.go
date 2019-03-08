@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"strings"
 
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	wfclientset "github.com/argoproj/argo/pkg/client/clientset/versioned"
-	"github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
+	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	wfclientset "github.com/CyrusBiotechnology/argo/pkg/client/clientset/versioned"
+	"github.com/CyrusBiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"

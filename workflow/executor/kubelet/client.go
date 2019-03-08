@@ -16,10 +16,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/argoproj/argo/util"
+	"github.com/CyrusBiotechnology/argo/util"
 
-	"github.com/argoproj/argo/errors"
-	"github.com/argoproj/argo/workflow/common"
+	"github.com/CyrusBiotechnology/argo/errors"
+	"github.com/CyrusBiotechnology/argo/workflow/common"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"

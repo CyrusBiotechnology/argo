@@ -16,9 +16,9 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/client-go/tools/clientcmd"
 
-	wfclientset "github.com/argoproj/argo/pkg/client/clientset/versioned"
-	cmdutil "github.com/argoproj/argo/util/cmd"
-	"github.com/argoproj/argo/workflow/controller"
+	wfclientset "github.com/CyrusBiotechnology/argo/pkg/client/clientset/versioned"
+	cmdutil "github.com/CyrusBiotechnology/argo/util/cmd"
+	"github.com/CyrusBiotechnology/argo/workflow/controller"
 )
 
 const (
@@ -31,6 +31,7 @@ func NewRootCommand() *cobra.Command {
 	var (
 		clientConfig            clientcmd.ClientConfig
 		configMap               string // --configmap
+		configFile              string // --config-file
 		executorImage           string // --executor-image
 		executorImagePullPolicy string // --executor-image-pull-policy
 		logLevel                string // --loglevel
@@ -57,6 +58,7 @@ func NewRootCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+
 			config.Burst = 30
 			config.QPS = 20.0
 
@@ -69,7 +71,7 @@ func NewRootCommand() *cobra.Command {
 			wflientset := wfclientset.NewForConfigOrDie(config)
 
 			// start a controller on instances of our custom resource
-			wfController := controller.NewWorkflowController(config, kubeclientset, wflientset, namespace, executorImage, executorImagePullPolicy, configMap)
+			wfController := controller.NewWorkflowController(config, kubeclientset, wflientset, namespace, executorImage, executorImagePullPolicy, configMap, configFile)
 			err = wfController.ResyncConfig()
 			if err != nil {
 				return err
@@ -91,6 +93,7 @@ func NewRootCommand() *cobra.Command {
 	clientConfig = cli.AddKubectlFlagsToCmd(&command)
 	command.AddCommand(cmdutil.NewVersionCmd(CLIName))
 	command.Flags().StringVar(&configMap, "configmap", "workflow-controller-configmap", "Name of K8s configmap to retrieve workflow controller configuration")
+	command.Flags().StringVar(&configFile, "config-file", "", "Path to a yaml config file. Cannot be specified at the same time as --configmap")
 	command.Flags().StringVar(&executorImage, "executor-image", "", "Executor image to use (overrides value in configmap)")
 	command.Flags().StringVar(&executorImagePullPolicy, "executor-image-pull-policy", "", "Executor imagePullPolicy to use (overrides value in configmap)")
 	command.Flags().StringVar(&logLevel, "loglevel", "info", "Set the logging level. One of: debug|info|warn|error")

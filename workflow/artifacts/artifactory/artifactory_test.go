@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	art "github.com/argoproj/argo/workflow/artifacts/artifactory"
+	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	art "github.com/CyrusBiotechnology/argo/workflow/artifacts/artifactory"
 	"github.com/stretchr/testify/assert"
 )
 
