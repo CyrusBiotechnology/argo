@@ -78,6 +78,6 @@ func TestEvaluateErrorConditions(t *testing.T) {
 	results, err = we.evaluatePatternConditions(&conditions, &logContentNoMatch)
 	assert.Nil(t, err)
 
-	assert.Equal(t, results, nil)
+	assert.Equal(t, results, []wfv1.ErrorResult(nil))
 
 }
