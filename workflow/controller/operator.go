@@ -21,13 +21,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/CyrusBiotechnology/argo/errors"
-	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/CyrusBiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
-	"github.com/CyrusBiotechnology/argo/util/retry"
-	"github.com/CyrusBiotechnology/argo/workflow/common"
-	"github.com/CyrusBiotechnology/argo/workflow/util"
-	"github.com/CyrusBiotechnology/argo/workflow/validate"
+	"github.com/cyrusbiotechnology/argo/errors"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/util/retry"
+	"github.com/cyrusbiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/workflow/util"
+	"github.com/cyrusbiotechnology/argo/workflow/validate"
 )
 
 // wfOperationCtx is the context for evaluation and operation of a single workflow
@@ -305,7 +305,7 @@ func (woc *wfOperationCtx) persistUpdates() {
 }
 
 // persistWorkflowSizeLimitErr will fail a the workflow with an error when we hit the resource size limit
-// See https://github.com/CyrusBiotechnology/argo/issues/913
+// See https://github.com/cyrusbiotechnology/argo/issues/913
 func (woc *wfOperationCtx) persistWorkflowSizeLimitErr(wfClient v1alpha1.WorkflowInterface, err error) {
 	woc.wf = woc.orig.DeepCopy()
 	woc.markWorkflowError(err, true)

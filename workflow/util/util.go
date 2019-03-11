@@ -26,15 +26,15 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/CyrusBiotechnology/argo/errors"
-	"github.com/CyrusBiotechnology/argo/pkg/apis/workflow"
-	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/CyrusBiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
-	cmdutil "github.com/CyrusBiotechnology/argo/util/cmd"
-	"github.com/CyrusBiotechnology/argo/util/retry"
-	unstructutil "github.com/CyrusBiotechnology/argo/util/unstructured"
-	"github.com/CyrusBiotechnology/argo/workflow/common"
-	"github.com/CyrusBiotechnology/argo/workflow/validate"
+	"github.com/cyrusbiotechnology/argo/errors"
+	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
+	cmdutil "github.com/cyrusbiotechnology/argo/util/cmd"
+	"github.com/cyrusbiotechnology/argo/util/retry"
+	unstructutil "github.com/cyrusbiotechnology/argo/util/unstructured"
+	"github.com/cyrusbiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/workflow/validate"
 )
 
 func NewDynamicWorkflowClient(config *rest.Config) (dynamic.Interface, error) {
@@ -46,7 +46,7 @@ func NewDynamicWorkflowClient(config *rest.Config) (dynamic.Interface, error) {
 // a custom built UnstructuredInformer which is in actuality returning unstructured.Unstructured
 // objects. We no longer return WorkflowInformer due to:
 // https://github.com/kubernetes/kubernetes/issues/57705
-// https://github.com/CyrusBiotechnology/argo/issues/632
+// https://github.com/cyrusbiotechnology/argo/issues/632
 func NewWorkflowInformer(cfg *rest.Config, ns string, resyncPeriod time.Duration, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	dclient, err := NewDynamicWorkflowClient(cfg)
 	if err != nil {

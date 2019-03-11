@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/CyrusBiotechnology/argo/pkg/apis/workflow"
+	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow"
 )
 
 const (

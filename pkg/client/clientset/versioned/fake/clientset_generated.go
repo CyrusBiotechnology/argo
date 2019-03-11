@@ -3,7 +3,7 @@
 package fake
 
 import (
-	clientset "github.com/CyrusBiotechnology/argo/pkg/client/clientset/versioned"
+	clientset "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned"
 	argoprojv1alpha1 "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	fakeargoprojv1alpha1 "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"

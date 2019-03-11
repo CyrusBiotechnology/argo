@@ -42,8 +42,8 @@ manner.
 
 ## Contributing to Argo
 
-Read and abide by the [Argo Code of Conduct](https://github.com/CyrusBiotechnology/argo/blob/master/CODE_OF_CONDUCT.md) :
-Before submitting a pull request, please sign the [CLA](https://github.com/CyrusBiotechnology/argo/blob/master/community/Argo%20Individual%20CLA.pdf). This agreement gives us permission to use and redistribute your contributions as part of the project.
+Read and abide by the [Argo Code of Conduct](https://github.com/cyrusbiotechnology/argo/blob/master/CODE_OF_CONDUCT.md) :
+Before submitting a pull request, please sign the [CLA](https://github.com/cyrusbiotechnology/argo/blob/master/community/Argo%20Individual%20CLA.pdf). This agreement gives us permission to use and redistribute your contributions as part of the project.
 
 
 ## Community Meetings

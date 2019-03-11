@@ -5,11 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/CyrusBiotechnology/argo/errors"
-	"github.com/CyrusBiotechnology/argo/pkg/apis/workflow"
-	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/CyrusBiotechnology/argo/workflow/common"
 	"github.com/argoproj/pkg/json"
+	"github.com/cyrusbiotechnology/argo/errors"
+	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/workflow/common"
 )
 
 // LintWorkflowDir validates all workflow manifests in a directory. Ignores non-workflow manifests

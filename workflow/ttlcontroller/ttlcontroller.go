@@ -17,10 +17,10 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
-	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
-	wfclientset "github.com/CyrusBiotechnology/argo/pkg/client/clientset/versioned"
-	"github.com/CyrusBiotechnology/argo/workflow/common"
-	"github.com/CyrusBiotechnology/argo/workflow/util"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	wfclientset "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned"
+	"github.com/cyrusbiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/workflow/util"
 )
 
 const (

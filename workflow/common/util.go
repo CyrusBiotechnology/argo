@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CyrusBiotechnology/argo/errors"
-	"github.com/CyrusBiotechnology/argo/pkg/apis/workflow"
-	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/errors"
+	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/ghodss/yaml"
 	log "github.com/sirupsen/logrus"
 	"github.com/valyala/fasttemplate"
