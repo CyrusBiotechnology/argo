@@ -728,7 +728,7 @@ func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ErrorCo
 				})
 			}
 		} else if condition.PatternUnmatched != "" {
-			regex, err := regexp.Compile(condition.PatternMatched)
+			regex, err := regexp.Compile(condition.PatternUnmatched)
 			if err != nil {
 				return nil, err
 			}

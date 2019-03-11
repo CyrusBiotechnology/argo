@@ -53,9 +53,14 @@ func TestEvaluateErrorConditions(t *testing.T) {
 
 	conditions := []wfv1.ErrorCondition{
 		{
-			Name:           "testCondition",
+			Name:           "testConditionMatch",
 			PatternMatched: "test log file",
 			Message:        "test condition was triggered",
+		},
+		{
+			Name:             "testConditionUnmatch",
+			PatternUnmatched: "unmatched log file",
+			Message:          "test condition was triggered",
 		},
 	}
 
@@ -66,14 +71,18 @@ func TestEvaluateErrorConditions(t *testing.T) {
 
 	expectedResult := []wfv1.ErrorResult{
 		{
-			Name:    "testCondition",
+			Name:    "testConditionMatch",
+			Message: "test condition was triggered",
+		},
+		{
+			Name:    "testConditionUnmatch",
 			Message: "test condition was triggered",
 		},
 	}
 
 	assert.Equal(t, results, expectedResult)
 
-	logContentNoMatch := []byte("non-matching log file")
+	logContentNoMatch := []byte("unmatched log file")
 
 	results, err = we.evaluatePatternConditions(&conditions, &logContentNoMatch)
 	assert.Nil(t, err)
