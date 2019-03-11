@@ -763,6 +763,27 @@ func inferFailedReason(pod *apiv1.Pod) (wfv1.NodePhase, string) {
 	for _, failMsg := range failMessages {
 		return wfv1.NodeFailed, failMsg
 	}
+
+	// If we get here, check the extended failure conditions and mark the node as failed if any exist
+
+	if resultString, ok := pod.Annotations[common.AnnotationKeyErrors]; ok {
+		var errorResults []wfv1.ErrorResult
+		err := json.Unmarshal([]byte(resultString), &errorResults)
+
+		if err != nil {
+			failMsg := fmt.Sprintf("Failed to deserialize Extended error descriptions: %s", err.Error())
+			return wfv1.NodeFailed, failMsg
+		}
+
+		if len(errorResults) > 0 {
+			failMsg := "failed for the following reasons: "
+			for _, result := range errorResults {
+				failMsg += fmt.Sprintf("%s - %s ", result.Name, result.Message)
+			}
+			return wfv1.NodeFailed, failMsg
+		}
+	}
+
 	// If we get here, we have detected that the main/wait containers succeed but the sidecar(s)
 	// were  SIGKILL'd. The executor may have had to forcefully terminate the sidecar (kill -9),
 	// resulting in a 137 exit code (which we had ignored earlier). If failMessages is empty, it
