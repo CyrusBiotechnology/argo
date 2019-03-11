@@ -642,45 +642,71 @@ func (we *WorkflowExecutor) AddAnnotation(key, value string) error {
 
 func (we *WorkflowExecutor) EvaluateErrorConditions() error {
 
-	results, err := we.evaluatePatternConditions(&we.Template.Errors)
-	if err != nil {
-		return errors.InternalWrapError(err)
-	}
-
-	errorResultBytes, err := json.Marshal(results)
-	if err != nil {
-		return errors.InternalWrapError(err)
-	}
-
-	return we.AddAnnotation(common.AnnotationKeyErrors, string(errorResultBytes))
-}
-
-func (we *WorkflowExecutor) EvaluateWarningConditions() error {
-
-	results, err := we.evaluatePatternConditions(&we.Template.Warnings)
-	if err != nil {
-		return errors.InternalWrapError(err)
-	}
-
-	warningResultBytes, err := json.Marshal(results)
-	return we.AddAnnotation(common.AnnotationKeyWarnings, string(warningResultBytes))
-}
-
-func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ErrorCondition) (results []wfv1.ErrorResult, err error) {
 	logPath, err := we.saveLogsToPath("/argo/error_handling/logs", "main.log")
 	if err != nil {
-		return
+		return err
 	}
 
 	logFile, err := os.Open(logPath)
 	if err != nil {
-		return
+		return err
 	}
+	defer logFile.Close()
 
 	logData, err := ioutil.ReadAll(logFile)
 	if err != nil {
-		return
+		return err
 	}
+
+	results, err := we.evaluatePatternConditions(&we.Template.Errors, &logData)
+	if err != nil {
+		return errors.InternalWrapError(err)
+	}
+
+	if results != nil {
+		errorResultBytes, err := json.Marshal(results)
+		if err != nil {
+			return errors.InternalWrapError(err)
+		}
+
+		return we.AddAnnotation(common.AnnotationKeyErrors, string(errorResultBytes))
+	}
+	return nil
+}
+
+func (we *WorkflowExecutor) EvaluateWarningConditions() error {
+	logPath, err := we.saveLogsToPath("/argo/error_handling/logs", "main.log")
+	if err != nil {
+		return err
+	}
+
+	logFile, err := os.Open(logPath)
+	if err != nil {
+		return err
+	}
+	defer logFile.Close()
+
+	logData, err := ioutil.ReadAll(logFile)
+	if err != nil {
+		return err
+	}
+
+	results, err := we.evaluatePatternConditions(&we.Template.Warnings, &logData)
+	if err != nil {
+		return errors.InternalWrapError(err)
+	}
+
+	if results != nil {
+		warningResultBytes, err := json.Marshal(results)
+		if err != nil {
+			return errors.InternalWrapError(err)
+		}
+		return we.AddAnnotation(common.AnnotationKeyWarnings, string(warningResultBytes))
+	}
+	return nil
+}
+
+func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ErrorCondition, logData *[]byte) (results []wfv1.ErrorResult, err error) {
 
 	for _, condition := range *conditions {
 		if condition.PatternMatched != "" && condition.PatternUnmatched != "" {
@@ -694,7 +720,7 @@ func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ErrorCo
 			if err != nil {
 				return nil, err
 			}
-			regexMatch := regex.Find(logData)
+			regexMatch := regex.Find(*logData)
 			if regexMatch != nil {
 				results = append(results, wfv1.ErrorResult{
 					Name:    condition.Name,
@@ -706,7 +732,7 @@ func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ErrorCo
 			if err != nil {
 				return nil, err
 			}
-			regexMatch := regex.Find(logData)
+			regexMatch := regex.Find(*logData)
 			if regexMatch == nil {
 				results = append(results, wfv1.ErrorResult{
 					Name:    condition.Name,
@@ -715,6 +741,7 @@ func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ErrorCo
 			}
 		}
 	}
+
 	return
 }
 
