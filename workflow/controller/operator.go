@@ -523,7 +523,7 @@ func assessNodeStatus(pod *apiv1.Pod, node *wfv1.NodeStatus) *wfv1.NodeStatus {
 		newDaemonStatus = &f
 		message = getPendingReason(pod)
 	case apiv1.PodSucceeded:
-		newPhase = wfv1.NodeSucceeded
+		newPhase, message = inferFailedReason(pod)
 		newDaemonStatus = &f
 	case apiv1.PodFailed:
 		newPhase, message = inferFailedReason(pod)
