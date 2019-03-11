@@ -21,6 +21,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactoryAuth":     schema_pkg_apis_workflow_v1alpha1_ArtifactoryAuth(ref),
 		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTask":             schema_pkg_apis_workflow_v1alpha1_DAGTask(ref),
 		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTemplate":         schema_pkg_apis_workflow_v1alpha1_DAGTemplate(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ErrorCondition":      schema_pkg_apis_workflow_v1alpha1_ErrorCondition(ref),
+		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ErrorResult":         schema_pkg_apis_workflow_v1alpha1_ErrorResult(ref),
 		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.GCSArtifact":         schema_pkg_apis_workflow_v1alpha1_GCSArtifact(ref),
 		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.GCSBucket":           schema_pkg_apis_workflow_v1alpha1_GCSBucket(ref),
 		"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.GitArtifact":         schema_pkg_apis_workflow_v1alpha1_GitArtifact(ref),
@@ -444,6 +446,87 @@ func schema_pkg_apis_workflow_v1alpha1_DAGTemplate(ref common.ReferenceCallback)
 		},
 		Dependencies: []string{
 			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTask"},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_ErrorCondition(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ErrorCondition is a container for defining an error or warning rule",
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"exitCodeMatched": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "byte",
+						},
+					},
+					"exitCodeUnmatched": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "byte",
+						},
+					},
+					"patternMatched": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"patternUnmatched": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"source": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"message": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_ErrorResult(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"message": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"name", "message"},
+			},
+		},
+		Dependencies: []string{},
 	}
 }
 
@@ -1649,12 +1732,36 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 							},
 						},
 					},
+					"errors": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ErrorCondition"),
+									},
+								},
+							},
+						},
+					},
+					"warnings": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ErrorCondition"),
+									},
+								},
+							},
+						},
+					},
 				},
 				Required: []string{"name"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTemplate", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Inputs", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Metadata", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Outputs", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ResourceTemplate", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.RetryStrategy", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ScriptTemplate", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Sidecar", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.SuspendTemplate", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowStep", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.Toleration"},
+			"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTemplate", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ErrorCondition", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Inputs", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Metadata", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Outputs", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ResourceTemplate", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.RetryStrategy", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.ScriptTemplate", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.Sidecar", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.SuspendTemplate", "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowStep", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.Toleration"},
 	}
 }
 

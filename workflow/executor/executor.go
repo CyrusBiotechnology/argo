@@ -14,6 +14,7 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime/debug"
 	"strings"
 	"syscall"
@@ -360,27 +361,38 @@ func (we *WorkflowExecutor) SaveParameters() error {
 	return nil
 }
 
+func (we *WorkflowExecutor) saveLogsToPath(logDir string, fileName string) (outputPath string, err error) {
+	mainCtrID, err := we.GetMainContainerID()
+	if err != nil {
+		return
+	}
+	err = os.MkdirAll(logDir, os.ModePerm)
+	if err != nil {
+		err = errors.InternalWrapError(err)
+		return
+	}
+	outputPath = path.Join(logDir, fileName)
+	err = we.RuntimeExecutor.Logs(mainCtrID, outputPath)
+	if err != nil {
+		return
+	}
+	return
+}
+
 // SaveLogs saves logs
 func (we *WorkflowExecutor) SaveLogs() (*wfv1.Artifact, error) {
 	if we.Template.ArchiveLocation == nil || we.Template.ArchiveLocation.ArchiveLogs == nil || !*we.Template.ArchiveLocation.ArchiveLogs {
 		return nil, nil
 	}
 	log.Infof("Saving logs")
-	mainCtrID, err := we.GetMainContainerID()
-	if err != nil {
-		return nil, err
-	}
-	tempLogsDir := "/argo/outputs/logs"
-	err = os.MkdirAll(tempLogsDir, os.ModePerm)
-	if err != nil {
-		return nil, errors.InternalWrapError(err)
-	}
 	fileName := "main.log"
-	mainLog := path.Join(tempLogsDir, fileName)
-	err = we.RuntimeExecutor.Logs(mainCtrID, mainLog)
+	tempLogsDir := "/argo/outputs/logs"
+
+	mainLog, err := we.saveLogsToPath(tempLogsDir, fileName)
 	if err != nil {
 		return nil, err
 	}
+
 	art := wfv1.Artifact{
 		Name:             "main-logs",
 		ArtifactLocation: *we.Template.ArchiveLocation,
@@ -626,6 +638,84 @@ func (we *WorkflowExecutor) AddError(err error) {
 // AddAnnotation adds an annotation to the workflow pod
 func (we *WorkflowExecutor) AddAnnotation(key, value string) error {
 	return common.AddPodAnnotation(we.ClientSet, we.PodName, we.Namespace, key, value)
+}
+
+func (we *WorkflowExecutor) EvaluateErrorConditions() error {
+
+	results, err := we.evaluatePatternConditions(&we.Template.Errors)
+	if err != nil {
+		return errors.InternalWrapError(err)
+	}
+
+	errorResultBytes, err := json.Marshal(results)
+	if err != nil {
+		return errors.InternalWrapError(err)
+	}
+
+	return we.AddAnnotation(common.AnnotationKeyErrors, string(errorResultBytes))
+}
+
+func (we *WorkflowExecutor) EvaluateWarningConditions() error {
+
+	results, err := we.evaluatePatternConditions(&we.Template.Warnings)
+	if err != nil {
+		return errors.InternalWrapError(err)
+	}
+
+	warningResultBytes, err := json.Marshal(results)
+	return we.AddAnnotation(common.AnnotationKeyWarnings, string(warningResultBytes))
+}
+
+func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ErrorCondition) (results []wfv1.ErrorResult, err error) {
+	logPath, err := we.saveLogsToPath("/argo/error_handling/logs", "main.log")
+	if err != nil {
+		return
+	}
+
+	logFile, err := os.Open(logPath)
+	if err != nil {
+		return
+	}
+
+	logData, err := ioutil.ReadAll(logFile)
+	if err != nil {
+		return
+	}
+
+	for _, condition := range *conditions {
+		if condition.PatternMatched != "" && condition.PatternUnmatched != "" {
+			errorMessage := fmt.Sprintf("Error condition %s cannot specify both match and unmatch simultaneously", condition.Name)
+			err = errors.InternalError(errorMessage)
+			return
+		}
+
+		if condition.PatternMatched != "" {
+			regex, err := regexp.Compile(condition.PatternMatched)
+			if err != nil {
+				return
+			}
+			regexMatch := regex.Find(logData)
+			if regexMatch != nil {
+				results = append(results, wfv1.ErrorResult{
+					Name:    condition.Name,
+					Message: condition.Message,
+				})
+			}
+		} else if condition.PatternUnmatched != "" {
+			regex, err := regexp.Compile(condition.PatternMatched)
+			if err != nil {
+				return
+			}
+			regexMatch := regex.Find(logData)
+			if regexMatch == nil {
+				results = append(results, wfv1.ErrorResult{
+					Name:    condition.Name,
+					Message: condition.Message,
+				})
+			}
+		}
+	}
+	return
 }
 
 // isTarball returns whether or not the file is a tarball

@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "title": "Argo",
-    "version": "v2.2.1"
+    "version": "v2.3.0"
   },
   "paths": {},
   "definitions": {
@@ -226,6 +226,51 @@
           "items": {
             "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.DAGTask"
           }
+        }
+      }
+    },
+    "io.argoproj.workflow.v1alpha1.ErrorCondition": {
+      "description": "ErrorCondition is a container for defining an error or warning rule",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "exitCodeMatched": {
+          "type": "integer",
+          "format": "byte"
+        },
+        "exitCodeUnmatched": {
+          "type": "integer",
+          "format": "byte"
+        },
+        "message": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "patternMatched": {
+          "type": "string"
+        },
+        "patternUnmatched": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      }
+    },
+    "io.argoproj.workflow.v1alpha1.ErrorResult": {
+      "required": [
+        "name",
+        "message"
+      ],
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
         }
       }
     },
@@ -821,6 +866,12 @@
           "description": "DAG template subtype which runs a DAG",
           "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.DAGTemplate"
         },
+        "errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.ErrorCondition"
+          }
+        },
         "inputs": {
           "description": "Inputs describe what inputs parameters and artifacts are supplied to this template",
           "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.Inputs"
@@ -887,6 +938,12 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/io.k8s.api.core.v1.Toleration"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.ErrorCondition"
           }
         }
       }

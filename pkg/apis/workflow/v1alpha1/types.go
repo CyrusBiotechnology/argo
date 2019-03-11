@@ -203,6 +203,9 @@ type Template struct {
 
 	// Tolerations to apply to workflow pods.
 	Tolerations []apiv1.Toleration `json:"tolerations,omitempty"`
+
+	Errors   []ErrorCondition `json:"errors,omitempty"`
+	Warnings []ErrorCondition `json:"warnings,omitempty"`
 }
 
 // Inputs are the mechanism for passing parameters, artifacts, volumes from one template to another
@@ -456,6 +459,9 @@ type WorkflowStatus struct {
 
 	// Outputs captures output values and artifact locations produced by the workflow via global outputs
 	Outputs *Outputs `json:"outputs,omitempty"`
+
+	Errors   []ErrorResult `json:"errors,omitempty"`
+	Warnings []ErrorResult `json:"warnings,omitempty"`
 }
 
 // RetryStrategy provides controls on how to retry a workflow step
@@ -685,6 +691,30 @@ type ResourceTemplate struct {
 	// FailureCondition is a label selector expression which describes the conditions
 	// of the k8s resource in which the step was considered failed
 	FailureCondition string `json:"failureCondition,omitempty"`
+}
+
+// ErrorCondition is a container for defining an error or warning rule
+type ErrorCondition struct {
+	Name              string `json:"name"`
+	ExitCodeMatched   *int8  `json:"exitCodeMatched,omitempty"`
+	ExitCodeUnmatched *int8  `json:"exitCodeUnmatched,omitempty"`
+	PatternMatched    string `json:"patternMatched,omitempty"`
+	PatternUnmatched  string `json:"patternUnmatched,omitempty"`
+	Source            string `json:"source,omitempty"`
+	Message           string `json:"message,omitempty"`
+}
+
+func (e *ErrorCondition) IsExitCodeCondition() bool {
+	return e.ExitCodeMatched != nil || e.ExitCodeUnmatched != nil
+}
+
+func (e *ErrorCondition) IsPatternCondition() bool {
+	return e.PatternMatched != "" || e.PatternUnmatched != ""
+}
+
+type ErrorResult struct {
+	Name    string `json:"name"`
+	Message string `json:"message"`
 }
 
 // GetType returns the type of this template

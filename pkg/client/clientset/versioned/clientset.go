@@ -3,7 +3,7 @@
 package versioned
 
 import (
-	argoprojv1alpha1 "github.com/CyrusBiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
+	argoprojv1alpha1 "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	glog "github.com/golang/glog"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
