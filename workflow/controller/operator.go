@@ -420,7 +420,7 @@ func (woc *wfOperationCtx) collectPodErrorsAndWarnings(pod *apiv1.Pod) error {
 
 	if errorString, ok := pod.Annotations[common.AnnotationKeyErrors]; ok {
 
-		err := json.Unmarshal([]byte(errorString), woc.wf.Status.Errors)
+		err := json.Unmarshal([]byte(errorString), &woc.wf.Status.Errors)
 		if err != nil {
 			return err
 		}
@@ -429,7 +429,7 @@ func (woc *wfOperationCtx) collectPodErrorsAndWarnings(pod *apiv1.Pod) error {
 
 	if warningString, ok := pod.Annotations[common.AnnotationKeyWarnings]; ok {
 
-		err := json.Unmarshal([]byte(warningString), woc.wf.Status.Warnings)
+		err := json.Unmarshal([]byte(warningString), &woc.wf.Status.Warnings)
 		if err != nil {
 			return err
 		}
