@@ -416,6 +416,29 @@ func (woc *wfOperationCtx) processNodeRetries(node *wfv1.NodeStatus, retryStrate
 	return nil
 }
 
+func (woc *wfOperationCtx) collectPodErrorsAndWarnings(pod *apiv1.Pod) error {
+
+	if errorString, ok := pod.Annotations[common.AnnotationKeyErrors]; ok {
+
+		err := json.Unmarshal([]byte(errorString), woc.wf.Status.Errors)
+		if err != nil {
+			return err
+		}
+		woc.updated = true
+	}
+
+	if warningString, ok := pod.Annotations[common.AnnotationKeyWarnings]; ok {
+
+		err := json.Unmarshal([]byte(warningString), woc.wf.Status.Warnings)
+		if err != nil {
+			return err
+		}
+		woc.updated = true
+
+	}
+	return nil
+}
+
 // podReconciliation is the process by which a workflow will examine all its related
 // pods and update the node state before continuing the evaluation of the workflow.
 // Records all pods which were observed completed, which will be labeled completed=true
@@ -427,7 +450,7 @@ func (woc *wfOperationCtx) podReconciliation() error {
 	}
 	seenPods := make(map[string]bool)
 
-	performAssessment := func(pod *apiv1.Pod) {
+	performAssessment := func(pod *apiv1.Pod) error {
 		nodeNameForPod := pod.Annotations[common.AnnotationKeyNodeName]
 		nodeID := woc.wf.NodeID(nodeNameForPod)
 		seenPods[nodeID] = true
@@ -439,12 +462,20 @@ func (woc *wfOperationCtx) podReconciliation() error {
 			}
 			if woc.wf.Status.Nodes[pod.ObjectMeta.Name].Completed() {
 				woc.completedPods[pod.ObjectMeta.Name] = true
+				err := woc.collectPodErrorsAndWarnings(pod)
+				if err != nil {
+					return err
+				}
 			}
 		}
+		return nil
 	}
 
 	for _, pod := range podList.Items {
-		performAssessment(&pod)
+		err = performAssessment(&pod)
+		if err != nil {
+			woc.log.Errorf("Failed to collect extended errors and warnings from pod %s: %s", pod.Name, err.Error())
+		}
 		err = woc.applyExecutionControl(&pod)
 		if err != nil {
 			woc.log.Warnf("Failed to apply execution control to pod %s", pod.Name)
