@@ -47,46 +47,46 @@ func TestSaveParameters(t *testing.T) {
 	assert.Equal(t, *we.Template.Outputs.Parameters[0].Value, "has a newline")
 }
 
-func TestEvaluateErrorConditions(t *testing.T) {
-
-	we := WorkflowExecutor{}
-
-	conditions := []wfv1.ErrorCondition{
-		{
-			Name:           "testConditionMatch",
-			PatternMatched: "test log file",
-			Message:        "test condition was triggered",
-		},
-		{
-			Name:             "testConditionUnmatch",
-			PatternUnmatched: "unmatched log file",
-			Message:          "test condition was triggered",
-		},
-	}
-
-	logContent := []byte("test log file")
-
-	results, err := we.evaluatePatternConditions(&conditions, &logContent)
-	assert.Nil(t, err)
-
-	expectedResult := []wfv1.ErrorResult{
-		{
-			Name:    "testConditionMatch",
-			Message: "test condition was triggered",
-		},
-		{
-			Name:    "testConditionUnmatch",
-			Message: "test condition was triggered",
-		},
-	}
-
-	assert.Equal(t, results, expectedResult)
-
-	logContentNoMatch := []byte("unmatched log file")
-
-	results, err = we.evaluatePatternConditions(&conditions, &logContentNoMatch)
-	assert.Nil(t, err)
-
-	assert.Equal(t, results, []wfv1.ErrorResult(nil))
-
-}
+//func TestEvaluateErrorConditions(t *testing.T) {
+//
+//	we := WorkflowExecutor{}
+//
+//	conditions := []wfv1.ErrorCondition{
+//		{
+//			Name:           "testConditionMatch",
+//			PatternMatched: "test log file",
+//			Message:        "test condition was triggered",
+//		},
+//		{
+//			Name:             "testConditionUnmatch",
+//			PatternUnmatched: "unmatched log file",
+//			Message:          "test condition was triggered",
+//		},
+//	}
+//
+//	logContent := []byte("test log file")
+//
+//	results, err := we.evaluatePatternConditions(&conditions, &logContent)
+//	assert.Nil(t, err)
+//
+//	expectedResult := []wfv1.ErrorResult{
+//		{
+//			Name:    "testConditionMatch",
+//			Message: "test condition was triggered",
+//		},
+//		{
+//			Name:    "testConditionUnmatch",
+//			Message: "test condition was triggered",
+//		},
+//	}
+//
+//	assert.Equal(t, results, expectedResult)
+//
+//	logContentNoMatch := []byte("unmatched log file")
+//
+//	results, err = we.evaluatePatternConditions(&conditions, &logContentNoMatch)
+//	assert.Nil(t, err)
+//
+//	assert.Equal(t, results, []wfv1.ErrorResult(nil))
+//
+//}
