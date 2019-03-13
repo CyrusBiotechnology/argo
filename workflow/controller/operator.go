@@ -416,27 +416,40 @@ func (woc *wfOperationCtx) processNodeRetries(node *wfv1.NodeStatus, retryStrate
 	return nil
 }
 
-func (woc *wfOperationCtx) collectPodErrorsAndWarnings(pod *apiv1.Pod) error {
+func (woc *wfOperationCtx) collectConditionResults(pod *apiv1.Pod, currentResults *[]wfv1.ErrorResult, annotationKey string) error {
 
-	if errorString, ok := pod.Annotations[common.AnnotationKeyErrors]; ok {
+	if resultString, ok := pod.Annotations[annotationKey]; ok {
 
-		err := json.Unmarshal([]byte(errorString), &woc.wf.Status.Errors)
+		uniqueConditionNames := make(map[string]bool)
+		for _, result := range *currentResults {
+			uniqueConditionNames[result.Name] = true
+		}
+
+		var newResults []wfv1.ErrorResult
+		err := json.Unmarshal([]byte(resultString), &newResults)
 		if err != nil {
 			return err
 		}
-		woc.updated = true
-	}
 
-	if warningString, ok := pod.Annotations[common.AnnotationKeyWarnings]; ok {
-
-		err := json.Unmarshal([]byte(warningString), &woc.wf.Status.Warnings)
-		if err != nil {
-			return err
+		// Only add the new result to the list if we don't already have an error result with that name
+		for _, newResult := range newResults {
+			if _, ok := uniqueConditionNames[newResult.Name]; !ok {
+				*currentResults = append(*currentResults, newResult)
+			}
 		}
-		woc.updated = true
-
 	}
 	return nil
+}
+
+func (woc *wfOperationCtx) collectPodErrorsAndWarnings(pod *apiv1.Pod) error {
+
+	err := woc.collectConditionResults(pod, &woc.wf.Status.Errors, common.AnnotationKeyErrors)
+	if err != nil {
+		return err
+	}
+
+	err = woc.collectConditionResults(pod, &woc.wf.Status.Warnings, common.AnnotationKeyWarnings)
+	return err
 }
 
 // podReconciliation is the process by which a workflow will examine all its related

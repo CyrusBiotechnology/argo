@@ -3,6 +3,7 @@ package executor
 import (
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -688,9 +689,18 @@ func (we *WorkflowExecutor) fetchFileForErrorHandling(fileSource string) (logDat
 		if err != nil {
 			return nil, err
 		}
-		logPath := "argo/logs/" + filepath.Base(fileSource)
+		baseDir := "/argo/logs/"
+		uncompressedLogPath := baseDir + filepath.Base(fileSource)
+
+		// RuntimeExecutor.CopyFile gzips the file
+		logPath = uncompressedLogPath + ".gz"
 
 		if _, err := os.Stat(logPath); os.IsNotExist(err) {
+			err = os.MkdirAll(baseDir, os.ModePerm)
+			if err != nil {
+				err = errors.InternalWrapError(err)
+				return nil, err
+			}
 			err = we.RuntimeExecutor.CopyFile(mainCtrID, fileSource, logPath)
 			if err != nil {
 				return nil, err
@@ -698,9 +708,13 @@ func (we *WorkflowExecutor) fetchFileForErrorHandling(fileSource string) (logDat
 		}
 
 	} else if fileSource == "stdout" {
-		logPath, err = we.saveLogsToPath("/argo/logs", "main.log")
-		if err != nil {
-			return
+
+		logPath = "/argo/logs/main.log"
+		if _, err := os.Stat(logPath); os.IsNotExist(err) {
+			_, err = we.saveLogsToPath("/argo/logs", "main.log")
+			if err != nil {
+				return nil, err
+			}
 		}
 	} else {
 		err = errors.InternalErrorf("fileSource must be an absolute path or 'stdout', got %s instead", fileSource)
@@ -710,11 +724,21 @@ func (we *WorkflowExecutor) fetchFileForErrorHandling(fileSource string) (logDat
 
 	logFile, err := os.Open(logPath)
 	if err != nil {
+		log.Errorf("Error attempting to open logfile %s", logPath)
 		return
 	}
 	defer logFile.Close()
 
-	logData, err = ioutil.ReadAll(logFile)
+	if strings.HasSuffix(logPath, ".gz") {
+		decompressed, err := gzip.NewReader(logFile)
+		if err != nil {
+			return nil, err
+		}
+		logData, err = ioutil.ReadAll(decompressed)
+	} else {
+		logData, err = ioutil.ReadAll(logFile)
+	}
+
 	return
 }
 
