@@ -640,25 +640,29 @@ func (we *WorkflowExecutor) AddAnnotation(key, value string) error {
 	return common.AddPodAnnotation(we.ClientSet, we.PodName, we.Namespace, key, value)
 }
 
-func (we *WorkflowExecutor) EvaluateErrorConditions() error {
+type ConditionType string
 
-	logPath, err := we.saveLogsToPath("/argo/error_handling/logs", "main.log")
-	if err != nil {
-		return err
+const (
+	ConditionTypeError   ConditionType = "error"
+	ConditionTypeWarning ConditionType = "warning"
+)
+
+func (we *WorkflowExecutor) EvaluateConditions(conditionMode ConditionType) error {
+
+	var resultsLocation *[]wfv1.ErrorCondition
+	var annotationKey string
+
+	if conditionMode == ConditionTypeError {
+		resultsLocation = &we.Template.Errors
+		annotationKey = common.AnnotationKeyErrors
+
+	} else if conditionMode == ConditionTypeWarning {
+
+	} else {
+		return errors.InternalErrorf("The valid condition types are 'error' or 'warning', got %s instead", string(conditionMode))
 	}
 
-	logFile, err := os.Open(logPath)
-	if err != nil {
-		return err
-	}
-	defer logFile.Close()
-
-	logData, err := ioutil.ReadAll(logFile)
-	if err != nil {
-		return err
-	}
-
-	results, err := we.evaluatePatternConditions(&we.Template.Errors, &logData)
+	results, err := we.evaluatePatternConditions(resultsLocation)
 	if err != nil {
 		return errors.InternalWrapError(err)
 	}
@@ -669,44 +673,51 @@ func (we *WorkflowExecutor) EvaluateErrorConditions() error {
 			return errors.InternalWrapError(err)
 		}
 
-		return we.AddAnnotation(common.AnnotationKeyErrors, string(errorResultBytes))
+		return we.AddAnnotation(annotationKey, string(errorResultBytes))
 	}
 	return nil
 }
 
-func (we *WorkflowExecutor) EvaluateWarningConditions() error {
-	logPath, err := we.saveLogsToPath("/argo/error_handling/logs", "main.log")
-	if err != nil {
-		return err
+func (we *WorkflowExecutor) fetchFileForErrorHandling(fileSource string) (logData []byte, err error) {
+
+	var logPath string
+
+	if fileSource[0] == '/' {
+		mainCtrID, err := we.GetMainContainerID()
+		if err != nil {
+			return nil, err
+		}
+		logPath := "argo/logs/" + filepath.Base(fileSource)
+
+		if _, err := os.Stat(logPath); os.IsNotExist(err) {
+			err = we.RuntimeExecutor.CopyFile(mainCtrID, fileSource, logPath)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+	} else if fileSource == "stdout" {
+		logPath, err = we.saveLogsToPath("/argo/logs", "main.log")
+		if err != nil {
+			return
+		}
+	} else {
+		err = errors.InternalErrorf("fileSource must be an absolute path or 'stdout', got %s instead", fileSource)
+		return
+
 	}
 
 	logFile, err := os.Open(logPath)
 	if err != nil {
-		return err
+		return
 	}
 	defer logFile.Close()
 
-	logData, err := ioutil.ReadAll(logFile)
-	if err != nil {
-		return err
-	}
-
-	results, err := we.evaluatePatternConditions(&we.Template.Warnings, &logData)
-	if err != nil {
-		return errors.InternalWrapError(err)
-	}
-
-	if results != nil {
-		warningResultBytes, err := json.Marshal(results)
-		if err != nil {
-			return errors.InternalWrapError(err)
-		}
-		return we.AddAnnotation(common.AnnotationKeyWarnings, string(warningResultBytes))
-	}
-	return nil
+	logData, err = ioutil.ReadAll(logFile)
+	return
 }
 
-func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ErrorCondition, logData *[]byte) (results []wfv1.ErrorResult, err error) {
+func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ErrorCondition) (results []wfv1.ErrorResult, err error) {
 
 	for _, condition := range *conditions {
 		if condition.PatternMatched != "" && condition.PatternUnmatched != "" {
@@ -715,12 +726,17 @@ func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ErrorCo
 			return
 		}
 
+		logData, err := we.fetchFileForErrorHandling(condition.Source)
+		if err != nil {
+			return nil, err
+		}
+
 		if condition.PatternMatched != "" {
 			regex, err := regexp.Compile(condition.PatternMatched)
 			if err != nil {
 				return nil, err
 			}
-			regexMatch := regex.Find(*logData)
+			regexMatch := regex.Find(logData)
 			if regexMatch != nil {
 				results = append(results, wfv1.ErrorResult{
 					Name:    condition.Name,
@@ -732,7 +748,7 @@ func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ErrorCo
 			if err != nil {
 				return nil, err
 			}
-			regexMatch := regex.Find(*logData)
+			regexMatch := regex.Find(logData)
 			if regexMatch == nil {
 				results = append(results, wfv1.ErrorResult{
 					Name:    condition.Name,
