@@ -657,7 +657,8 @@ func (we *WorkflowExecutor) EvaluateConditions(conditionMode ConditionType) erro
 		annotationKey = common.AnnotationKeyErrors
 
 	} else if conditionMode == ConditionTypeWarning {
-
+		resultsLocation = &we.Template.Warnings
+		annotationKey = common.AnnotationKeyWarnings
 	} else {
 		return errors.InternalErrorf("The valid condition types are 'error' or 'warning', got %s instead", string(conditionMode))
 	}
