@@ -695,23 +695,14 @@ type ResourceTemplate struct {
 
 // ErrorCondition is a container for defining an error or warning rule
 type ErrorCondition struct {
-	Name              string `json:"name"`
-	ExitCodeMatched   *int8  `json:"exitCodeMatched,omitempty"`
-	ExitCodeUnmatched *int8  `json:"exitCodeUnmatched,omitempty"`
-	PatternMatched    string `json:"patternMatched,omitempty"`
-	PatternUnmatched  string `json:"patternUnmatched,omitempty"`
-	Source            string `json:"source,omitempty"`
-	Message           string `json:"message,omitempty"`
+	Name             string `json:"name"`
+	PatternMatched   string `json:"patternMatched,omitempty"`
+	PatternUnmatched string `json:"patternUnmatched,omitempty"`
+	Source           string `json:"source,omitempty"`
+	Message          string `json:"message,omitempty"`
 }
 
-func (e *ErrorCondition) IsExitCodeCondition() bool {
-	return e.ExitCodeMatched != nil || e.ExitCodeUnmatched != nil
-}
-
-func (e *ErrorCondition) IsPatternCondition() bool {
-	return e.PatternMatched != "" || e.PatternUnmatched != ""
-}
-
+// ErrorResult contains the results on an extended error or warning condition evaluation
 type ErrorResult struct {
 	Name    string `json:"name"`
 	Message string `json:"message"`
