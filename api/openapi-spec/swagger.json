@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "title": "Argo",
-    "version": "v2.4.0.dev4"
+    "version": "v2.5.0"
   },
   "paths": {},
   "definitions": {
@@ -256,13 +256,21 @@
       "description": "ErrorResult contains the results on an extended error or warning condition evaluation",
       "required": [
         "name",
-        "message"
+        "message",
+        "podId",
+        "stepName"
       ],
       "properties": {
         "message": {
           "type": "string"
         },
         "name": {
+          "type": "string"
+        },
+        "podId": {
+          "type": "string"
+        },
+        "stepName": {
           "type": "string"
         }
       }

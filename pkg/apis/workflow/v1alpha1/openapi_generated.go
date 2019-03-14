@@ -511,8 +511,20 @@ func schema_pkg_apis_workflow_v1alpha1_ErrorResult(ref common.ReferenceCallback)
 							Format: "",
 						},
 					},
+					"podId": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"stepName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
-				Required: []string{"name", "message"},
+				Required: []string{"name", "message", "podId", "stepName"},
 			},
 		},
 		Dependencies: []string{},

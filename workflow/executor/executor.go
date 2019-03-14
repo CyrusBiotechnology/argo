@@ -756,6 +756,13 @@ func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ErrorCo
 			return nil, err
 		}
 
+		result := wfv1.ErrorResult{
+			Name:     condition.Name,
+			Message:  condition.Message,
+			PodId:    we.PodName,
+			StepName: we.Template.Name,
+		}
+
 		if condition.PatternMatched != "" {
 			regex, err := regexp.Compile(condition.PatternMatched)
 			if err != nil {
@@ -763,10 +770,8 @@ func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ErrorCo
 			}
 			regexMatch := regex.Find(logData)
 			if regexMatch != nil {
-				results = append(results, wfv1.ErrorResult{
-					Name:    condition.Name,
-					Message: condition.Message,
-				})
+
+				results = append(results, result)
 			}
 		} else if condition.PatternUnmatched != "" {
 			regex, err := regexp.Compile(condition.PatternUnmatched)
@@ -775,10 +780,7 @@ func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ErrorCo
 			}
 			regexMatch := regex.Find(logData)
 			if regexMatch == nil {
-				results = append(results, wfv1.ErrorResult{
-					Name:    condition.Name,
-					Message: condition.Message,
-				})
+				results = append(results, result)
 			}
 		}
 	}
