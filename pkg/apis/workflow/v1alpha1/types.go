@@ -704,8 +704,10 @@ type ErrorCondition struct {
 
 // ErrorResult contains the results on an extended error or warning condition evaluation
 type ErrorResult struct {
-	Name    string `json:"name"`
-	Message string `json:"message"`
+	Name     string `json:"name"`
+	Message  string `json:"message"`
+	PodId    string `json:"podId"`
+	StepName string `json:"stepName"`
 }
 
 // GetType returns the type of this template
