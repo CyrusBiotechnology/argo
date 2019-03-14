@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "title": "Argo",
-    "version": "v2.3.0"
+    "version": "v2.4.0.dev4"
   },
   "paths": {},
   "definitions": {
@@ -235,14 +235,6 @@
         "name"
       ],
       "properties": {
-        "exitCodeMatched": {
-          "type": "integer",
-          "format": "byte"
-        },
-        "exitCodeUnmatched": {
-          "type": "integer",
-          "format": "byte"
-        },
         "message": {
           "type": "string"
         },
@@ -261,6 +253,7 @@
       }
     },
     "io.argoproj.workflow.v1alpha1.ErrorResult": {
+      "description": "ErrorResult contains the results on an extended error or warning condition evaluation",
       "required": [
         "name",
         "message"

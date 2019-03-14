@@ -461,18 +461,6 @@ func schema_pkg_apis_workflow_v1alpha1_ErrorCondition(ref common.ReferenceCallba
 							Format: "",
 						},
 					},
-					"exitCodeMatched": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "byte",
-						},
-					},
-					"exitCodeUnmatched": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "byte",
-						},
-					},
 					"patternMatched": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
@@ -509,6 +497,7 @@ func schema_pkg_apis_workflow_v1alpha1_ErrorResult(ref common.ReferenceCallback)
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Description: "ErrorResult contains the results on an extended error or warning condition evaluation",
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
