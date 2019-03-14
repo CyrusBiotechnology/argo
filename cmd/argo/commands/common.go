@@ -46,7 +46,7 @@ const (
 	FgDefault = 39
 )
 
-//shorthands
+//useful icons
 var (
 	YellowWarning = ansiFormat("⚠", FgYellow)
 	RedError      = ansiFormat("✖", FgRed)
