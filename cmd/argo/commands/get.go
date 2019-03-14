@@ -119,7 +119,8 @@ func printWorkflowHelper(wf *wfv1.Workflow, outFmt string) {
 
 	if wf.Status.Errors != nil || wf.Status.Warnings != nil {
 
-		fmt.Fprint(errorWriter, "  STEP\tPODNAME\tCODE\tMESSAGE\n")
+		fmt.Printf("\nErrors and Warnings:\n")
+		fmt.Fprintf(errorWriter, "%s\tPODNAME\tCODE\tMESSAGE\n", ansiFormat("STEP", FgDefault))
 	}
 
 	if wf.Status.Errors != nil {
