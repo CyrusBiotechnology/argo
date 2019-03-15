@@ -114,6 +114,28 @@ func printWorkflowHelper(wf *wfv1.Workflow, outFmt string) {
 			}
 		}
 	}
+
+	errorWriter := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+
+	if wf.Status.Errors != nil || wf.Status.Warnings != nil {
+
+		fmt.Printf("\nErrors and Warnings:\n")
+		fmt.Fprintf(errorWriter, "%s\tPODNAME\tCODE\tMESSAGE\n", ansiFormat("STEP", FgDefault))
+	}
+
+	if wf.Status.Errors != nil {
+		for _, errorResult := range wf.Status.Errors {
+			fmt.Fprintf(errorWriter, "%s %s\t%s\t%s\t%s\n", RedError, errorResult.StepName, errorResult.PodId, errorResult.Name, errorResult.Message)
+		}
+	}
+
+	if wf.Status.Warnings != nil {
+		for _, warningResult := range wf.Status.Warnings {
+			fmt.Fprintf(errorWriter, "%s %s\t%s\t%s\t%s\n", YellowWarning, warningResult.StepName, warningResult.PodId, warningResult.Name, warningResult.Message)
+		}
+	}
+	_ = errorWriter.Flush()
+
 	printTree := true
 	if wf.Status.Nodes == nil {
 		printTree = false
