@@ -3,8 +3,8 @@ package validate
 import (
 	"testing"
 
-	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/CyrusBiotechnology/argo/test"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/test"
 	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
 )
@@ -738,7 +738,7 @@ spec:
       - name: argo-source
         path: /src
         git:
-          repo: https://github.com/CyrusBiotechnology/argo.git
+          repo: https://github.com/cyrusbiotechnology/argo.git
     container:
       image: alpine:latest
       command: [sh, -c]

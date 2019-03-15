@@ -1,8 +1,8 @@
 package raw
 
 import (
-	"github.com/CyrusBiotechnology/argo/errors"
-	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/errors"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 	"os"
 )
 

@@ -8,9 +8,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/CyrusBiotechnology/argo/errors"
-	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/CyrusBiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/errors"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/workflow/common"
 	"github.com/valyala/fasttemplate"
 	apivalidation "k8s.io/apimachinery/pkg/util/validation"
 )

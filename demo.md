@@ -17,7 +17,7 @@ brew install argoproj/tap/argo
 ```
 On Linux:
 ```
-curl -sSL -o /usr/local/bin/argo https://github.com/CyrusBiotechnology/argo/releases/download/v2.2.1/argo-linux-amd64
+curl -sSL -o /usr/local/bin/argo https://github.com/cyrusbiotechnology/argo/releases/download/v2.2.1/argo-linux-amd64
 chmod +x /usr/local/bin/argo
 ```
 
@@ -64,13 +64,13 @@ kubectl get po --selector=workflows.argoproj.io/workflow=hello-world-xxx --show-
 kubectl logs hello-world-yyy -c main
 ```
 
-Additional examples are availabe [here](https://github.com/CyrusBiotechnology/argo/blob/master/examples/README.md).
+Additional examples are availabe [here](https://github.com/cyrusbiotechnology/argo/blob/master/examples/README.md).
 
 ## 5. Install an Artifact Repository
 
 Argo supports S3 (AWS, GCS, Minio) as well as Artifactory as artifact repositories. This tutorial
 uses Minio for the sake of portability. Instructions on how to configure other artifact repositories
-are [here](https://github.com/CyrusBiotechnology/argo/blob/master/ARTIFACT_REPO.md).
+are [here](https://github.com/cyrusbiotechnology/argo/blob/master/ARTIFACT_REPO.md).
 ```
 brew install kubernetes-helm # mac
 helm init

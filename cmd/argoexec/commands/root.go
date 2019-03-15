@@ -10,12 +10,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/CyrusBiotechnology/argo"
-	"github.com/CyrusBiotechnology/argo/util/cmd"
-	"github.com/CyrusBiotechnology/argo/workflow/common"
-	"github.com/CyrusBiotechnology/argo/workflow/executor"
-	"github.com/CyrusBiotechnology/argo/workflow/executor/docker"
-	"github.com/CyrusBiotechnology/argo/workflow/executor/kubelet"
+	"github.com/cyrusbiotechnology/argo"
+	"github.com/cyrusbiotechnology/argo/util/cmd"
+	"github.com/cyrusbiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/workflow/executor"
+	"github.com/cyrusbiotechnology/argo/workflow/executor/docker"
+	"github.com/cyrusbiotechnology/argo/workflow/executor/kubelet"
 )
 
 const (
