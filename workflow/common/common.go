@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/CyrusBiotechnology/argo/pkg/apis/workflow"
+	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow"
 )
 
 const (
@@ -55,6 +55,10 @@ const (
 	// set by the controller and obeyed by the executor. For example, the controller will use this annotation to
 	// signal the executors of daemoned containers that it should terminate.
 	AnnotationKeyExecutionControl = workflow.FullName + "/execution"
+	//AnnotationKeyErrors is the annotation key containing extended fatal error information
+	AnnotationKeyErrors = workflow.FullName + "/errors"
+	//AnnotationKeyWarnings is the annotation key containing extended
+	AnnotationKeyWarnings = workflow.FullName + "/warnings"
 
 	// LabelKeyControllerInstanceID is the label the controller will carry forward to workflows/pod labels
 	// for the purposes of workflow segregation

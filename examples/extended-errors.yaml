@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: hello-world-
+spec:
+  entrypoint: error-steps
+  templates:
+  - name: error-steps
+    steps:
+    - - name: warning-file
+        template: cowsay-file
+    - - name: error-stdout
+        template: cowsay-stdout
+  - name: cowsay-file
+    container:
+      image: docker/whalesay:latest
+      command: [sh, -c]
+      args: ["cowsay 'some message'> /tmp/output.txt"]
+
+    warnings:
+      - name: WrongWord
+        source: /tmp/output.txt
+        patternMatched: "some.*"
+        message: "the word 'some' shouldn't be here"
+
+  - name: cowsay-stdout
+    container:
+      image: docker/whalesay:latest
+      command: [cowsay]
+      args: ["what planet"]
+    errors:
+      - name: FailToSayHello
+        source: stdout
+        patternUnmatched: ".*hello.*"
+        message: "did't say hello"
+    warnings:
+      - name: NoPlanets
+        source: stdout
+        patternMatched: ".*planet.*"
+        message: "used the wrong word"

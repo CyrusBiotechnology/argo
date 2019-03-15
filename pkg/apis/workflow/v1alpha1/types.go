@@ -203,6 +203,9 @@ type Template struct {
 
 	// Tolerations to apply to workflow pods.
 	Tolerations []apiv1.Toleration `json:"tolerations,omitempty"`
+
+	Errors   []ExceptionCondition `json:"errors,omitempty"`
+	Warnings []ExceptionCondition `json:"warnings,omitempty"`
 }
 
 // Inputs are the mechanism for passing parameters, artifacts, volumes from one template to another
@@ -456,6 +459,9 @@ type WorkflowStatus struct {
 
 	// Outputs captures output values and artifact locations produced by the workflow via global outputs
 	Outputs *Outputs `json:"outputs,omitempty"`
+
+	Errors   []ExceptionResult `json:"errors,omitempty"`
+	Warnings []ExceptionResult `json:"warnings,omitempty"`
 }
 
 // RetryStrategy provides controls on how to retry a workflow step
@@ -685,6 +691,23 @@ type ResourceTemplate struct {
 	// FailureCondition is a label selector expression which describes the conditions
 	// of the k8s resource in which the step was considered failed
 	FailureCondition string `json:"failureCondition,omitempty"`
+}
+
+// ExceptionCondition is a container for defining an error or warning rule
+type ExceptionCondition struct {
+	Name             string `json:"name"`
+	PatternMatched   string `json:"patternMatched,omitempty"`
+	PatternUnmatched string `json:"patternUnmatched,omitempty"`
+	Source           string `json:"source,omitempty"`
+	Message          string `json:"message,omitempty"`
+}
+
+// ExceptionResult contains the results on an extended error or warning condition evaluation
+type ExceptionResult struct {
+	Name     string `json:"name"`
+	Message  string `json:"message"`
+	PodName  string `json:"podName"`
+	StepName string `json:"stepName"`
 }
 
 // GetType returns the type of this template

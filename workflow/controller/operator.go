@@ -21,13 +21,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/CyrusBiotechnology/argo/errors"
-	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/CyrusBiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
-	"github.com/CyrusBiotechnology/argo/util/retry"
-	"github.com/CyrusBiotechnology/argo/workflow/common"
-	"github.com/CyrusBiotechnology/argo/workflow/util"
-	"github.com/CyrusBiotechnology/argo/workflow/validate"
+	"github.com/cyrusbiotechnology/argo/errors"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/util/retry"
+	"github.com/cyrusbiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/workflow/util"
+	"github.com/cyrusbiotechnology/argo/workflow/validate"
 )
 
 // wfOperationCtx is the context for evaluation and operation of a single workflow
@@ -305,7 +305,7 @@ func (woc *wfOperationCtx) persistUpdates() {
 }
 
 // persistWorkflowSizeLimitErr will fail a the workflow with an error when we hit the resource size limit
-// See https://github.com/CyrusBiotechnology/argo/issues/913
+// See https://github.com/cyrusbiotechnology/argo/issues/913
 func (woc *wfOperationCtx) persistWorkflowSizeLimitErr(wfClient v1alpha1.WorkflowInterface, err error) {
 	woc.wf = woc.orig.DeepCopy()
 	woc.markWorkflowError(err, true)
@@ -416,6 +416,42 @@ func (woc *wfOperationCtx) processNodeRetries(node *wfv1.NodeStatus, retryStrate
 	return nil
 }
 
+func (woc *wfOperationCtx) collectConditionResults(pod *apiv1.Pod, currentResults *[]wfv1.ExceptionResult, annotationKey string) error {
+
+	if resultString, ok := pod.Annotations[annotationKey]; ok {
+
+		uniqueConditionNames := make(map[string]bool)
+		for _, result := range *currentResults {
+			uniqueConditionNames[result.Name] = true
+		}
+
+		var newResults []wfv1.ExceptionResult
+		err := json.Unmarshal([]byte(resultString), &newResults)
+		if err != nil {
+			return err
+		}
+
+		// Only add the new result to the list if we don't already have an error result with that name
+		for _, newResult := range newResults {
+			if _, ok := uniqueConditionNames[newResult.Name]; !ok {
+				*currentResults = append(*currentResults, newResult)
+			}
+		}
+	}
+	return nil
+}
+
+func (woc *wfOperationCtx) collectPodErrorsAndWarnings(pod *apiv1.Pod) error {
+
+	err := woc.collectConditionResults(pod, &woc.wf.Status.Errors, common.AnnotationKeyErrors)
+	if err != nil {
+		return err
+	}
+
+	err = woc.collectConditionResults(pod, &woc.wf.Status.Warnings, common.AnnotationKeyWarnings)
+	return err
+}
+
 // podReconciliation is the process by which a workflow will examine all its related
 // pods and update the node state before continuing the evaluation of the workflow.
 // Records all pods which were observed completed, which will be labeled completed=true
@@ -427,7 +463,7 @@ func (woc *wfOperationCtx) podReconciliation() error {
 	}
 	seenPods := make(map[string]bool)
 
-	performAssessment := func(pod *apiv1.Pod) {
+	performAssessment := func(pod *apiv1.Pod) error {
 		nodeNameForPod := pod.Annotations[common.AnnotationKeyNodeName]
 		nodeID := woc.wf.NodeID(nodeNameForPod)
 		seenPods[nodeID] = true
@@ -439,12 +475,20 @@ func (woc *wfOperationCtx) podReconciliation() error {
 			}
 			if woc.wf.Status.Nodes[pod.ObjectMeta.Name].Completed() {
 				woc.completedPods[pod.ObjectMeta.Name] = true
+				err := woc.collectPodErrorsAndWarnings(pod)
+				if err != nil {
+					return err
+				}
 			}
 		}
+		return nil
 	}
 
 	for _, pod := range podList.Items {
-		performAssessment(&pod)
+		err = performAssessment(&pod)
+		if err != nil {
+			woc.log.Errorf("Failed to collect extended errors and warnings from pod %s: %s", pod.Name, err.Error())
+		}
 		err = woc.applyExecutionControl(&pod)
 		if err != nil {
 			woc.log.Warnf("Failed to apply execution control to pod %s", pod.Name)
@@ -523,10 +567,11 @@ func assessNodeStatus(pod *apiv1.Pod, node *wfv1.NodeStatus) *wfv1.NodeStatus {
 		newDaemonStatus = &f
 		message = getPendingReason(pod)
 	case apiv1.PodSucceeded:
-		newPhase = wfv1.NodeSucceeded
+		// A pod can exit with a successful status and still fail an exception condition check
+		newPhase, message = handlePodFailures(pod)
 		newDaemonStatus = &f
 	case apiv1.PodFailed:
-		newPhase, message = inferFailedReason(pod)
+		newPhase, message = handlePodFailures(pod)
 		newDaemonStatus = &f
 	case apiv1.PodRunning:
 		newPhase = wfv1.NodeRunning
@@ -666,9 +711,9 @@ func getPendingReason(pod *apiv1.Pod) string {
 	return ""
 }
 
-// inferFailedReason returns metadata about a Failed pod to be used in its NodeStatus
+// handlePodFailures returns metadata about a Failed pod to be used in its NodeStatus
 // Returns a tuple of the new phase and message
-func inferFailedReason(pod *apiv1.Pod) (wfv1.NodePhase, string) {
+func handlePodFailures(pod *apiv1.Pod) (wfv1.NodePhase, string) {
 	if pod.Status.Message != "" {
 		// Pod has a nice error message. Use that.
 		return wfv1.NodeFailed, pod.Status.Message
@@ -763,6 +808,27 @@ func inferFailedReason(pod *apiv1.Pod) (wfv1.NodePhase, string) {
 	for _, failMsg := range failMessages {
 		return wfv1.NodeFailed, failMsg
 	}
+
+	// If we get here, check the extended failure conditions and mark the node as failed if any exist
+
+	if resultString, ok := pod.Annotations[common.AnnotationKeyErrors]; ok {
+		var errorResults []wfv1.ExceptionResult
+		err := json.Unmarshal([]byte(resultString), &errorResults)
+
+		if err != nil {
+			failMsg := fmt.Sprintf("Failed to deserialize Extended error descriptions: %s", err.Error())
+			return wfv1.NodeFailed, failMsg
+		}
+
+		if len(errorResults) > 0 {
+			failMsg := "failed for the following reasons: "
+			for _, result := range errorResults {
+				failMsg += fmt.Sprintf("%s - %s ", result.Name, result.Message)
+			}
+			return wfv1.NodeFailed, failMsg
+		}
+	}
+
 	// If we get here, we have detected that the main/wait containers succeed but the sidecar(s)
 	// were  SIGKILL'd. The executor may have had to forcefully terminate the sidecar (kill -9),
 	// resulting in a 137 exit code (which we had ignored earlier). If failMessages is empty, it

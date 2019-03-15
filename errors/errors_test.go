@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/CyrusBiotechnology/argo/errors"
+	"github.com/cyrusbiotechnology/argo/errors"
 	pkgerr "github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
