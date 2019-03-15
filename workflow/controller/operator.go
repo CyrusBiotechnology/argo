@@ -416,7 +416,7 @@ func (woc *wfOperationCtx) processNodeRetries(node *wfv1.NodeStatus, retryStrate
 	return nil
 }
 
-func (woc *wfOperationCtx) collectConditionResults(pod *apiv1.Pod, currentResults *[]wfv1.ErrorResult, annotationKey string) error {
+func (woc *wfOperationCtx) collectConditionResults(pod *apiv1.Pod, currentResults *[]wfv1.ExceptionResult, annotationKey string) error {
 
 	if resultString, ok := pod.Annotations[annotationKey]; ok {
 
@@ -425,7 +425,7 @@ func (woc *wfOperationCtx) collectConditionResults(pod *apiv1.Pod, currentResult
 			uniqueConditionNames[result.Name] = true
 		}
 
-		var newResults []wfv1.ErrorResult
+		var newResults []wfv1.ExceptionResult
 		err := json.Unmarshal([]byte(resultString), &newResults)
 		if err != nil {
 			return err
@@ -811,7 +811,7 @@ func inferFailedReason(pod *apiv1.Pod) (wfv1.NodePhase, string) {
 	// If we get here, check the extended failure conditions and mark the node as failed if any exist
 
 	if resultString, ok := pod.Annotations[common.AnnotationKeyErrors]; ok {
-		var errorResults []wfv1.ErrorResult
+		var errorResults []wfv1.ExceptionResult
 		err := json.Unmarshal([]byte(resultString), &errorResults)
 
 		if err != nil {

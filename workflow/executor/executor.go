@@ -650,7 +650,7 @@ const (
 
 func (we *WorkflowExecutor) EvaluateConditions(conditionMode ConditionType) error {
 
-	var resultsLocation *[]wfv1.ErrorCondition
+	var resultsLocation *[]wfv1.ExceptionCondition
 	var annotationKey string
 
 	if conditionMode == ConditionTypeError {
@@ -742,7 +742,7 @@ func (we *WorkflowExecutor) fetchFileForErrorHandling(fileSource string) (logDat
 	return
 }
 
-func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ErrorCondition) (results []wfv1.ErrorResult, err error) {
+func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ExceptionCondition) (results []wfv1.ExceptionResult, err error) {
 
 	for _, condition := range *conditions {
 		if condition.PatternMatched != "" && condition.PatternUnmatched != "" {
@@ -756,10 +756,10 @@ func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ErrorCo
 			return nil, err
 		}
 
-		result := wfv1.ErrorResult{
+		result := wfv1.ExceptionResult{
 			Name:     condition.Name,
 			Message:  condition.Message,
-			PodId:    we.PodName,
+			PodName:  we.PodName,
 			StepName: we.Template.Name,
 		}
 

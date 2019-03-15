@@ -204,8 +204,8 @@ type Template struct {
 	// Tolerations to apply to workflow pods.
 	Tolerations []apiv1.Toleration `json:"tolerations,omitempty"`
 
-	Errors   []ErrorCondition `json:"errors,omitempty"`
-	Warnings []ErrorCondition `json:"warnings,omitempty"`
+	Errors   []ExceptionCondition `json:"errors,omitempty"`
+	Warnings []ExceptionCondition `json:"warnings,omitempty"`
 }
 
 // Inputs are the mechanism for passing parameters, artifacts, volumes from one template to another
@@ -460,8 +460,8 @@ type WorkflowStatus struct {
 	// Outputs captures output values and artifact locations produced by the workflow via global outputs
 	Outputs *Outputs `json:"outputs,omitempty"`
 
-	Errors   []ErrorResult `json:"errors,omitempty"`
-	Warnings []ErrorResult `json:"warnings,omitempty"`
+	Errors   []ExceptionResult `json:"errors,omitempty"`
+	Warnings []ExceptionResult `json:"warnings,omitempty"`
 }
 
 // RetryStrategy provides controls on how to retry a workflow step
@@ -693,8 +693,8 @@ type ResourceTemplate struct {
 	FailureCondition string `json:"failureCondition,omitempty"`
 }
 
-// ErrorCondition is a container for defining an error or warning rule
-type ErrorCondition struct {
+// ExceptionCondition is a container for defining an error or warning rule
+type ExceptionCondition struct {
 	Name             string `json:"name"`
 	PatternMatched   string `json:"patternMatched,omitempty"`
 	PatternUnmatched string `json:"patternUnmatched,omitempty"`
@@ -702,11 +702,11 @@ type ErrorCondition struct {
 	Message          string `json:"message,omitempty"`
 }
 
-// ErrorResult contains the results on an extended error or warning condition evaluation
-type ErrorResult struct {
+// ExceptionResult contains the results on an extended error or warning condition evaluation
+type ExceptionResult struct {
 	Name     string `json:"name"`
 	Message  string `json:"message"`
-	PodId    string `json:"podId"`
+	PodName  string `json:"podName"`
 	StepName string `json:"stepName"`
 }
 

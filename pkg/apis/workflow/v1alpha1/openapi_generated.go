@@ -21,8 +21,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactoryAuth":     schema_pkg_apis_workflow_v1alpha1_ArtifactoryAuth(ref),
 		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTask":             schema_pkg_apis_workflow_v1alpha1_DAGTask(ref),
 		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTemplate":         schema_pkg_apis_workflow_v1alpha1_DAGTemplate(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ErrorCondition":      schema_pkg_apis_workflow_v1alpha1_ErrorCondition(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ErrorResult":         schema_pkg_apis_workflow_v1alpha1_ErrorResult(ref),
+		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ExceptionCondition":  schema_pkg_apis_workflow_v1alpha1_ErrorCondition(ref),
+		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ExceptionResult":     schema_pkg_apis_workflow_v1alpha1_ErrorResult(ref),
 		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.GCSArtifact":         schema_pkg_apis_workflow_v1alpha1_GCSArtifact(ref),
 		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.GCSBucket":           schema_pkg_apis_workflow_v1alpha1_GCSBucket(ref),
 		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.GitArtifact":         schema_pkg_apis_workflow_v1alpha1_GitArtifact(ref),
@@ -453,7 +453,7 @@ func schema_pkg_apis_workflow_v1alpha1_ErrorCondition(ref common.ReferenceCallba
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ErrorCondition is a container for defining an error or warning rule",
+				Description: "ExceptionCondition is a container for defining an error or warning rule",
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -497,7 +497,7 @@ func schema_pkg_apis_workflow_v1alpha1_ErrorResult(ref common.ReferenceCallback)
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ErrorResult contains the results on an extended error or warning condition evaluation",
+				Description: "ExceptionResult contains the results on an extended error or warning condition evaluation",
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -1739,7 +1739,7 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ErrorCondition"),
+										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ExceptionCondition"),
 									},
 								},
 							},
@@ -1751,7 +1751,7 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ErrorCondition"),
+										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ExceptionCondition"),
 									},
 								},
 							},
@@ -1762,7 +1762,7 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTemplate", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ErrorCondition", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Inputs", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Metadata", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Outputs", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ResourceTemplate", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.RetryStrategy", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ScriptTemplate", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Sidecar", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.SuspendTemplate", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowStep", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.Toleration"},
+			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTemplate", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ExceptionCondition", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Inputs", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Metadata", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Outputs", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ResourceTemplate", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.RetryStrategy", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ScriptTemplate", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Sidecar", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.SuspendTemplate", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowStep", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.Toleration"},
 	}
 }
 
