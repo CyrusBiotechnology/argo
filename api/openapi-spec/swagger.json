@@ -229,8 +229,8 @@
         }
       }
     },
-    "io.argoproj.workflow.v1alpha1.ErrorCondition": {
-      "description": "ErrorCondition is a container for defining an error or warning rule",
+    "io.argoproj.workflow.v1alpha1.ExceptionCondition": {
+      "description": "ExceptionCondition is a container for defining an error or warning rule",
       "required": [
         "name"
       ],
@@ -252,12 +252,12 @@
         }
       }
     },
-    "io.argoproj.workflow.v1alpha1.ErrorResult": {
-      "description": "ErrorResult contains the results on an extended error or warning condition evaluation",
+    "io.argoproj.workflow.v1alpha1.ExceptionResult": {
+      "description": "ExceptionResult contains the results on an extended error or warning condition evaluation",
       "required": [
         "name",
         "message",
-        "podId",
+        "podName",
         "stepName"
       ],
       "properties": {
@@ -267,7 +267,7 @@
         "name": {
           "type": "string"
         },
-        "podId": {
+        "podName": {
           "type": "string"
         },
         "stepName": {
@@ -870,7 +870,7 @@
         "errors": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.ErrorCondition"
+            "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.ExceptionCondition"
           }
         },
         "inputs": {
@@ -944,7 +944,7 @@
         "warnings": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.ErrorCondition"
+            "$ref": "#/definitions/io.argoproj.workflow.v1alpha1.ExceptionCondition"
           }
         }
       }

@@ -567,10 +567,11 @@ func assessNodeStatus(pod *apiv1.Pod, node *wfv1.NodeStatus) *wfv1.NodeStatus {
 		newDaemonStatus = &f
 		message = getPendingReason(pod)
 	case apiv1.PodSucceeded:
-		newPhase, message = inferFailedReason(pod)
+		// A pod can exit with a successful status and still fail an exception condition check
+		newPhase, message = handlePodFailures(pod)
 		newDaemonStatus = &f
 	case apiv1.PodFailed:
-		newPhase, message = inferFailedReason(pod)
+		newPhase, message = handlePodFailures(pod)
 		newDaemonStatus = &f
 	case apiv1.PodRunning:
 		newPhase = wfv1.NodeRunning
@@ -710,9 +711,9 @@ func getPendingReason(pod *apiv1.Pod) string {
 	return ""
 }
 
-// inferFailedReason returns metadata about a Failed pod to be used in its NodeStatus
+// handlePodFailures returns metadata about a Failed pod to be used in its NodeStatus
 // Returns a tuple of the new phase and message
-func inferFailedReason(pod *apiv1.Pod) (wfv1.NodePhase, string) {
+func handlePodFailures(pod *apiv1.Pod) (wfv1.NodePhase, string) {
 	if pod.Status.Message != "" {
 		// Pod has a nice error message. Use that.
 		return wfv1.NodeFailed, pod.Status.Message

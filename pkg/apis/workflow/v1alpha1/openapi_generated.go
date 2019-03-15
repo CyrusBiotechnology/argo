@@ -21,8 +21,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactoryAuth":     schema_pkg_apis_workflow_v1alpha1_ArtifactoryAuth(ref),
 		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTask":             schema_pkg_apis_workflow_v1alpha1_DAGTask(ref),
 		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTemplate":         schema_pkg_apis_workflow_v1alpha1_DAGTemplate(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ExceptionCondition":  schema_pkg_apis_workflow_v1alpha1_ErrorCondition(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ExceptionResult":     schema_pkg_apis_workflow_v1alpha1_ErrorResult(ref),
+		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ExceptionCondition":  schema_pkg_apis_workflow_v1alpha1_ExceptionCondition(ref),
+		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ExceptionResult":     schema_pkg_apis_workflow_v1alpha1_ExceptionResult(ref),
 		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.GCSArtifact":         schema_pkg_apis_workflow_v1alpha1_GCSArtifact(ref),
 		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.GCSBucket":           schema_pkg_apis_workflow_v1alpha1_GCSBucket(ref),
 		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.GitArtifact":         schema_pkg_apis_workflow_v1alpha1_GitArtifact(ref),
@@ -449,7 +449,7 @@ func schema_pkg_apis_workflow_v1alpha1_DAGTemplate(ref common.ReferenceCallback)
 	}
 }
 
-func schema_pkg_apis_workflow_v1alpha1_ErrorCondition(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_pkg_apis_workflow_v1alpha1_ExceptionCondition(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -493,7 +493,7 @@ func schema_pkg_apis_workflow_v1alpha1_ErrorCondition(ref common.ReferenceCallba
 	}
 }
 
-func schema_pkg_apis_workflow_v1alpha1_ErrorResult(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_pkg_apis_workflow_v1alpha1_ExceptionResult(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -511,7 +511,7 @@ func schema_pkg_apis_workflow_v1alpha1_ErrorResult(ref common.ReferenceCallback)
 							Format: "",
 						},
 					},
-					"podId": {
+					"podName": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
@@ -524,7 +524,7 @@ func schema_pkg_apis_workflow_v1alpha1_ErrorResult(ref common.ReferenceCallback)
 						},
 					},
 				},
-				Required: []string{"name", "message", "podId", "stepName"},
+				Required: []string{"name", "message", "podName", "stepName"},
 			},
 		},
 		Dependencies: []string{},
