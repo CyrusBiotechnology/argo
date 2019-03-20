@@ -125,13 +125,13 @@ func printWorkflowHelper(wf *wfv1.Workflow, outFmt string) {
 
 	if wf.Status.Errors != nil {
 		for _, errorResult := range wf.Status.Errors {
-			fmt.Fprintf(errorWriter, "%s %s\t%s\t%s\t%s\n", RedError, errorResult.StepName, errorResult.PodId, errorResult.Name, errorResult.Message)
+			fmt.Fprintf(errorWriter, "%s %s\t%s\t%s\t%s\n", RedError, errorResult.StepName, errorResult.PodName, errorResult.Name, errorResult.Message)
 		}
 	}
 
 	if wf.Status.Warnings != nil {
 		for _, warningResult := range wf.Status.Warnings {
-			fmt.Fprintf(errorWriter, "%s %s\t%s\t%s\t%s\n", YellowWarning, warningResult.StepName, warningResult.PodId, warningResult.Name, warningResult.Message)
+			fmt.Fprintf(errorWriter, "%s %s\t%s\t%s\t%s\n", YellowWarning, warningResult.StepName, warningResult.PodName, warningResult.Name, warningResult.Message)
 		}
 	}
 	_ = errorWriter.Flush()
