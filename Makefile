@@ -1,4 +1,4 @@
-PACKAGE=github.com/CyrusBiotechnology/argo
+PACKAGE=github.com/cyrusbiotechnology/argo
 CURRENT_DIR=$(shell pwd)
 DIST_DIR=${CURRENT_DIR}/dist
 ARGO_CLI_NAME=argo

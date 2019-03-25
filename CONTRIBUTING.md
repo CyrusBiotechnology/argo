@@ -29,8 +29,8 @@ Go to https://groups.google.com/forum/#!forum/argoproj
 
 ### Quickstart
 ```
-$ go get github.com/CyrusBiotechnology/argo
-$ cd $(go env GOPATH)/src/github.com/CyrusBiotechnology/argo
+$ go get github.com/cyrusbiotechnology/argo
+$ cd $(go env GOPATH)/src/github.com/cyrusbiotechnology/argo
 $ dep ensure -vendor-only
 $ make
 ```

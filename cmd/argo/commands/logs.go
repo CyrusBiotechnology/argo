@@ -11,10 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
-	wfclientset "github.com/CyrusBiotechnology/argo/pkg/client/clientset/versioned"
-	wfinformers "github.com/CyrusBiotechnology/argo/pkg/client/informers/externalversions"
 	"github.com/argoproj/pkg/errors"
+	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	wfclientset "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned"
+	wfinformers "github.com/cyrusbiotechnology/argo/pkg/client/informers/externalversions"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"k8s.io/api/core/v1"

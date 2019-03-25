@@ -17,10 +17,10 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 
-	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/CyrusBiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
-	"github.com/CyrusBiotechnology/argo/workflow/common"
-	"github.com/CyrusBiotechnology/argo/workflow/util"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/workflow/util"
 )
 
 type listFlags struct {

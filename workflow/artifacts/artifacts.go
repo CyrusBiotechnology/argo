@@ -1,7 +1,7 @@
 package executor
 
 import (
-	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 )
 
 // ArtifactDriver is the interface for loading and saving of artifacts

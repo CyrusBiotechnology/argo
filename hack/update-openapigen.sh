@@ -10,7 +10,7 @@ VERSION="v1alpha1"
 
 go run ${CODEGEN_PKG}/cmd/openapi-gen/main.go \
   --go-header-file ${PROJECT_ROOT}/hack/custom-boilerplate.go.txt \
-  --input-dirs github.com/CyrusBiotechnology/argo/pkg/apis/workflow/${VERSION} \
-  --output-package github.com/CyrusBiotechnology/argo/pkg/apis/workflow/${VERSION} \
+  --input-dirs github.com/cyrusbiotechnology/argo/pkg/apis/workflow/${VERSION} \
+  --output-package github.com/cyrusbiotechnology/argo/pkg/apis/workflow/${VERSION} \
   $@
 
