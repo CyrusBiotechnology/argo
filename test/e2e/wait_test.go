@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/CyrusBiotechnology/argo/cmd/argo/commands"
+	"github.com/cyrusbiotechnology/argo/cmd/argo/commands"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

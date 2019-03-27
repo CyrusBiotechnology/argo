@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	fakewfclientset "github.com/CyrusBiotechnology/argo/pkg/client/clientset/versioned/fake"
-	"github.com/CyrusBiotechnology/argo/test"
-	"github.com/CyrusBiotechnology/argo/workflow/util"
+	fakewfclientset "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/fake"
+	"github.com/cyrusbiotechnology/argo/test"
+	"github.com/cyrusbiotechnology/argo/workflow/util"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

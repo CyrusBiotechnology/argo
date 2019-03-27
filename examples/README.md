@@ -6,7 +6,7 @@ Argo is an open source project that provides container-native workflows for Kube
 
 Argo is implemented as a Kubernetes CRD (Custom Resource Definition). As a result, Argo workflows can be managed using kubectl and natively integrates with other Kubernetes services such as volumes, secrets, and RBAC. The new Argo software is lightweight and installs in under a minute but provides complete workflow features including parameter substitution, artifacts, fixtures, loops and recursive workflows.
 
-Many of the Argo examples used in this walkthrough are available at https://github.com/CyrusBiotechnology/argo/tree/master/examples.  If you like this project, please give us a star!
+Many of the Argo examples used in this walkthrough are available at https://github.com/cyrusbiotechnology/argo/tree/master/examples.  If you like this project, please give us a star!
 
 ## Table of Content
 
@@ -37,7 +37,7 @@ Many of the Argo examples used in this walkthrough are available at https://gith
 
 In case you want to follow along with this walkthrough, here's a quick overview of the most useful argo CLI commands.
 
-[Install Argo here](https://github.com/CyrusBiotechnology/argo/blob/master/demo.md)
+[Install Argo here](https://github.com/cyrusbiotechnology/argo/blob/master/demo.md)
 
 ```sh
 argo submit hello-world.yaml    # submit a workflow spec to Kubernetes
@@ -300,7 +300,7 @@ The templates called from a dag or steps template can themselves be dag or steps
 
 **Note:**
 You will need to have configured an artifact repository to run this example.
-[Configuring an artifact repository here](https://github.com/CyrusBiotechnology/argo/blob/master/ARTIFACT_REPO.md).
+[Configuring an artifact repository here](https://github.com/cyrusbiotechnology/argo/blob/master/ARTIFACT_REPO.md).
 
 When running workflows, it is very common to have steps that generate or consume artifacts. Often, the output artifacts of one step may be used as input artifacts to a subsequent step.
 
@@ -1086,7 +1086,7 @@ spec:
       - name: argo-source
         path: /src
         git:
-          repo: https://github.com/CyrusBiotechnology/argo.git
+          repo: https://github.com/cyrusbiotechnology/argo.git
           revision: "master"
       # Download kubectl 1.8.0 and place it at /bin/kubectl
       - name: kubectl
@@ -1194,4 +1194,4 @@ spec:
 ## Continuous integration example
 Continuous integration is a popular application for workflows. Currently, Argo does not provide event triggers for automatically kicking off your CI jobs, but we plan to do so in the near future. Until then, you can easily write a cron job that checks for new commits and kicks off the needed workflow, or use your existing Jenkins server to kick off the workflow.
 
-A good example of a CI workflow spec is provided at https://github.com/CyrusBiotechnology/argo/tree/master/examples/influxdb-ci.yaml. Because it just uses the concepts that we've already covered and is somewhat long, we don't go into details here.
+A good example of a CI workflow spec is provided at https://github.com/cyrusbiotechnology/argo/tree/master/examples/influxdb-ci.yaml. Because it just uses the concepts that we've already covered and is somewhat long, we don't go into details here.

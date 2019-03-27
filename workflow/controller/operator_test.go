@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	wfv1 "github.com/CyrusBiotechnology/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/CyrusBiotechnology/argo/test"
-	"github.com/CyrusBiotechnology/argo/workflow/util"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/test"
+	"github.com/cyrusbiotechnology/argo/workflow/util"
 	"github.com/stretchr/testify/assert"
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"

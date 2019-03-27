@@ -6,7 +6,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/CyrusBiotechnology/argo/errors"
+	"github.com/cyrusbiotechnology/argo/errors"
 	log "github.com/sirupsen/logrus"
 )
 

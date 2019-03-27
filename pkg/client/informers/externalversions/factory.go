@@ -7,9 +7,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/CyrusBiotechnology/argo/pkg/client/clientset/versioned"
-	internalinterfaces "github.com/CyrusBiotechnology/argo/pkg/client/informers/externalversions/internalinterfaces"
-	workflow "github.com/CyrusBiotechnology/argo/pkg/client/informers/externalversions/workflow"
+	versioned "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned"
+	internalinterfaces "github.com/cyrusbiotechnology/argo/pkg/client/informers/externalversions/internalinterfaces"
+	workflow "github.com/cyrusbiotechnology/argo/pkg/client/informers/externalversions/workflow"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

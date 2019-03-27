@@ -3,8 +3,8 @@
 package argoproj
 
 import (
-	internalinterfaces "github.com/CyrusBiotechnology/argo/pkg/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/CyrusBiotechnology/argo/pkg/client/informers/externalversions/workflow/v1alpha1"
+	internalinterfaces "github.com/cyrusbiotechnology/argo/pkg/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/cyrusbiotechnology/argo/pkg/client/informers/externalversions/workflow/v1alpha1"
 )
 
 // Interface provides access to each of this group's versions.
