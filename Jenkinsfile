@@ -12,7 +12,7 @@ def runUtilityCommand(buildCommand) {
     sh "docker run --rm " +
        "-v ${pwd()}/dist/pkg:/usr/local/go/pkg " +
        "-v ${pwd()}:/go/src/github.com/cyrusbiotechnology/argo " +
-       "-w /go/src/github.com/cyrusbiotechnology/argo argoexec:${VERSION} ${buildCommand}"
+       "-w /go/src/github.com/cyrusbiotechnology/argo argo-builder ${buildCommand}"
 }
 
 pipeline {
@@ -39,11 +39,11 @@ pipeline {
             }
         }
 
-//        stage('build utility container') {
-//            steps {
-//                sh "docker build -t argo-builder --target builder ."
-//            }
-//        }
+        stage('build utility container') {
+            steps {
+                sh "docker build -t argo-builder --target builder-base ."
+            }
+        }
 
 
         stage('build controller') {
