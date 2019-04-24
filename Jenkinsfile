@@ -61,7 +61,7 @@ pipeline {
 
         stage('run tests') {
             steps {
-                runUtilityCommand("go test ./...")
+                runUtilityCommand("make test")
             }
         }
 
