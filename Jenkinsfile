@@ -10,9 +10,9 @@ def NAMESPACE = ''
 def runUtilityCommand(buildCommand) {
     // Run an arbitrary command inside the docker builder image
     sh "docker run --rm " +
-       "-v ${pwd()}/dist/pkg:/root/go/pkg " +
-       "-v ${pwd()}:/root/go/src/github.com/cyrusbiotechnology/argo " +
-       "-w /root/go/src/github.com/cyrusbiotechnology/argo argo-builder ${buildCommand}"
+       "-v ${pwd()}/dist/pkg:/usr/local/go/pkg " +
+       "-v ${pwd()}:/go/src/github.com/cyrusbiotechnology/argo " +
+       "-w /go/src/github.com/cyrusbiotechnology/argo argo-builder ${buildCommand}"
 }
 
 pipeline {
