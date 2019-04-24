@@ -41,7 +41,7 @@ pipeline {
 
         stage('build utility container') {
             steps {
-                sh "docker build -t argo-builder -f Dockerfile-builder ."
+                sh "docker build -t argo-builder --target builder ."
             }
         }
 
@@ -54,14 +54,14 @@ pipeline {
         stage('build controller') {
             steps {
                 runUtilityCommand("make controller")
-                sh "docker build -t workflow-controller:${VERSION} -f Dockerfile-workflow-controller ."
+                sh "docker build -t workflow-controller:${VERSION} --target workflow-controller ."
             }
         }
 
         stage('build executor') {
             steps {
                 runUtilityCommand("make executor")
-                sh "docker build -t argoexec:${VERSION} -f Dockerfile-argoexec ."
+                sh "docker build -t argoexec:${VERSION} --target argoexec-base ."
             }
         }
 
