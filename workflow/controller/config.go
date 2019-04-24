@@ -130,7 +130,6 @@ type HDFSArtifactRepository struct {
 	Force bool `json:"force,omitempty"`
 }
 
-// ResyncConfig reloads the controller config from the configmap
 // GCSArtifactRepository defines the controller configuration for a GCS artifact repository
 type GCSArtifactRepository struct {
 	wfv1.GCSBucket `json:",inline"`

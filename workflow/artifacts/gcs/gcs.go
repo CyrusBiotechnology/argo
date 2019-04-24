@@ -4,20 +4,25 @@ import (
 	"cloud.google.com/go/storage"
 	"context"
 	"errors"
+	"fmt"
 	argoErrors "github.com/cyrusbiotechnology/argo/errors"
 	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/api/option"
 	"io"
 	"os"
 )
 
 type GCSArtifactDriver struct {
-	Context context.Context
+	Context       context.Context
+	CredsJSONData []byte
 }
 
 func (gcsDriver *GCSArtifactDriver) newGcsClient() (client *storage.Client, err error) {
 	gcsDriver.Context = context.Background()
-	client, err = storage.NewClient(gcsDriver.Context)
+
+	fmt.Println(string(gcsDriver.CredsJSONData))
+	client, err = storage.NewClient(gcsDriver.Context, option.WithCredentialsJSON(gcsDriver.CredsJSONData))
 	if err != nil {
 		return nil, argoErrors.InternalWrapError(err)
 	}
@@ -35,7 +40,7 @@ func (gcsDriver *GCSArtifactDriver) saveToFile(inputArtifact *wfv1.Artifact, fil
 		return err
 	}
 
-	if stat != nil && stat.IsDir() {
+	if stat.IsDir() {
 		return errors.New("output artifact path is a directory")
 	}
 

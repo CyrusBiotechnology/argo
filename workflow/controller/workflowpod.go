@@ -66,30 +66,6 @@ var (
 		MountPath: "/var/run/docker.sock",
 		ReadOnly:  true,
 	}
-
-	// execEnvVars exposes various pod information as environment variables to the exec container
-	execEnvVars = []apiv1.EnvVar{
-		envFromField(common.EnvVarPodName, "metadata.name"),
-	}
-
-	volumeMountGoogleSecret = apiv1.VolumeMount{
-		Name:      common.GoogleSecretVolumeName,
-		MountPath: "/var/secrets/google",
-	}
-
-	googleCredentialSecretEnvVar = apiv1.EnvVar{
-		Name:  "GOOGLE_APPLICATION_CREDENTIALS",
-		Value: "/var/secrets/google/key.json",
-	}
-
-	volumeGoogleSecret = apiv1.Volume{
-		Name: common.GoogleSecretVolumeName,
-		VolumeSource: apiv1.VolumeSource{
-			Secret: &apiv1.SecretVolumeSource{
-				SecretName: common.GoogleSecretName,
-			},
-		},
-	}
 )
 
 func (woc *wfOperationCtx) createWorkflowPod(nodeName string, mainCtr apiv1.Container, tmpl *wfv1.Template) (*apiv1.Pod, error) {
@@ -144,10 +120,6 @@ func (woc *wfOperationCtx) createWorkflowPod(nodeName string, mainCtr apiv1.Cont
 	err := woc.addArchiveLocation(pod, tmpl)
 	if err != nil {
 		return nil, err
-	}
-
-	if common.GoogleSecretName != "" {
-		pod.Spec.Volumes = append(pod.Spec.Volumes, volumeGoogleSecret)
 	}
 
 	if tmpl.GetType() != wfv1.TemplateTypeResource {
@@ -415,7 +387,6 @@ func (woc *wfOperationCtx) newExecContainer(name string) *apiv1.Container {
 		Name:            name,
 		Image:           woc.controller.executorImage(),
 		ImagePullPolicy: woc.controller.executorImagePullPolicy(),
-		VolumeMounts:    []apiv1.VolumeMount{},
 		Env:             woc.createEnvVars(),
 		VolumeMounts: []apiv1.VolumeMount{
 			volumeMountPodMetadata,
@@ -448,10 +419,6 @@ func (woc *wfOperationCtx) newExecContainer(name string) *apiv1.Container {
 		exec.Args = append(exec.Args, "--kubeconfig="+path)
 	}
 
-	if common.GoogleSecretName != "" {
-		exec.VolumeMounts = append(exec.VolumeMounts, volumeMountGoogleSecret)
-		exec.Env = append(exec.Env, googleCredentialSecretEnvVar)
-	}
 	return &exec
 }
 

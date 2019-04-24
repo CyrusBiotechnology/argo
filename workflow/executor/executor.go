@@ -562,6 +562,16 @@ func (we *WorkflowExecutor) InitDriver(art wfv1.Artifact) (artifact.ArtifactDriv
 		return &driver, nil
 	}
 	if art.GCS != nil {
+		credsJSONData, err := we.GetSecrets(we.Namespace, art.GCS.CredentialsSecret.Name, art.GCS.CredentialsSecret.Key)
+		if err != nil {
+			return nil, err
+		}
+		driver := gcs.GCSArtifactDriver{
+			CredsJSONData: []byte(credsJSONData),
+		}
+		return &driver, nil
+	}
+	if art.GCS != nil {
 		driver := gcs.GCSArtifactDriver{}
 		return &driver, nil
 	}

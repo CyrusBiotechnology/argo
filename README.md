@@ -21,9 +21,9 @@ If you actively use Argo in your organization and your organization would be int
 ## What is Argoproj?
 
 Argoproj is a collection of tools for getting work done with Kubernetes.
-* [Argo Workflows](https://github.com/argoproj/argo) - Container-native Workflow Engine
-* [Argo CD](https://github.com/argoproj/argo-cd) - Declarative GitOps Continuous Delivery
-* [Argo Events](https://github.com/argoproj/argo-events) - Event-based Dependency Manager
+* [Argo Workflows](https://github.com/cyrusbiotechnology/argo) - Container-native Workflow Engine
+* [Argo CD](https://github.com/cyrusbiotechnology/argo-cd) - Declarative GitOps Continuous Delivery
+* [Argo Events](https://github.com/cyrusbiotechnology/argo-events) - Event-based Dependency Manager
 
 ## What is Argo Workflows?
 Argo Workflows is an open source container-native workflow engine for orchestrating parallel jobs on Kubernetes. Argo Workflows is implemented as a Kubernetes CRD (Custom Resource Definition).

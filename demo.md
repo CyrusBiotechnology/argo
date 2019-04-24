@@ -24,7 +24,7 @@ chmod +x /usr/local/bin/argo
 ## 2. Install the Controller and UI
 ```
 kubectl create ns argo
-kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/v2.2.1/manifests/install.yaml
+kubectl apply -n argo -f https://raw.githubusercontent.com/cyrusbiotechnology/argo/v2.2.1/manifests/install.yaml
 ```
 NOTE: On GKE, you may need to grant your account the ability to create new clusterroles
 ```
@@ -48,9 +48,9 @@ argo submit --serviceaccount <name>
 
 ## 4. Run Simple Example Workflows
 ```
-argo submit --watch https://raw.githubusercontent.com/argoproj/argo/master/examples/hello-world.yaml
-argo submit --watch https://raw.githubusercontent.com/argoproj/argo/master/examples/coinflip.yaml
-argo submit --watch https://raw.githubusercontent.com/argoproj/argo/master/examples/loops-maps.yaml
+argo submit --watch https://raw.githubusercontent.com/cyrusbiotechnology/argo/master/examples/hello-world.yaml
+argo submit --watch https://raw.githubusercontent.com/cyrusbiotechnology/argo/master/examples/coinflip.yaml
+argo submit --watch https://raw.githubusercontent.com/cyrusbiotechnology/argo/master/examples/loops-maps.yaml
 argo list
 argo get xxx-workflow-name-xxx
 argo logs xxx-pod-name-xxx #from get command above
@@ -60,7 +60,7 @@ You can also create workflows directly with kubectl. However, the Argo CLI offer
 that kubectl does not, such as YAML validation, workflow visualization, parameter passing, retries
 and resubmits, suspend and resume, and more.
 ```
-kubectl create -f https://raw.githubusercontent.com/argoproj/argo/master/examples/hello-world.yaml
+kubectl create -f https://raw.githubusercontent.com/cyrusbiotechnology/argo/master/examples/hello-world.yaml
 kubectl get wf
 kubectl get wf hello-world-xxx
 kubectl get po --selector=workflows.argoproj.io/workflow=hello-world-xxx --show-all
@@ -132,7 +132,7 @@ namespace you use for workflows.
 
 ## 7. Run a workflow which uses artifacts
 ```
-argo submit https://raw.githubusercontent.com/argoproj/argo/master/examples/artifact-passing.yaml
+argo submit https://raw.githubusercontent.com/cyrusbiotechnology/argo/master/examples/artifact-passing.yaml
 ```
 
 ## 8. Access the Argo UI
