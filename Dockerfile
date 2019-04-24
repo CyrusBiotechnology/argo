@@ -76,8 +76,7 @@ RUN make $MAKE_TARGET
 ####################################################################################################
 # argoexec
 ####################################################################################################
-FROM argoexec-b
-ase as argoexec
+FROM argoexec-base as argoexec
 COPY --from=argo-build /go/src/github.com/cyrusbiotechnology/argo/dist/argoexec /usr/local/bin/
 
 

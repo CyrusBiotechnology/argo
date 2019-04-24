@@ -4,9 +4,9 @@ import (
 	"cloud.google.com/go/storage"
 	"context"
 	"errors"
-	"fmt"
 	argoErrors "github.com/cyrusbiotechnology/argo/errors"
 	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/util"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 	"io"
@@ -21,7 +21,6 @@ type GCSArtifactDriver struct {
 func (gcsDriver *GCSArtifactDriver) newGcsClient() (client *storage.Client, err error) {
 	gcsDriver.Context = context.Background()
 
-	fmt.Println(string(gcsDriver.CredsJSONData))
 	client, err = storage.NewClient(gcsDriver.Context, option.WithCredentialsJSON(gcsDriver.CredsJSONData))
 	if err != nil {
 		return nil, argoErrors.InternalWrapError(err)
@@ -61,7 +60,7 @@ func (gcsDriver *GCSArtifactDriver) saveToFile(inputArtifact *wfv1.Artifact, fil
 	if err != nil {
 		return err
 	}
-	defer r.Close()
+	defer util.Close(r)
 
 	_, err = io.Copy(outputFile, r)
 	if err != nil {
@@ -99,7 +98,7 @@ func (gcsDriver *GCSArtifactDriver) saveToGCS(outputArtifact *wfv1.Artifact, fil
 		return errors.New("only single files can be saved to GCS, not entire directories")
 	}
 
-	defer inputFile.Close()
+	defer util.Close(inputFile)
 
 	bucket := gcsClient.Bucket(outputArtifact.GCS.Bucket)
 	object := bucket.Object(outputArtifact.GCS.Key)
