@@ -1,7 +1,11 @@
 package git
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
 	"os/exec"
+	"os/user"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -17,9 +21,10 @@ import (
 
 // GitArtifactDriver is the artifact driver for a git repo
 type GitArtifactDriver struct {
-	Username      string
-	Password      string
-	SSHPrivateKey string
+	Username              string
+	Password              string
+	SSHPrivateKey         string
+	InsecureIgnoreHostKey bool
 }
 
 // Load download artifacts from an git URL
@@ -30,14 +35,16 @@ func (g *GitArtifactDriver) Load(inputArtifact *wfv1.Artifact, path string) erro
 			return errors.InternalWrapError(err)
 		}
 		auth := &ssh2.PublicKeys{User: "git", Signer: signer}
-		auth.HostKeyCallback = ssh.InsecureIgnoreHostKey()
-		return gitClone(path, inputArtifact, auth)
+		if g.InsecureIgnoreHostKey {
+			auth.HostKeyCallback = ssh.InsecureIgnoreHostKey()
+		}
+		return gitClone(path, inputArtifact, auth, g.SSHPrivateKey)
 	}
 	if g.Username != "" || g.Password != "" {
 		auth := &http.BasicAuth{Username: g.Username, Password: g.Password}
-		return gitClone(path, inputArtifact, auth)
+		return gitClone(path, inputArtifact, auth, "")
 	}
-	return gitClone(path, inputArtifact, nil)
+	return gitClone(path, inputArtifact, nil, "")
 }
 
 // Save is unsupported for git output artifacts
@@ -45,7 +52,35 @@ func (g *GitArtifactDriver) Save(path string, outputArtifact *wfv1.Artifact) err
 	return errors.Errorf(errors.CodeBadRequest, "Git output artifacts unsupported")
 }
 
-func gitClone(path string, inputArtifact *wfv1.Artifact, auth transport.AuthMethod) error {
+func writePrivateKey(key string, insecureIgnoreHostKey bool) error {
+	usr, err := user.Current()
+	if err != nil {
+		return errors.InternalWrapError(err)
+	}
+	sshDir := fmt.Sprintf("%s/.ssh", usr.HomeDir)
+	err = os.Mkdir(sshDir, 0700)
+	if err != nil {
+		return errors.InternalWrapError(err)
+	}
+
+	if insecureIgnoreHostKey {
+		sshConfig := `Host *
+	StrictHostKeyChecking no
+	UserKnownHostsFile /dev/null`
+		err = ioutil.WriteFile(fmt.Sprintf("%s/config", sshDir), []byte(sshConfig), 0644)
+		if err != nil {
+			return errors.InternalWrapError(err)
+		}
+	}
+	err = ioutil.WriteFile(fmt.Sprintf("%s/id_rsa", sshDir), []byte(key), 0600)
+	if err != nil {
+		return errors.InternalWrapError(err)
+	}
+
+	return nil
+}
+
+func gitClone(path string, inputArtifact *wfv1.Artifact, auth transport.AuthMethod, privateKey string) error {
 	cloneOptions := git.CloneOptions{
 		URL:               inputArtifact.Git.Repo,
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
@@ -70,6 +105,23 @@ func gitClone(path string, inputArtifact *wfv1.Artifact, auth transport.AuthMeth
 			return errors.InternalWrapError(err)
 		}
 		log.Errorf("`%s` stdout:\n%s", cmd.Args, string(output))
+		if privateKey != "" {
+			err := writePrivateKey(privateKey, inputArtifact.Git.InsecureIgnoreHostKey)
+			if err != nil {
+				return errors.InternalWrapError(err)
+			}
+		}
+		submodulesCmd := exec.Command("git", "submodule", "update", "--init", "--recursive", "--force")
+		submodulesCmd.Dir = path
+		submoduleOutput, err := submodulesCmd.Output()
+		if err != nil {
+			if exErr, ok := err.(*exec.ExitError); ok {
+				log.Errorf("`%s` stderr:\n%s", submodulesCmd.Args, string(exErr.Stderr))
+				return errors.InternalError(strings.Split(string(exErr.Stderr), "\n")[0])
+			}
+			return errors.InternalWrapError(err)
+		}
+		log.Errorf("`%s` stdout:\n%s", submodulesCmd.Args, string(submoduleOutput))
 	}
 	return nil
 }
