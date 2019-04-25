@@ -9,7 +9,7 @@ def NAMESPACE = ''
 
 def runUtilityCommand(buildCommand) {
     // Run an arbitrary command inside the docker builder image
-    sh "docker run --rm  builder-base:latest ${buildCommand}"
+    sh "docker run -v ${pwd)}/dist:/go/src/github.com/cyrusbiotechnology/argo/dist --rm  builder-base:latest ${buildCommand}"
 }
 
 pipeline {
@@ -42,11 +42,14 @@ pipeline {
             }
         }
 
+// TODO uncomment once we have the infrastructure to submit tests
+/*
         stage('run tests') {
             steps {
                 runUtilityCommand("go test ./...")
             }
         }
+*/
 
         stage('build controller') {
             steps {
