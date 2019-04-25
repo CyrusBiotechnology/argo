@@ -225,11 +225,13 @@ func TestWorkflowParallelismLimit(t *testing.T) {
 	assert.Equal(t, 2, len(pods.Items))
 	// operate again and make sure we don't schedule any more pods
 	makePodsRunning(t, controller.kubeclientset, wf.ObjectMeta.Namespace)
+	assert.Equal(t, int64(2), woc.countActivePods())
 	wf, err = wfcset.Get(wf.ObjectMeta.Name, metav1.GetOptions{})
 	assert.Nil(t, err)
 	// wfBytes, _ := json.MarshalIndent(wf, "", "  ")
 	// log.Printf("%s", wfBytes)
 	woc = newWorkflowOperationCtx(wf, controller)
+	assert.Equal(t, int64(2), woc.countActivePods())
 	woc.operate()
 	pods, err = controller.kubeclientset.CoreV1().Pods("").List(metav1.ListOptions{})
 	assert.Nil(t, err)

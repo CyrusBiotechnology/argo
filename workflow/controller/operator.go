@@ -548,7 +548,7 @@ func (woc *wfOperationCtx) podReconciliation() error {
 		wg.Add(1)
 		go func(tmpPod apiv1.Pod) {
 			defer wg.Done()
-			err = performAssessment(&pod)
+			err = performAssessment(&tmpPod)
 			if err != nil {
 				woc.log.Errorf("Failed to collect extended errors and warnings from pod %s: %s", pod.Name, err.Error())
 			}

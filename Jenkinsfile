@@ -42,14 +42,13 @@ pipeline {
             }
         }
 
-// TODO uncomment once we have the infrastructure to submit tests
-/*
+
         stage('run tests') {
             steps {
                 runUtilityCommand("go test ./...")
             }
         }
-*/
+
 
         stage('build controller') {
             steps {
@@ -86,8 +85,8 @@ pipeline {
         stage('push CLI to artifactory') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'Artifactory', usernameVariable: 'ARTI_NAME', passwordVariable: 'ARTI_PASS')]) {
-                    runUtilityCommand("curl -u ${ARTI_NAME}:${ARTI_PASS} -T /root/go/src/github.com/cyrusbiotechnology/argo/dist/argo-darwin-amd64 https://cyrusbio.jfrog.io/cyrusbio/argo-cli/argo-mac-${VERSION}")
-                    runUtilityCommand("curl -u ${ARTI_NAME}:${ARTI_PASS} -T /root/go/src/github.com/cyrusbiotechnology/argo/dist/argo-linux-amd64 https://cyrusbio.jfrog.io/cyrusbio/argo-cli/argo-linux-${VERSION}")
+                    runUtilityCommand("curl -u ${ARTI_NAME}:${ARTI_PASS} -T /go/src/github.com/cyrusbiotechnology/argo/dist/argo-darwin-amd64 https://cyrusbio.jfrog.io/cyrusbio/argo-cli/argo-mac-${VERSION}")
+                    runUtilityCommand("curl -u ${ARTI_NAME}:${ARTI_PASS} -T /go/src/github.com/cyrusbiotechnology/argo/dist/argo-linux-amd64 https://cyrusbio.jfrog.io/cyrusbio/argo-cli/argo-linux-${VERSION}")
                 }
             }
         }
