@@ -9,10 +9,7 @@ def NAMESPACE = ''
 
 def runUtilityCommand(buildCommand) {
     // Run an arbitrary command inside the docker builder image
-    sh "docker run --rm " +
-       "-v ${pwd()}/dist/pkg:/usr/local/go/pkg " +
-       "-v ${pwd()}:/go/src/github.com/cyrusbiotechnology/argo " +
-       "-w /go/src/github.com/cyrusbiotechnology/argo argo-builder ${buildCommand}"
+    sh "docker run --rm  builder-base:latest ${buildCommand}"
 }
 
 pipeline {
@@ -41,10 +38,15 @@ pipeline {
 
         stage('build utility container') {
             steps {
-                sh "docker build -t argo-builder --target builder-base ."
+                sh "docker build -t builder-base --target builder-base ."
             }
         }
 
+        stage('run tests') {
+            steps {
+                runUtilityCommand("go test ./...")
+            }
+        }
 
         stage('build controller') {
             steps {
@@ -59,11 +61,7 @@ pipeline {
         }
 
 
-        stage('run tests') {
-            steps {
-                runUtilityCommand("make test")
-            }
-        }
+
 
         stage('build Linux and MacOS CLIs') {
             steps {
