@@ -58,7 +58,7 @@ pipeline {
 
         stage('build executor') {
             steps {
-                sh "docker build -t argoexec:${VERSION} --target argoexec-base ."
+                sh "docker build -t argoexec:${VERSION} --target argoexec ."
             }
         }
 
