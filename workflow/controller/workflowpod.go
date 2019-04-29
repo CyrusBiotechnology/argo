@@ -185,7 +185,10 @@ func (woc *wfOperationCtx) createWorkflowPod(nodeName string, mainCtr apiv1.Cont
 	// Perform one last variable substitution here. Some variables come from the from workflow
 	// configmap (e.g. archive location) or volumes attribute, and were not substituted
 	// in executeTemplate.
-	podParams := woc.globalParams
+	podParams := make(map[string]string)
+	for gkey, gval := range woc.globalParams {
+		podParams[gkey] = gval
+	}
 	for _, inParam := range tmpl.Inputs.Parameters {
 		podParams["inputs.parameters."+inParam.Name] = *inParam.Value
 	}
