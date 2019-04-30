@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/argoproj/pkg/json"
+
 	"github.com/cyrusbiotechnology/argo/errors"
 	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow"
 	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
@@ -60,7 +61,7 @@ func LintWorkflowFile(filePath string, strict bool) error {
 		return errors.Errorf(errors.CodeBadRequest, "%s failed to parse: %v", filePath, err)
 	}
 	for _, wf := range workflows {
-		err = ValidateWorkflow(&wf, true)
+		err = ValidateWorkflow(&wf, ValidateOpts{Lint: true})
 		if err != nil {
 			return errors.Errorf(errors.CodeBadRequest, "%s: %s", filePath, err.Error())
 		}

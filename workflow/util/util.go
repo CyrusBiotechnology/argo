@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -25,22 +26,19 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/utils/pointer"
 
 	"github.com/cyrusbiotechnology/argo/errors"
 	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow"
 	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	cmdutil "github.com/cyrusbiotechnology/argo/util/cmd"
+	"github.com/cyrusbiotechnology/argo/util/file"
 	"github.com/cyrusbiotechnology/argo/util/retry"
 	unstructutil "github.com/cyrusbiotechnology/argo/util/unstructured"
 	"github.com/cyrusbiotechnology/argo/workflow/common"
 	"github.com/cyrusbiotechnology/argo/workflow/validate"
 )
-
-func NewDynamicWorkflowClient(config *rest.Config) (dynamic.Interface, error) {
-	dynClientPool := dynamic.NewDynamicClientPool(config)
-	return dynClientPool.ClientForGroupVersionKind(wfv1.SchemaGroupVersionKind)
-}
 
 // NewWorkflowInformer returns the workflow informer used by the controller. This is actually
 // a custom built UnstructuredInformer which is in actuality returning unstructured.Unstructured
@@ -48,17 +46,14 @@ func NewDynamicWorkflowClient(config *rest.Config) (dynamic.Interface, error) {
 // https://github.com/kubernetes/kubernetes/issues/57705
 // https://github.com/cyrusbiotechnology/argo/issues/632
 func NewWorkflowInformer(cfg *rest.Config, ns string, resyncPeriod time.Duration, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
-	dclient, err := NewDynamicWorkflowClient(cfg)
+	dclient, err := dynamic.NewForConfig(cfg)
 	if err != nil {
 		panic(err)
 	}
-	resource := &metav1.APIResource{
-		Name:         workflow.Plural,
-		SingularName: workflow.Singular,
-		Namespaced:   true,
-		Group:        workflow.Group,
-		Version:      "v1alpha1",
-		ShortNames:   []string{"wf"},
+	resource := schema.GroupVersionResource{
+		Group:    workflow.Group,
+		Version:  "v1alpha1",
+		Resource: "workflows",
 	}
 	informer := unstructutil.NewFilteredUnstructuredInformer(
 		resource,
@@ -139,13 +134,14 @@ func IsWorkflowCompleted(wf *wfv1.Workflow) bool {
 
 // SubmitOpts are workflow submission options
 type SubmitOpts struct {
-	Name           string   // --name
-	GenerateName   string   // --generate-name
-	InstanceID     string   // --instanceid
-	Entrypoint     string   // --entrypoint
-	Parameters     []string // --parameter
-	ParameterFile  string   // --parameter-file
-	ServiceAccount string   // --serviceaccount
+	Name           string                 // --name
+	GenerateName   string                 // --generate-name
+	InstanceID     string                 // --instanceid
+	Entrypoint     string                 // --entrypoint
+	Parameters     []string               // --parameter
+	ParameterFile  string                 // --parameter-file
+	ServiceAccount string                 // --serviceaccount
+	OwnerReference *metav1.OwnerReference // useful if your custom controller creates argo workflow resources
 }
 
 // SubmitWorkflow validates and submit a single workflow and override some of the fields of the workflow
@@ -240,7 +236,11 @@ func SubmitWorkflow(wfIf v1alpha1.WorkflowInterface, wf *wfv1.Workflow, opts *Su
 	if opts.Name != "" {
 		wf.ObjectMeta.Name = opts.Name
 	}
-	err := validate.ValidateWorkflow(wf)
+	if opts.OwnerReference != nil {
+		wf.SetOwnerReferences(append(wf.GetOwnerReferences(), *opts.OwnerReference))
+	}
+
+	err := validate.ValidateWorkflow(wf, validate.ValidateOpts{})
 	if err != nil {
 		return nil, err
 	}
@@ -258,8 +258,7 @@ func SuspendWorkflow(wfIf v1alpha1.WorkflowInterface, workflowName string) error
 			return false, errSuspendedCompletedWorkflow
 		}
 		if wf.Spec.Suspend == nil || *wf.Spec.Suspend != true {
-			t := true
-			wf.Spec.Suspend = &t
+			wf.Spec.Suspend = pointer.BoolPtr(true)
 			wf, err = wfIf.Update(wf)
 			if err != nil {
 				if apierr.IsConflict(err) {
@@ -526,4 +525,20 @@ func TerminateWorkflow(wfClient v1alpha1.WorkflowInterface, name string) error {
 		time.Sleep(100 * time.Millisecond)
 	}
 	return err
+}
+
+// DecompressWorkflow decompresses the compressed status of a workflow (if compressed)
+func DecompressWorkflow(wf *wfv1.Workflow) error {
+	if wf.Status.CompressedNodes != "" {
+		nodeContent, err := file.DecodeDecompressString(wf.Status.CompressedNodes)
+		if err != nil {
+			return errors.InternalWrapError(err)
+		}
+		err = json.Unmarshal([]byte(nodeContent), &wf.Status.Nodes)
+		if err != nil {
+			return err
+		}
+		wf.Status.CompressedNodes = ""
+	}
+	return nil
 }
