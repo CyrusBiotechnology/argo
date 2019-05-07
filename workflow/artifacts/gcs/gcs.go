@@ -10,7 +10,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 	"io"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"os"
+	"time"
 )
 
 type GCSArtifactDriver struct {
@@ -71,7 +73,8 @@ func (gcsDriver *GCSArtifactDriver) saveToFile(inputArtifact *wfv1.Artifact, fil
 	if err != nil {
 		return err
 	}
-	return nil
+
+	return err
 }
 
 func (gcsDriver *GCSArtifactDriver) saveToGCS(outputArtifact *wfv1.Artifact, filePath string) error {
@@ -113,18 +116,38 @@ func (gcsDriver *GCSArtifactDriver) saveToGCS(outputArtifact *wfv1.Artifact, fil
 	if err != nil {
 		return err
 	}
-	return nil
+
+	return err
 
 }
 
 func (gcsDriver *GCSArtifactDriver) Load(inputArtifact *wfv1.Artifact, path string) error {
+	err := wait.ExponentialBackoff(wait.Backoff{Duration: time.Second * 2, Factor: 2.0, Steps: 5, Jitter: 0.1},
+		func() (done bool, LoadErr error) {
+			LoadErr = gcsDriver.saveToFile(inputArtifact, path)
 
-	err := gcsDriver.saveToFile(inputArtifact, path)
+			if LoadErr != nil {
+				done = true
+			} else {
+				done = false
+			}
+			return
+		})
+
 	return err
 }
 
 func (gcsDriver *GCSArtifactDriver) Save(path string, outputArtifact *wfv1.Artifact) error {
+	err := wait.ExponentialBackoff(wait.Backoff{Duration: time.Second * 2, Factor: 2.0, Steps: 5, Jitter: 0.1},
+		func() (done bool, SaveErr error) {
+			SaveErr = gcsDriver.saveToGCS(outputArtifact, path)
 
-	err := gcsDriver.saveToGCS(outputArtifact, path)
+			if SaveErr != nil {
+				done = true
+			} else {
+				done = false
+			}
+			return
+		})
 	return err
 }
