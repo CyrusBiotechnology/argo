@@ -10,7 +10,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 	"io"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"os"
+	"time"
 )
 
 type GCSArtifactDriver struct {
@@ -31,89 +33,100 @@ func (gcsDriver *GCSArtifactDriver) newGcsClient() (client *storage.Client, err 
 
 func (gcsDriver *GCSArtifactDriver) saveToFile(inputArtifact *wfv1.Artifact, filePath string) error {
 
-	log.Infof("Loading from GCS (gs://%s/%s) to %s",
-		inputArtifact.GCS.Bucket, inputArtifact.GCS.Key, filePath)
+	err := wait.ExponentialBackoff(wait.Backoff{Duration: time.Second * 2, Factor: 2.0, Steps: 5, Jitter: 0.1},
+		func() (bool, error) {
+			log.Infof("Loading from GCS (gs://%s/%s) to %s",
+				inputArtifact.GCS.Bucket, inputArtifact.GCS.Key, filePath)
 
-	stat, err := os.Stat(filePath)
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
+			stat, err := os.Stat(filePath)
+			if err != nil && !os.IsNotExist(err) {
+				return false, err
+			}
 
-	if stat != nil && stat.IsDir() {
-		return errors.New("output artifact path is a directory")
-	}
+			if stat != nil && stat.IsDir() {
+				return false, errors.New("output artifact path is a directory")
+			}
 
-	outputFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
-	if err != nil {
-		return err
-	}
+			outputFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+			if err != nil {
+				return false, err
+			}
 
-	gcsClient, err := gcsDriver.newGcsClient()
-	if err != nil {
-		return err
-	}
+			gcsClient, err := gcsDriver.newGcsClient()
+			if err != nil {
+				return false, err
+			}
 
-	bucket := gcsClient.Bucket(inputArtifact.GCS.Bucket)
-	object := bucket.Object(inputArtifact.GCS.Key)
+			bucket := gcsClient.Bucket(inputArtifact.GCS.Bucket)
+			object := bucket.Object(inputArtifact.GCS.Key)
 
-	r, err := object.NewReader(gcsDriver.Context)
-	if err != nil {
-		return err
-	}
-	defer util.Close(r)
+			r, err := object.NewReader(gcsDriver.Context)
+			if err != nil {
+				return false, err
+			}
+			defer util.Close(r)
 
-	_, err = io.Copy(outputFile, r)
-	if err != nil {
-		return err
-	}
+			_, err = io.Copy(outputFile, r)
+			if err != nil {
+				return false, err
+			}
 
-	err = outputFile.Close()
-	if err != nil {
-		return err
-	}
-	return nil
+			err = outputFile.Close()
+			if err != nil {
+				return false, err
+			}
+
+			return true, nil
+		})
+
+	return err
 }
 
 func (gcsDriver *GCSArtifactDriver) saveToGCS(outputArtifact *wfv1.Artifact, filePath string) error {
 
-	log.Infof("Saving to GCS (gs://%s/%s)",
-		outputArtifact.GCS.Bucket, outputArtifact.GCS.Key)
+	err := wait.ExponentialBackoff(wait.Backoff{Duration: time.Second * 2, Factor: 2.0, Steps: 5, Jitter: 0.1},
+		func() (bool, error) {
+			log.Infof("Saving to GCS (gs://%s/%s)",
+				outputArtifact.GCS.Bucket, outputArtifact.GCS.Key)
 
-	gcsClient, err := gcsDriver.newGcsClient()
-	if err != nil {
-		return err
-	}
+			gcsClient, err := gcsDriver.newGcsClient()
+			if err != nil {
+				return false, err
+			}
 
-	inputFile, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
+			inputFile, err := os.Open(filePath)
+			if err != nil {
+				return false, err
+			}
 
-	stat, err := os.Stat(filePath)
-	if err != nil {
-		return err
-	}
+			stat, err := os.Stat(filePath)
+			if err != nil {
+				return false, err
+			}
 
-	if stat.IsDir() {
-		return errors.New("only single files can be saved to GCS, not entire directories")
-	}
+			if stat.IsDir() {
+				return false, errors.New("only single files can be saved to GCS, not entire directories")
+			}
 
-	defer util.Close(inputFile)
+			defer util.Close(inputFile)
 
-	bucket := gcsClient.Bucket(outputArtifact.GCS.Bucket)
-	object := bucket.Object(outputArtifact.GCS.Key)
+			bucket := gcsClient.Bucket(outputArtifact.GCS.Bucket)
+			object := bucket.Object(outputArtifact.GCS.Key)
 
-	w := object.NewWriter(gcsDriver.Context)
-	_, err = io.Copy(w, inputFile)
-	if err != nil {
-		return err
-	}
+			w := object.NewWriter(gcsDriver.Context)
+			_, err = io.Copy(w, inputFile)
+			if err != nil {
+				return false, err
+			}
 
-	err = w.Close()
-	if err != nil {
-		return err
-	}
-	return nil
+			err = w.Close()
+			if err != nil {
+				return false, err
+			}
+			return true, nil
+		})
+
+	return err
 
 }
 
