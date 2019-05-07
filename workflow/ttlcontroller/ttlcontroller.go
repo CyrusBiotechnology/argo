@@ -17,10 +17,10 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	wfclientset "github.com/argoproj/argo/pkg/client/clientset/versioned"
-	"github.com/argoproj/argo/workflow/common"
-	"github.com/argoproj/argo/workflow/util"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	wfclientset "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned"
+	"github.com/cyrusbiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/workflow/util"
 )
 
 const (
@@ -130,7 +130,12 @@ func (c *Controller) processNextWorkItem() bool {
 
 // enqueueWF conditionally queues a workflow to the ttl queue if it is within the deletion period
 func (c *Controller) enqueueWF(obj interface{}) {
-	wf, err := util.FromUnstructured(obj.(*unstructured.Unstructured))
+	un, ok := obj.(*unstructured.Unstructured)
+	if !ok {
+		log.Warnf("'%v' is not an unstructured", obj)
+		return
+	}
+	wf, err := util.FromUnstructured(un)
 	if err != nil {
 		log.Warnf("Failed to unmarshal workflow %v object: %v", obj, err)
 		return

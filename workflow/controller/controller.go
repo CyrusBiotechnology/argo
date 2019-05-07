@@ -22,12 +22,12 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
-	"github.com/argoproj/argo"
-	wfclientset "github.com/argoproj/argo/pkg/client/clientset/versioned"
-	"github.com/argoproj/argo/workflow/common"
-	"github.com/argoproj/argo/workflow/metrics"
-	"github.com/argoproj/argo/workflow/ttlcontroller"
-	"github.com/argoproj/argo/workflow/util"
+	"github.com/cyrusbiotechnology/argo"
+	wfclientset "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned"
+	"github.com/cyrusbiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/workflow/metrics"
+	"github.com/cyrusbiotechnology/argo/workflow/ttlcontroller"
+	"github.com/cyrusbiotechnology/argo/workflow/util"
 )
 
 // WorkflowController is the controller for workflow resources
@@ -36,6 +36,8 @@ type WorkflowController struct {
 	namespace string
 	// configMap is the name of the config map in which to derive configuration of the controller from
 	configMap string
+	// configFile is the path to a configuration file
+	configFile string
 	// Config is the workflow controller's configuration
 	Config WorkflowControllerConfig
 
@@ -74,12 +76,15 @@ func NewWorkflowController(
 	executorImage,
 	executorImagePullPolicy,
 	configMap string,
+	configFile string,
 ) *WorkflowController {
+
 	wfc := WorkflowController{
 		restConfig:                 restConfig,
 		kubeclientset:              kubeclientset,
 		wfclientset:                wfclientset,
 		configMap:                  configMap,
+		configFile:                 configFile,
 		namespace:                  namespace,
 		cliExecutorImage:           executorImage,
 		cliExecutorImagePullPolicy: executorImagePullPolicy,
@@ -130,11 +135,16 @@ func (wfc *WorkflowController) Run(ctx context.Context, wfWorkers, podWorkers in
 
 	log.Infof("Workflow Controller (version: %s) starting", argo.GetVersion())
 	log.Infof("Workers: workflow: %d, pod: %d", wfWorkers, podWorkers)
-	log.Info("Watch Workflow controller config map updates")
-	_, err := wfc.watchControllerConfigMap(ctx)
-	if err != nil {
-		log.Errorf("Failed to register watch for controller config map: %v", err)
-		return
+
+	if wfc.configFile != "" {
+		log.Info("A config file was specified. Ignoring the k8s configmap resource")
+	} else {
+		log.Info("Watch Workflow controller config map updates")
+		_, err := wfc.watchControllerConfigMap(ctx)
+		if err != nil {
+			log.Errorf("Failed to register watch for controller config map: %v", err)
+			return
+		}
 	}
 
 	wfc.wfInformer = util.NewWorkflowInformer(wfc.restConfig, wfc.Config.Namespace, workflowResyncPeriod, wfc.tweakWorkflowlist)
@@ -243,6 +253,16 @@ func (wfc *WorkflowController) processNextItem() bool {
 	}
 
 	woc := newWorkflowOperationCtx(wf, wfc)
+
+	// Decompress the node if it is compressed
+	err = util.DecompressWorkflow(woc.wf)
+	if err != nil {
+		woc.log.Warnf("workflow decompression failed: %v", err)
+		woc.markWorkflowFailed(fmt.Sprintf("workflow decompression failed: %s", err.Error()))
+		woc.persistUpdates()
+		wfc.throttler.Remove(key)
+		return true
+	}
 	woc.operate()
 	if woc.wf.Status.Completed() {
 		wfc.throttler.Remove(key)

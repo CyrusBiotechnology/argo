@@ -9,11 +9,11 @@ import (
 	"text/tabwriter"
 
 	"github.com/argoproj/pkg/humanize"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/workflow/util"
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 )
 
 const onExitSuffix = "onExit"
@@ -33,6 +33,10 @@ func NewGetCommand() *cobra.Command {
 			}
 			wfClient := InitWorkflowClient()
 			wf, err := wfClient.Get(args[0], metav1.GetOptions{})
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = util.DecompressWorkflow(wf)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -71,7 +75,7 @@ func printWorkflowHelper(wf *wfv1.Workflow, outFmt string) {
 		serviceAccount = "default"
 	}
 	fmt.Printf(fmtStr, "ServiceAccount:", serviceAccount)
-	fmt.Printf(fmtStr, "Status:", worklowStatus(wf))
+	fmt.Printf(fmtStr, "Status:", workflowStatus(wf))
 	if wf.Status.Message != "" {
 		fmt.Printf(fmtStr, "Message:", wf.Status.Message)
 	}
@@ -114,6 +118,28 @@ func printWorkflowHelper(wf *wfv1.Workflow, outFmt string) {
 			}
 		}
 	}
+
+	errorWriter := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+
+	if wf.Status.Errors != nil || wf.Status.Warnings != nil {
+
+		fmt.Printf("\nErrors and Warnings:\n")
+		fmt.Fprintf(errorWriter, "%s\tPODNAME\tCODE\tMESSAGE\n", ansiFormat("STEP", FgDefault))
+	}
+
+	if wf.Status.Errors != nil {
+		for _, errorResult := range wf.Status.Errors {
+			fmt.Fprintf(errorWriter, "%s %s\t%s\t%s\t%s\n", RedError, errorResult.StepName, errorResult.PodName, errorResult.Name, errorResult.Message)
+		}
+	}
+
+	if wf.Status.Warnings != nil {
+		for _, warningResult := range wf.Status.Warnings {
+			fmt.Fprintf(errorWriter, "%s %s\t%s\t%s\t%s\n", YellowWarning, warningResult.StepName, warningResult.PodName, warningResult.Name, warningResult.Message)
+		}
+	}
+	_ = errorWriter.Flush()
+
 	printTree := true
 	if wf.Status.Nodes == nil {
 		printTree = false

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/cyrusbiotechnology/argo/workflow/executor"
 	"time"
 
 	"github.com/argoproj/pkg/stats"
@@ -8,19 +9,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	RootCmd.AddCommand(waitCmd)
-}
-
-var waitCmd = &cobra.Command{
-	Use:   "wait",
-	Short: "wait for main container to finish and save artifacts",
-	Run: func(cmd *cobra.Command, args []string) {
-		err := waitContainer()
-		if err != nil {
-			log.Fatalf("%+v", err)
-		}
-	},
+func NewWaitCommand() *cobra.Command {
+	var command = cobra.Command{
+		Use:   "wait",
+		Short: "wait for main container to finish and save artifacts",
+		Run: func(cmd *cobra.Command, args []string) {
+			err := waitContainer()
+			if err != nil {
+				log.Fatalf("%+v", err)
+			}
+		},
+	}
+	return &command
 }
 
 func waitContainer() error {
@@ -29,24 +29,30 @@ func waitContainer() error {
 	defer stats.LogStats()
 	stats.StartStatsTicker(5 * time.Minute)
 
-	// Wait for main container to complete and kill sidecars
+	// Wait for main container to complete
 	err := wfExecutor.Wait()
 	if err != nil {
 		wfExecutor.AddError(err)
-		// do not return here so we can still try to save outputs
+		// do not return here so we can still try to kill sidecars & save outputs
+	}
+	err = wfExecutor.KillSidecars()
+	if err != nil {
+		wfExecutor.AddError(err)
+		// do not return here so we can still try save outputs
 	}
 	logArt, err := wfExecutor.SaveLogs()
 	if err != nil {
 		wfExecutor.AddError(err)
 		return err
 	}
-	err = wfExecutor.SaveArtifacts()
+	// Saving output parameters
+	err = wfExecutor.SaveParameters()
 	if err != nil {
 		wfExecutor.AddError(err)
 		return err
 	}
-	// Saving output parameters
-	err = wfExecutor.SaveParameters()
+	// Saving output artifacts
+	err = wfExecutor.SaveArtifacts()
 	if err != nil {
 		wfExecutor.AddError(err)
 		return err
@@ -62,5 +68,18 @@ func waitContainer() error {
 		wfExecutor.AddError(err)
 		return err
 	}
+
+	err = wfExecutor.EvaluateConditions(executor.ConditionTypeError)
+	if err != nil {
+		wfExecutor.AddError(err)
+		return err
+	}
+
+	err = wfExecutor.EvaluateConditions(executor.ConditionTypeWarning)
+	if err != nil {
+		wfExecutor.AddError(err)
+		return err
+	}
+
 	return nil
 }

@@ -17,10 +17,10 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
-	"github.com/argoproj/argo/workflow/common"
-	"github.com/argoproj/argo/workflow/util"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/workflow/util"
 )
 
 type listFlags struct {
@@ -119,7 +119,11 @@ func printTable(wfList []wfv1.Workflow, listArgs *listFlags) {
 		if listArgs.allNamespaces {
 			fmt.Fprintf(w, "%s\t", wf.ObjectMeta.Namespace)
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d", wf.ObjectMeta.Name, worklowStatus(&wf), ageStr, durationStr, wf.Spec.Priority)
+		var priority int
+		if wf.Spec.Priority != nil {
+			priority = int(*wf.Spec.Priority)
+		}
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d", wf.ObjectMeta.Name, workflowStatus(&wf), ageStr, durationStr, priority)
 		if listArgs.output == "wide" {
 			pending, running, completed := countPendingRunningCompleted(&wf)
 			fmt.Fprintf(w, "\t%d/%d/%d", pending, running, completed)
@@ -134,6 +138,10 @@ func countPendingRunningCompleted(wf *wfv1.Workflow) (int, int, int) {
 	pending := 0
 	running := 0
 	completed := 0
+	err := util.DecompressWorkflow(wf)
+	if err != nil {
+		log.Fatal(err)
+	}
 	for _, node := range wf.Status.Nodes {
 		tmpl := wf.GetTemplate(node.TemplateName)
 		if tmpl == nil || !tmpl.IsPodType() {
@@ -196,7 +204,7 @@ func (f ByFinishedAt) Less(i, j int) bool {
 }
 
 // workflowStatus returns a human readable inferred workflow status based on workflow phase and conditions
-func worklowStatus(wf *wfv1.Workflow) wfv1.NodePhase {
+func workflowStatus(wf *wfv1.Workflow) wfv1.NodePhase {
 	switch wf.Status.Phase {
 	case wfv1.NodeRunning:
 		if util.IsWorkflowSuspended(wf) {

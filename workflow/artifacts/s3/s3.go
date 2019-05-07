@@ -1,13 +1,14 @@
 package s3
 
 import (
+	"time"
+
+	log "github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/util/wait"
+
 	"github.com/argoproj/pkg/file"
 	argos3 "github.com/argoproj/pkg/s3"
-	log "github.com/sirupsen/logrus"
-
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"time"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 )
 
 // S3ArtifactDriver is a driver for AWS S3
@@ -33,9 +34,9 @@ func (s3Driver *S3ArtifactDriver) newS3Client() (argos3.S3Client, error) {
 
 // Load downloads artifacts from S3 compliant storage
 func (s3Driver *S3ArtifactDriver) Load(inputArtifact *wfv1.Artifact, path string) error {
-	err := wait.ExponentialBackoff(wait.Backoff{Duration: time.Millisecond * 10, Factor: 2.0, Steps: 5, Jitter: 0.1},
+	err := wait.ExponentialBackoff(wait.Backoff{Duration: time.Second * 2, Factor: 2.0, Steps: 5, Jitter: 0.1},
 		func() (bool, error) {
-
+			log.Infof("S3 Load path: %s, key: %s", path, inputArtifact.S3.Key)
 			s3cli, err := s3Driver.newS3Client()
 			if err != nil {
 				log.Warnf("Failed to create new S3 client: %v", err)
@@ -46,7 +47,8 @@ func (s3Driver *S3ArtifactDriver) Load(inputArtifact *wfv1.Artifact, path string
 				return true, nil
 			}
 			if !argos3.IsS3ErrCode(origErr, "NoSuchKey") {
-				return false, origErr
+				log.Warnf("Failed get file: %v", origErr)
+				return false, nil
 			}
 			// If we get here, the error was a NoSuchKey. The key might be a s3 "directory"
 			isDir, err := s3cli.IsDirectory(inputArtifact.S3.Bucket, inputArtifact.S3.Key)
@@ -60,6 +62,7 @@ func (s3Driver *S3ArtifactDriver) Load(inputArtifact *wfv1.Artifact, path string
 			}
 
 			if err = s3cli.GetDirectory(inputArtifact.S3.Bucket, inputArtifact.S3.Key, path); err != nil {
+				log.Warnf("Failed get directory: %v", err)
 				return false, nil
 			}
 			return true, nil
@@ -70,8 +73,9 @@ func (s3Driver *S3ArtifactDriver) Load(inputArtifact *wfv1.Artifact, path string
 
 // Save saves an artifact to S3 compliant storage
 func (s3Driver *S3ArtifactDriver) Save(path string, outputArtifact *wfv1.Artifact) error {
-	err := wait.ExponentialBackoff(wait.Backoff{Duration: time.Millisecond * 10, Factor: 2.0, Steps: 5, Jitter: 0.1},
+	err := wait.ExponentialBackoff(wait.Backoff{Duration: time.Second * 2, Factor: 2.0, Steps: 5, Jitter: 0.1},
 		func() (bool, error) {
+			log.Infof("S3 Save path: %s, key: %s", path, outputArtifact.S3.Key)
 			s3cli, err := s3Driver.newS3Client()
 			if err != nil {
 				log.Warnf("Failed to create new S3 client: %v", err)
@@ -84,11 +88,14 @@ func (s3Driver *S3ArtifactDriver) Save(path string, outputArtifact *wfv1.Artifac
 			}
 			if isDir {
 				if err = s3cli.PutDirectory(outputArtifact.S3.Bucket, outputArtifact.S3.Key, path); err != nil {
+					log.Warnf("Failed to put directory: %v", err)
 					return false, nil
 				}
-			}
-			if err = s3cli.PutFile(outputArtifact.S3.Bucket, outputArtifact.S3.Key, path); err != nil {
-				return false, nil
+			} else {
+				if err = s3cli.PutFile(outputArtifact.S3.Bucket, outputArtifact.S3.Key, path); err != nil {
+					log.Warnf("Failed to put file: %v", err)
+					return false, nil
+				}
 			}
 			return true, nil
 		})

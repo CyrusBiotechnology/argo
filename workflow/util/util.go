@@ -26,23 +26,25 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/utils/pointer"
 
-	"github.com/argoproj/argo/errors"
-	"github.com/argoproj/argo/pkg/apis/workflow"
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/argoproj/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
-	cmdutil "github.com/argoproj/argo/util/cmd"
-	"github.com/argoproj/argo/util/retry"
-	unstructutil "github.com/argoproj/argo/util/unstructured"
-	"github.com/argoproj/argo/workflow/common"
-	"github.com/argoproj/argo/workflow/validate"
+	"github.com/cyrusbiotechnology/argo/errors"
+	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
+	cmdutil "github.com/cyrusbiotechnology/argo/util/cmd"
+	"github.com/cyrusbiotechnology/argo/util/file"
+	"github.com/cyrusbiotechnology/argo/util/retry"
+	unstructutil "github.com/cyrusbiotechnology/argo/util/unstructured"
+	"github.com/cyrusbiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/workflow/validate"
 )
 
 // NewWorkflowInformer returns the workflow informer used by the controller. This is actually
 // a custom built UnstructuredInformer which is in actuality returning unstructured.Unstructured
 // objects. We no longer return WorkflowInformer due to:
 // https://github.com/kubernetes/kubernetes/issues/57705
-// https://github.com/argoproj/argo/issues/632
+// https://github.com/cyrusbiotechnology/argo/issues/632
 func NewWorkflowInformer(cfg *rest.Config, ns string, resyncPeriod time.Duration, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	dclient, err := dynamic.NewForConfig(cfg)
 	if err != nil {
@@ -132,13 +134,14 @@ func IsWorkflowCompleted(wf *wfv1.Workflow) bool {
 
 // SubmitOpts are workflow submission options
 type SubmitOpts struct {
-	Name           string   // --name
-	GenerateName   string   // --generate-name
-	InstanceID     string   // --instanceid
-	Entrypoint     string   // --entrypoint
-	Parameters     []string // --parameter
-	ParameterFile  string   // --parameter-file
-	ServiceAccount string   // --serviceaccount
+	Name           string                 // --name
+	GenerateName   string                 // --generate-name
+	InstanceID     string                 // --instanceid
+	Entrypoint     string                 // --entrypoint
+	Parameters     []string               // --parameter
+	ParameterFile  string                 // --parameter-file
+	ServiceAccount string                 // --serviceaccount
+	OwnerReference *metav1.OwnerReference // useful if your custom controller creates argo workflow resources
 }
 
 // SubmitWorkflow validates and submit a single workflow and override some of the fields of the workflow
@@ -233,7 +236,11 @@ func SubmitWorkflow(wfIf v1alpha1.WorkflowInterface, wf *wfv1.Workflow, opts *Su
 	if opts.Name != "" {
 		wf.ObjectMeta.Name = opts.Name
 	}
-	err := validate.ValidateWorkflow(wf)
+	if opts.OwnerReference != nil {
+		wf.SetOwnerReferences(append(wf.GetOwnerReferences(), *opts.OwnerReference))
+	}
+
+	err := validate.ValidateWorkflow(wf, validate.ValidateOpts{})
 	if err != nil {
 		return nil, err
 	}
@@ -251,8 +258,7 @@ func SuspendWorkflow(wfIf v1alpha1.WorkflowInterface, workflowName string) error
 			return false, errSuspendedCompletedWorkflow
 		}
 		if wf.Spec.Suspend == nil || *wf.Spec.Suspend != true {
-			t := true
-			wf.Spec.Suspend = &t
+			wf.Spec.Suspend = pointer.BoolPtr(true)
 			wf, err = wfIf.Update(wf)
 			if err != nil {
 				if apierr.IsConflict(err) {
@@ -519,4 +525,20 @@ func TerminateWorkflow(wfClient v1alpha1.WorkflowInterface, name string) error {
 		time.Sleep(100 * time.Millisecond)
 	}
 	return err
+}
+
+// DecompressWorkflow decompresses the compressed status of a workflow (if compressed)
+func DecompressWorkflow(wf *wfv1.Workflow) error {
+	if wf.Status.CompressedNodes != "" {
+		nodeContent, err := file.DecodeDecompressString(wf.Status.CompressedNodes)
+		if err != nil {
+			return errors.InternalWrapError(err)
+		}
+		err = json.Unmarshal([]byte(nodeContent), &wf.Status.Nodes)
+		if err != nil {
+			return err
+		}
+		wf.Status.CompressedNodes = ""
+	}
+	return nil
 }

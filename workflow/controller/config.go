@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,10 +12,10 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/argoproj/argo/errors"
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/argoproj/argo/workflow/common"
-	"github.com/argoproj/argo/workflow/metrics"
+	"github.com/cyrusbiotechnology/argo/errors"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/workflow/metrics"
 	"github.com/ghodss/yaml"
 	log "github.com/sirupsen/logrus"
 )
@@ -22,13 +23,22 @@ import (
 // WorkflowControllerConfig contain the configuration settings for the workflow controller
 type WorkflowControllerConfig struct {
 	// ExecutorImage is the image name of the executor to use when running pods
+	// DEPRECATED: use --executor-image flag to workflow-controller instead
 	ExecutorImage string `json:"executorImage,omitempty"`
 
 	// ExecutorImagePullPolicy is the imagePullPolicy of the executor to use when running pods
+	// DEPRECATED: use `executor.imagePullPolicy` in configmap instead
 	ExecutorImagePullPolicy string `json:"executorImagePullPolicy,omitempty"`
 
+	// Executor holds container customizations for the executor to use when running pods
+	Executor *apiv1.Container `json:"executor,omitempty"`
+
 	// ExecutorResources specifies the resource requirements that will be used for the executor sidecar
+	// DEPRECATED: use `executor.resources` in configmap instead
 	ExecutorResources *apiv1.ResourceRequirements `json:"executorResources,omitempty"`
+
+	// KubeConfig specifies a kube config file for the wait & init containers
+	KubeConfig *KubeConfig `json:"kubeConfig,omitempty"`
 
 	// ContainerRuntimeExecutor specifies the container runtime interface to use, default is docker
 	ContainerRuntimeExecutor string `json:"containerRuntimeExecutor,omitempty"`
@@ -62,6 +72,21 @@ type WorkflowControllerConfig struct {
 	Parallelism int `json:"parallelism,omitempty"`
 }
 
+// KubeConfig is used for wait & init sidecar containers to communicate with a k8s apiserver by a outofcluster method,
+// it is used when the workflow controller is in a different cluster with the workflow workloads
+type KubeConfig struct {
+	// SecretName of the kubeconfig secret
+	// may not be empty if kuebConfig specified
+	SecretName string `json:"secretName"`
+	// SecretKey of the kubeconfig in the secret
+	// may not be empty if kubeConfig specified
+	SecretKey string `json:"secretKey"`
+	// VolumeName of kubeconfig, default to 'kubeconfig'
+	VolumeName string `json:"volumeName,omitempty"`
+	// MountPath of the kubeconfig secret, default to '/kube/config'
+	MountPath string `json:"mountPath,omitempty"`
+}
+
 // ArtifactRepository represents a artifact repository in which a controller will store its artifacts
 type ArtifactRepository struct {
 	// ArchiveLogs enables log archiving
@@ -70,6 +95,9 @@ type ArtifactRepository struct {
 	S3 *S3ArtifactRepository `json:"s3,omitempty"`
 	// Artifactory stores artifacts to JFrog Artifactory
 	Artifactory *ArtifactoryArtifactRepository `json:"artifactory,omitempty"`
+	// HDFS stores artifacts in HDFS
+	HDFS *HDFSArtifactRepository `json:"hdfs,omitempty"`
+	GCS  *GCSArtifactRepository  `json:"gcs,omitempty"`
 }
 
 // S3ArtifactRepository defines the controller configuration for an S3 artifact repository
@@ -91,28 +119,66 @@ type ArtifactoryArtifactRepository struct {
 	RepoURL string `json:"repoURL,omitempty"`
 }
 
-// ResyncConfig reloads the controller config from the configmap
-func (wfc *WorkflowController) ResyncConfig() error {
-	cmClient := wfc.kubeclientset.CoreV1().ConfigMaps(wfc.namespace)
-	cm, err := cmClient.Get(wfc.configMap, metav1.GetOptions{})
-	if err != nil {
-		return errors.InternalWrapError(err)
-	}
-	return wfc.updateConfig(cm)
+// HDFSArtifactRepository defines the controller configuration for an HDFS artifact repository
+type HDFSArtifactRepository struct {
+	wfv1.HDFSConfig `json:",inline"`
+
+	// PathFormat is defines the format of path to store a file. Can reference workflow variables
+	PathFormat string `json:"pathFormat,omitempty"`
+
+	// Force copies a file forcibly even if it exists (default: false)
+	Force bool `json:"force,omitempty"`
 }
 
-func (wfc *WorkflowController) updateConfig(cm *apiv1.ConfigMap) error {
-	configStr, ok := cm.Data[common.WorkflowControllerConfigMapKey]
+// GCSArtifactRepository defines the controller configuration for a GCS artifact repository
+type GCSArtifactRepository struct {
+	wfv1.GCSBucket `json:",inline"`
+}
+
+// ResyncConfig reloads the controller config from the configmap or configFile
+func (wfc *WorkflowController) ResyncConfig() error {
+
+	if wfc.configFile != "" {
+		log.Infof("Loading configfile from %s", wfc.configFile)
+		return wfc.updateConfigFromFile(wfc.configFile)
+	} else {
+		cmClient := wfc.kubeclientset.CoreV1().ConfigMaps(wfc.namespace)
+		cm, err := cmClient.Get(wfc.configMap, metav1.GetOptions{})
+		if err != nil {
+			return errors.InternalWrapError(err)
+		}
+		return wfc.updateConfigFromConfigMap(cm)
+	}
+}
+
+func (wfc *WorkflowController) updateConfigFromConfigMap(cm *apiv1.ConfigMap) error {
+	configString, ok := cm.Data[common.WorkflowControllerConfigMapKey]
 	if !ok {
 		log.Warnf("ConfigMap '%s' does not have key '%s'", wfc.configMap, common.WorkflowControllerConfigMapKey)
 		return nil
 	}
+
+	return wfc.updateConfig(configString)
+}
+
+func (wfc *WorkflowController) updateConfigFromFile(filePath string) error {
+	fileData, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		log.Errorf("Error reading config file %s", filePath)
+		return err
+	}
+	return wfc.updateConfig(string(fileData))
+
+}
+
+func (wfc *WorkflowController) updateConfig(configString string) error {
+
 	var config WorkflowControllerConfig
-	err := yaml.Unmarshal([]byte(configStr), &config)
+	err := yaml.Unmarshal([]byte(configString), &config)
 	if err != nil {
 		return errors.InternalWrapError(err)
 	}
-	log.Printf("workflow controller configuration from %s:\n%s", wfc.configMap, configStr)
+	log.Printf("workflow controller configuration from %s:\n%s", wfc.configMap, configString)
 	if wfc.cliExecutorImage == "" && config.ExecutorImage == "" {
 		return errors.Errorf(errors.CodeBadRequest, "ConfigMap '%s' does not have executorImage", wfc.configMap)
 	}
@@ -131,13 +197,13 @@ func (wfc *WorkflowController) executorImage() string {
 
 // executorImagePullPolicy returns the imagePullPolicy to use for the workflow executor
 func (wfc *WorkflowController) executorImagePullPolicy() apiv1.PullPolicy {
-	var policy string
 	if wfc.cliExecutorImagePullPolicy != "" {
-		policy = wfc.cliExecutorImagePullPolicy
+		return apiv1.PullPolicy(wfc.cliExecutorImagePullPolicy)
+	} else if wfc.Config.Executor != nil && wfc.Config.Executor.ImagePullPolicy != "" {
+		return wfc.Config.Executor.ImagePullPolicy
 	} else {
-		policy = wfc.Config.ExecutorImagePullPolicy
+		return apiv1.PullPolicy(wfc.Config.ExecutorImagePullPolicy)
 	}
-	return apiv1.PullPolicy(policy)
 }
 
 func (wfc *WorkflowController) watchControllerConfigMap(ctx context.Context) (cache.Controller, error) {
@@ -150,7 +216,7 @@ func (wfc *WorkflowController) watchControllerConfigMap(ctx context.Context) (ca
 			AddFunc: func(obj interface{}) {
 				if cm, ok := obj.(*apiv1.ConfigMap); ok {
 					log.Infof("Detected ConfigMap update. Updating the controller config.")
-					err := wfc.updateConfig(cm)
+					err := wfc.updateConfigFromConfigMap(cm)
 					if err != nil {
 						log.Errorf("Update of config failed due to: %v", err)
 					}
@@ -164,7 +230,7 @@ func (wfc *WorkflowController) watchControllerConfigMap(ctx context.Context) (ca
 				}
 				if newCm, ok := new.(*apiv1.ConfigMap); ok {
 					log.Infof("Detected ConfigMap update. Updating the controller config.")
-					err := wfc.updateConfig(newCm)
+					err := wfc.updateConfigFromConfigMap(newCm)
 					if err != nil {
 						log.Errorf("Update of config failed due to: %v", err)
 					}

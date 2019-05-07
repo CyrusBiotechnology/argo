@@ -17,14 +17,14 @@ brew install argoproj/tap/argo
 ```
 On Linux:
 ```
-curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/v2.2.1/argo-linux-amd64
+curl -sSL -o /usr/local/bin/argo https://github.com/cyrusbiotechnology/argo/releases/download/v2.2.1/argo-linux-amd64
 chmod +x /usr/local/bin/argo
 ```
 
 ## 2. Install the Controller and UI
 ```
 kubectl create ns argo
-kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/v2.2.1/manifests/install.yaml
+kubectl apply -n argo -f https://raw.githubusercontent.com/cyrusbiotechnology/argo/v2.2.1/manifests/install.yaml
 ```
 NOTE: On GKE, you may need to grant your account the ability to create new clusterroles
 ```
@@ -48,9 +48,9 @@ argo submit --serviceaccount <name>
 
 ## 4. Run Simple Example Workflows
 ```
-argo submit --watch https://raw.githubusercontent.com/argoproj/argo/master/examples/hello-world.yaml
-argo submit --watch https://raw.githubusercontent.com/argoproj/argo/master/examples/coinflip.yaml
-argo submit --watch https://raw.githubusercontent.com/argoproj/argo/master/examples/loops-maps.yaml
+argo submit --watch https://raw.githubusercontent.com/cyrusbiotechnology/argo/master/examples/hello-world.yaml
+argo submit --watch https://raw.githubusercontent.com/cyrusbiotechnology/argo/master/examples/coinflip.yaml
+argo submit --watch https://raw.githubusercontent.com/cyrusbiotechnology/argo/master/examples/loops-maps.yaml
 argo list
 argo get xxx-workflow-name-xxx
 argo logs xxx-pod-name-xxx #from get command above
@@ -60,33 +60,36 @@ You can also create workflows directly with kubectl. However, the Argo CLI offer
 that kubectl does not, such as YAML validation, workflow visualization, parameter passing, retries
 and resubmits, suspend and resume, and more.
 ```
-kubectl create -f https://raw.githubusercontent.com/argoproj/argo/master/examples/hello-world.yaml
+kubectl create -f https://raw.githubusercontent.com/cyrusbiotechnology/argo/master/examples/hello-world.yaml
 kubectl get wf
 kubectl get wf hello-world-xxx
 kubectl get po --selector=workflows.argoproj.io/workflow=hello-world-xxx --show-all
 kubectl logs hello-world-yyy -c main
 ```
 
-Additional examples are available [here](https://github.com/argoproj/argo/blob/master/examples/README.md).
+Additional examples are available [here](https://github.com/cyrusbiotechnology/argo/blob/master/examples/README.md).
 
 ## 5. Install an Artifact Repository
 
 Argo supports S3 (AWS, GCS, Minio) as well as Artifactory as artifact repositories. This tutorial
 uses Minio for the sake of portability. Instructions on how to configure other artifact repositories
-are [here](https://github.com/argoproj/argo/blob/master/ARTIFACT_REPO.md).
+are [here](https://github.com/cyrusbiotechnology/argo/blob/master/ARTIFACT_REPO.md).
 ```
-brew install kubernetes-helm # mac
-helm init
-helm install stable/minio --name argo-artifacts --set service.type=LoadBalancer --set persistence.enabled=false
+helm install stable/minio \
+  --name argo-artifacts \
+  --set service.type=LoadBalancer \
+  --set defaultBucket.enabled=true \
+  --set defaultBucket.name=my-bucket \
+  --set persistence.enabled=false
 ```
 
 Login to the Minio UI using a web browser (port 9000) after exposing obtaining the external IP using `kubectl`.
 ```
-kubectl get service argo-artifacts-minio -o wide
+kubectl get service argo-artifacts -o wide
 ```
 On Minikube:
 ```
-minikube service --url argo-artifacts-minio
+minikube service --url argo-artifacts
 ```
 
 NOTE: When minio is installed via Helm, it uses the following hard-wired default credentials,
@@ -98,8 +101,8 @@ Create a bucket named `my-bucket` from the Minio UI.
 
 ## 6. Reconfigure the workflow controller to use the Minio artifact repository
 
-Edit the workflow-controller config map to reference the service name (argo-artifacts-minio) and
-secret (argo-artifacts-minio) created by the helm install:
+Edit the workflow-controller config map to reference the service name (argo-artifacts) and
+secret (argo-artifacts) created by the helm install:
 ```
 kubectl edit cm -n argo workflow-controller-configmap
 ...
@@ -108,18 +111,18 @@ data:
     artifactRepository:
       s3:
         bucket: my-bucket
-        endpoint: argo-artifacts-minio.default:9000
+        endpoint: argo-artifacts.default:9000
         insecure: true
         # accessKeySecret and secretKeySecret are secret selectors.
-        # It references the k8s secret named 'argo-artifacts-minio'
+        # It references the k8s secret named 'argo-artifacts'
         # which was created during the minio helm install. The keys,
         # 'accesskey' and 'secretkey', inside that secret are where the
         # actual minio credentials are stored.
         accessKeySecret:
-          name: argo-artifacts-minio
+          name: argo-artifacts
           key: accesskey
         secretKeySecret:
-          name: argo-artifacts-minio
+          name: argo-artifacts
           key: secretkey
 ```
 
@@ -129,7 +132,7 @@ namespace you use for workflows.
 
 ## 7. Run a workflow which uses artifacts
 ```
-argo submit https://raw.githubusercontent.com/argoproj/argo/master/examples/artifact-passing.yaml
+argo submit https://raw.githubusercontent.com/cyrusbiotechnology/argo/master/examples/artifact-passing.yaml
 ```
 
 ## 8. Access the Argo UI

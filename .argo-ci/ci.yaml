@@ -9,7 +9,7 @@ spec:
     - name: revision
       value: master
     - name: repo
-      value: https://github.com/argoproj/argo.git
+      value: https://github.com/cyrusbiotechnology/argo.git
 
   templates:
   - name: argo-ci
@@ -22,16 +22,13 @@ spec:
             value: "{{item}}"
         withItems:
         - make controller-image executor-image
-        - make cli-linux
-        - make cli-darwin
+        - make release-clis
       - name: test
         template: ci-builder
         arguments:
           parameters:
           - name: cmd
-            value: "{{item}}"
-        withItems:
-        - dep ensure && make lint test verify-codegen
+            value: dep ensure && make lint test verify-codegen
 
   - name: ci-builder
     inputs:
@@ -39,7 +36,7 @@ spec:
       - name: cmd
       artifacts:
       - name: code
-        path: /go/src/github.com/argoproj/argo
+        path: /go/src/github.com/cyrusbiotechnology/argo
         git:
           repo: "{{workflow.parameters.repo}}"
           revision: "{{workflow.parameters.revision}}"
@@ -47,7 +44,7 @@ spec:
       image: argoproj/argo-ci-builder:latest
       command: [sh, -c]
       args: ["{{inputs.parameters.cmd}}"]
-      workingDir: /go/src/github.com/argoproj/argo
+      workingDir: /go/src/github.com/cyrusbiotechnology/argo
 
   - name: ci-dind
     inputs:
@@ -55,7 +52,7 @@ spec:
       - name: cmd
       artifacts:
       - name: code
-        path: /go/src/github.com/argoproj/argo
+        path: /go/src/github.com/cyrusbiotechnology/argo
         git:
           repo: "{{workflow.parameters.repo}}"
           revision: "{{workflow.parameters.revision}}"
@@ -63,14 +60,15 @@ spec:
       image: argoproj/argo-ci-builder:latest
       command: [sh, -c]
       args: ["until docker ps; do sleep 3; done && {{inputs.parameters.cmd}}"]
-      workingDir: /go/src/github.com/argoproj/argo
+      workingDir: /go/src/github.com/cyrusbiotechnology/argo
       env:
       - name: DOCKER_HOST
         value: 127.0.0.1
+      - name: DOCKER_BUILDKIT
+        value: "1"
     sidecars:
     - name: dind
-      image: docker:17.10-dind
+      image: docker:18.09-dind
       securityContext:
         privileged: true
       mirrorVolumeMounts: true
-

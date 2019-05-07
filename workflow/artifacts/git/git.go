@@ -15,15 +15,16 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	ssh2 "gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 
-	"github.com/argoproj/argo/errors"
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/errors"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 )
 
 // GitArtifactDriver is the artifact driver for a git repo
 type GitArtifactDriver struct {
-	Username      string
-	Password      string
-	SSHPrivateKey string
+	Username              string
+	Password              string
+	SSHPrivateKey         string
+	InsecureIgnoreHostKey bool
 }
 
 // Load download artifacts from an git URL
@@ -34,7 +35,9 @@ func (g *GitArtifactDriver) Load(inputArtifact *wfv1.Artifact, path string) erro
 			return errors.InternalWrapError(err)
 		}
 		auth := &ssh2.PublicKeys{User: "git", Signer: signer}
-		auth.HostKeyCallback = ssh.InsecureIgnoreHostKey()
+		if g.InsecureIgnoreHostKey {
+			auth.HostKeyCallback = ssh.InsecureIgnoreHostKey()
+		}
 		return gitClone(path, inputArtifact, auth, g.SSHPrivateKey)
 	}
 	if g.Username != "" || g.Password != "" {
@@ -49,7 +52,7 @@ func (g *GitArtifactDriver) Save(path string, outputArtifact *wfv1.Artifact) err
 	return errors.Errorf(errors.CodeBadRequest, "Git output artifacts unsupported")
 }
 
-func writePrivateKey(key string) error {
+func writePrivateKey(key string, insecureIgnoreHostKey bool) error {
 	usr, err := user.Current()
 	if err != nil {
 		return errors.InternalWrapError(err)
@@ -60,12 +63,14 @@ func writePrivateKey(key string) error {
 		return errors.InternalWrapError(err)
 	}
 
-	sshConfig := `Host *
+	if insecureIgnoreHostKey {
+		sshConfig := `Host *
 	StrictHostKeyChecking no
 	UserKnownHostsFile /dev/null`
-	err = ioutil.WriteFile(fmt.Sprintf("%s/config", sshDir), []byte(sshConfig), 0644)
-	if err != nil {
-		return errors.InternalWrapError(err)
+		err = ioutil.WriteFile(fmt.Sprintf("%s/config", sshDir), []byte(sshConfig), 0644)
+		if err != nil {
+			return errors.InternalWrapError(err)
+		}
 	}
 	err = ioutil.WriteFile(fmt.Sprintf("%s/id_rsa", sshDir), []byte(key), 0600)
 	if err != nil {
@@ -101,7 +106,7 @@ func gitClone(path string, inputArtifact *wfv1.Artifact, auth transport.AuthMeth
 		}
 		log.Errorf("`%s` stdout:\n%s", cmd.Args, string(output))
 		if privateKey != "" {
-			err := writePrivateKey(privateKey)
+			err := writePrivateKey(privateKey, inputArtifact.Git.InsecureIgnoreHostKey)
 			if err != nil {
 				return errors.InternalWrapError(err)
 			}
