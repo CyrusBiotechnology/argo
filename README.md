@@ -1,5 +1,14 @@
 [![slack](https://img.shields.io/badge/slack-argoproj-brightgreen.svg?logo=slack)](https://argoproj.github.io/community/join-slack)
 
+# Cyrus specific developer notes
+
+To cut a version tag, `./cut_version_tag.sh`.  This script will switch to the master branch, pull and then 
+cut a version using the current contents of the `VERSION` file at the `HEAD` of master.  The new tag will be automatically pushed
+
+Jenkins will automatically build images and command line executables for newly pushed tags.
+
+Merges to master in this repository are not automatically deployed
+
 # Argoproj - Get stuff done with Kubernetes
 
 ![Argo Image](argo.png)
