@@ -29,7 +29,13 @@ pipeline {
 
                     def baseVersionTag = readFile "VERSION"
                     baseVersionTag = baseVersionTag.trim();
-                    VERSION = "${baseVersionTag}-cyrus-${GIT_BRANCH}"
+
+                    if (env.BRANCH_NAME == 'master') {
+                        VERSION = "${baseVersionTag}"
+                    } else {
+                        VERSION = "${baseVersionTag}-${GIT_BRANCH}"
+                    }
+
 
                     println "Version tag for this build is ${VERSION}"
                 }
@@ -90,6 +96,5 @@ pipeline {
                 }
             }
         }
-
     }
  }
