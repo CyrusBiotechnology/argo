@@ -88,6 +88,7 @@ type kv struct {
 	Key string
 	Value time.Duration
 }
+
 func printWorkflowProfiler(wf *wfv1.Workflow, outFmt string) {
 	const fmtStr = "%-20s %v\n"
 	fmt.Printf(fmtStr, "Name:", wf.ObjectMeta.Name)
@@ -113,7 +114,7 @@ func printWorkflowProfiler(wf *wfv1.Workflow, outFmt string) {
 		fmt.Println()
 		
 		fmt.Printf("\nWorflow Profile\n")
-		fmt.Fprintf(profileWriter,"STEP\t\t\t\t\tDURATION\t\tCPUs\t\t\tPARAMETERS\t\t\t\tARTIFACTS\n")
+		fmt.Fprintf(profileWriter,"STEP\t\t\t\t\tDURATION\t\t\tPARAMETERS\t\t\tARTIFACTS\t\t\t\t\t\t\t\t\t\t\tREQUESTED RESOURCES\t\t\tUSED RESOURCES\n")
 		m := make(map[string]time.Duration)
 		artis := make(map[string]string)
 		parms := make(map[string]string)
@@ -156,7 +157,7 @@ func printWorkflowProfiler(wf *wfv1.Workflow, outFmt string) {
 			parameters := parms[kv.Key]
 
 			args := []interface{}{kv.Key,runtime,parameters,artifacts}
-			fmt.Fprintf(profileWriter,"%s\t\t\t\t\t%s\t\t\t\t\t%s\t\t\t\t%s\n", args...)
+			fmt.Fprintf(profileWriter,"%s\t\t\t\t\t%s\t\t\t%s\t\t\t%s\n", args...)
 		}		
 	
 		_=profileWriter.Flush()
