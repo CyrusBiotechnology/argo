@@ -82,8 +82,8 @@ func timeStamp(t time.Duration) (hr, min, sec int) {
 		sec = (totalTime % 3600) % 60
 	}
 	return hr,min,sec
-
 }
+
 type kv struct {
 	Key string
 	Value time.Duration
@@ -102,13 +102,13 @@ func printWorkflowProfiler(wf *wfv1.Workflow, outFmt string) {
 		fmt.Printf(fmtStr, "Duration:", humanize.RelativeDuration(wf.Status.StartedAt.Time, wf.Status.FinishedAt.Time))
 	}
 
-	printTree := true
+	printProfile := true
 	if wf.Status.Nodes == nil {
-		printTree = false
+		printProfile = false
 	} else if _, ok := wf.Status.Nodes[wf.ObjectMeta.Name]; !ok {
-		printTree = false
+		printProfile = false
 	}
-	if printTree {
+	if printProfile {
 		profileWriter := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		fmt.Println()
 		
