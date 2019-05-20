@@ -145,7 +145,7 @@ pipeline {
             }
         }
 
-        stage('Deploy to staging') {
+        stage('Deploy to production') {
             when {
                 anyOf {
                     tag "*-production"
