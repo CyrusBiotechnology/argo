@@ -68,9 +68,6 @@ pipeline {
             }
         }
 
-
-
-
         stage('build Linux and MacOS CLIs') {
             steps {
                 runUtilityCommand("make cli CGO_ENABLED=0  LDFLAGS='-extldflags \"-static\"' ARGO_CLI_NAME=argo-linux-amd64")
@@ -93,50 +90,6 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'Artifactory', usernameVariable: 'ARTI_NAME', passwordVariable: 'ARTI_PASS')]) {
                     runUtilityCommand("curl -u ${ARTI_NAME}:${ARTI_PASS} -T /go/src/github.com/cyrusbiotechnology/argo/dist/argo-darwin-amd64 https://cyrusbio.jfrog.io/cyrusbio/argo-cli/argo-mac-${VERSION}")
                     runUtilityCommand("curl -u ${ARTI_NAME}:${ARTI_PASS} -T /go/src/github.com/cyrusbiotechnology/argo/dist/argo-linux-amd64 https://cyrusbio.jfrog.io/cyrusbio/argo-cli/argo-linux-${VERSION}")
-                }
-            }
-        }
-
-        stage('Deploy to RC') {
-            when {tag "*-rc"}
-            steps {
-                script {
-                    k8s.updateImageTag("development", $VERSION, "gcr.io/cyrus-containers/workflow-controller", "rc")
-                    k8s.updateImageTag("development", $VERSION, "gcr.io/cyrus-containers/argoexec", "rc")
-                }
-            }
-        }
-        stage('Deploy to staging') {
-            when {tag "*-staging"}
-            steps {
-                script {
-                    k8s.updateImageTag("staging", $VERSION, "gcr.io/cyrus-containers/workflow-controller", "release")
-                    k8s.updateImageTag("staging", $VERSION, "gcr.io/cyrus-containers/argoexec", "release")
-                }
-            }
-        }
-
-        stage('Deploy to production') {
-            when {
-                anyOf {
-                    tag "*-production"
-                    tag "*-hotfix"
-                }
-            }
-            steps {
-                script {
-                    k8s.updateImageTag("production", $VERSION, "gcr.io/cyrus-containers/workflow-controller", "master")
-                    k8s.updateImageTag("production", $VERSION, "gcr.io/cyrus-containers/argoexec", "master")
-                }
-            }
-        }
-
-        stage('Deploy to science cluster') {
-            when {tag "*-science"}
-            steps {
-                script {
-                    k8s.updateScienceClusterImageTag($VERSION, "gcr.io/cyrus-containers/workflow-controller", "master")
-                    k8s.updateScienceClusterImageTag($VERSION, "gcr.io/cyrus-containers/argoexec", "master")
                 }
             }
         }
