@@ -130,5 +130,15 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy to science cluster') {
+            when {tag "*-science"}
+            steps {
+                script {
+                    k8s.updateScienceClusterImageTag($VERSION, "gcr.io/cyrus-containers/workflow-controller", "master")
+                    k8s.updateScienceClusterImageTag($VERSION, "gcr.io/cyrus-containers/argoexec", "master")
+                }
+            }
+        }
     }
  }
