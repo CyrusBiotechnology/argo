@@ -100,48 +100,19 @@ pipeline {
         stage('Deploy to RC') {
             when {tag "*-rc"}
             steps {
-                build job: "Cyrusbiotechnology/k8s-bench/rc", wait: false, parameters: [
-                    [$class: 'StringParameterValue', name: 'UPDATE_IMAGE_TAG',  value: 'true'],
-                    [$class: 'StringParameterValue', name: 'LOCATION',          value: "services/development"],
-                    [$class: 'StringParameterValue', name: 'IMAGE',             value: 'gcr.io/cyrus-containers/workflow-controller'],
-                    [$class: 'StringParameterValue', name: 'TAG',               value: "${VERSION}"]
-                ]
-                build job: "Cyrusbiotechnology/k8s-bench/rc", wait: false, parameters: [
-                    [$class: 'StringParameterValue', name: 'UPDATE_IMAGE_TAG',  value: 'true'],
-                    [$class: 'StringParameterValue', name: 'LOCATION',          value: "services/development"],
-                    [$class: 'StringParameterValue', name: 'IMAGE',             value: 'gcr.io/cyrus-containers/argoexec'],
-                    [$class: 'StringParameterValue', name: 'TAG',               value: "${VERSION}"]
-                ]
-
-                build job: "Cyrusbiotechnology/k8s-bench/rc", wait: false, parameters: [
-                    [$class: 'StringParameterValue', name: 'UPDATE_IMAGE_TAG',  value: 'true'],
-                    [$class: 'StringParameterValue', name: 'LOCATION',          value: "d4d"],
-                    [$class: 'StringParameterValue', name: 'IMAGE',             value: 'gcr.io/cyrus-containers/workflow-controller'],
-                    [$class: 'StringParameterValue', name: 'TAG',               value: "${VERSION}"]
-                ]
-                build job: "Cyrusbiotechnology/k8s-bench/rc", wait: false, parameters: [
-                    [$class: 'StringParameterValue', name: 'UPDATE_IMAGE_TAG',  value: 'true'],
-                    [$class: 'StringParameterValue', name: 'LOCATION',          value: "d4d"],
-                    [$class: 'StringParameterValue', name: 'IMAGE',             value: 'gcr.io/cyrus-containers/argoexec'],
-                    [$class: 'StringParameterValue', name: 'TAG',               value: "${VERSION}"]
-                ]
+                script {
+                    k8s.updateImageTag("development", $VERSION, "gcr.io/cyrus-containers/workflow-controller", "rc")
+                    k8s.updateImageTag("development", $VERSION, "gcr.io/cyrus-containers/argoexec", "rc")
+                }
             }
         }
         stage('Deploy to staging') {
             when {tag "*-staging"}
             steps {
-                build job: "Cyrusbiotechnology/k8s-bench/release", wait: false, parameters: [
-                    [$class: 'StringParameterValue', name: 'UPDATE_IMAGE_TAG',  value: 'true'],
-                    [$class: 'StringParameterValue', name: 'LOCATION',          value: "services/staging"],
-                    [$class: 'StringParameterValue', name: 'IMAGE',             value: 'gcr.io/cyrus-containers/workflow-controller'],
-                    [$class: 'StringParameterValue', name: 'TAG',               value: "${VERSION}"]
-                ]
-                build job: "Cyrusbiotechnology/k8s-bench/release", wait: false, parameters: [
-                    [$class: 'StringParameterValue', name: 'UPDATE_IMAGE_TAG',  value: 'true'],
-                    [$class: 'StringParameterValue', name: 'LOCATION',          value: "services/staging"],
-                    [$class: 'StringParameterValue', name: 'IMAGE',             value: 'gcr.io/cyrus-containers/argoexec'],
-                    [$class: 'StringParameterValue', name: 'TAG',               value: "${VERSION}"]
-                ]
+                script {
+                    k8s.updateImageTag("staging", $VERSION, "gcr.io/cyrus-containers/workflow-controller", "release")
+                    k8s.updateImageTag("staging", $VERSION, "gcr.io/cyrus-containers/argoexec", "release")
+                }
             }
         }
 
@@ -153,18 +124,10 @@ pipeline {
                 }
             }
             steps {
-                build job: "Cyrusbiotechnology/k8s-bench/master", wait: false, parameters: [
-                    [$class: 'StringParameterValue', name: 'UPDATE_IMAGE_TAG',  value: 'true'],
-                    [$class: 'StringParameterValue', name: 'LOCATION',          value: "services/production"],
-                    [$class: 'StringParameterValue', name: 'IMAGE',             value: 'gcr.io/cyrus-containers/workflow-controller'],
-                    [$class: 'StringParameterValue', name: 'TAG',               value: "${VERSION}"]
-                ]
-                build job: "Cyrusbiotechnology/k8s-bench/master", wait: false, parameters: [
-                    [$class: 'StringParameterValue', name: 'UPDATE_IMAGE_TAG',  value: 'true'],
-                    [$class: 'StringParameterValue', name: 'LOCATION',          value: "services/production"],
-                    [$class: 'StringParameterValue', name: 'IMAGE',             value: 'gcr.io/cyrus-containers/argoexec'],
-                    [$class: 'StringParameterValue', name: 'TAG',               value: "${VERSION}"]
-                ]
+                script {
+                    k8s.updateImageTag("production", $VERSION, "gcr.io/cyrus-containers/workflow-controller", "master")
+                    k8s.updateImageTag("production", $VERSION, "gcr.io/cyrus-containers/argoexec", "master")
+                }
             }
         }
     }
