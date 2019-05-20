@@ -1,5 +1,18 @@
 [![slack](https://img.shields.io/badge/slack-argoproj-brightgreen.svg?logo=slack)](https://argoproj.github.io/community/join-slack)
 
+# Cyrus specific developer notes
+
+To cut a version tag to release to rc run, `./cut_version_tag.sh --environment=rc`.  This script will switch to the master branch, pull and then 
+cut a version using the current contents of the `VERSION` file at the `HEAD` of master.  
+The new tag will be automatically pushed and will trigger a deploy to rc.
+
+* to trigger a release to staging: `./cut_version_tag.sh --environment=rc`
+* to trigger a release to production: `./cut_version_tag.sh --environment=production` or `./cut_version_tag.sh --environment=hotfix`
+
+Jenkins will automatically build images and command line executables for newly pushed tags.
+
+Merges to master in this repository are not automatically deployed. a tag is required to trigger a release
+
 # Argoproj - Get stuff done with Kubernetes
 
 ![Argo Image](argo.png)

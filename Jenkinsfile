@@ -29,7 +29,13 @@ pipeline {
 
                     def baseVersionTag = readFile "VERSION"
                     baseVersionTag = baseVersionTag.trim();
-                    VERSION = "${baseVersionTag}-cyrus-${GIT_BRANCH}"
+
+                    if (env.BRANCH_NAME == 'master') {
+                        VERSION = "${baseVersionTag}"
+                    } else {
+                        VERSION = "${baseVersionTag}-${GIT_BRANCH}"
+                    }
+
 
                     println "Version tag for this build is ${VERSION}"
                 }
@@ -91,5 +97,48 @@ pipeline {
             }
         }
 
+        stage('Deploy to RC') {
+            when {tag "*-rc"}
+            steps {
+                script {
+                    k8s.updateImageTag("development", $VERSION, "gcr.io/cyrus-containers/workflow-controller", "rc")
+                    k8s.updateImageTag("development", $VERSION, "gcr.io/cyrus-containers/argoexec", "rc")
+                }
+            }
+        }
+        stage('Deploy to staging') {
+            when {tag "*-staging"}
+            steps {
+                script {
+                    k8s.updateImageTag("staging", $VERSION, "gcr.io/cyrus-containers/workflow-controller", "release")
+                    k8s.updateImageTag("staging", $VERSION, "gcr.io/cyrus-containers/argoexec", "release")
+                }
+            }
+        }
+
+        stage('Deploy to production') {
+            when {
+                anyOf {
+                    tag "*-production"
+                    tag "*-hotfix"
+                }
+            }
+            steps {
+                script {
+                    k8s.updateImageTag("production", $VERSION, "gcr.io/cyrus-containers/workflow-controller", "master")
+                    k8s.updateImageTag("production", $VERSION, "gcr.io/cyrus-containers/argoexec", "master")
+                }
+            }
+        }
+
+        stage('Deploy to science cluster') {
+            when {tag "*-science"}
+            steps {
+                script {
+                    k8s.updateScienceClusterImageTag($VERSION, "gcr.io/cyrus-containers/workflow-controller", "master")
+                    k8s.updateScienceClusterImageTag($VERSION, "gcr.io/cyrus-containers/argoexec", "master")
+                }
+            }
+        }
     }
  }
