@@ -9,6 +9,7 @@ import (
 	"text/tabwriter"
 	"time"
 	"sort"
+	"path/filepath"
 
 	"github.com/argoproj/pkg/humanize"
 	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
@@ -16,6 +17,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 const onExitSuffix = "onExit"
@@ -89,6 +92,40 @@ type kv struct {
 	Value time.Duration
 }
 
+type PodMetricsList struct {
+    Kind       string `json:"kind"`
+    APIVersion string `json:"apiVersion"`
+    Metadata   struct {
+        SelfLink string `json:"selfLink"`
+    } `json:"metadata"`
+    Items []struct {
+        Metadata struct {
+            Name              string    `json:"name"`
+            Namespace         string    `json:"namespace"`
+            SelfLink          string    `json:"selfLink"`
+            CreationTimestamp time.Time `json:"creationTimestamp"`
+        } `json:"metadata"`
+        Timestamp  time.Time `json:"timestamp"`
+        Window     string    `json:"window"`
+        Containers []struct {
+            Name  string `json:"name"`
+            Usage struct {
+                CPU    string `json:"cpu"`
+                Memory string `json:"memory"`
+            } `json:"usage"`
+        } `json:"containers"`
+    } `json:"items"`
+}
+
+func getMetrics(clientset *kubernetes.Clientset, pods *PodMetricsList) error {
+    data, err := clientset.RESTClient().Get().AbsPath("apis/metrics.k8s.io/v1beta1/namespaces/default/pods").DoRaw()
+    if err != nil {
+        return err
+    }
+    err = json.Unmarshal(data, &pods)
+    return err
+}
+
 func printWorkflowProfiler(wf *wfv1.Workflow, outFmt string) {
 	const fmtStr = "%-20s %v\n"
 	fmt.Printf(fmtStr, "Name:", wf.ObjectMeta.Name)
@@ -102,6 +139,21 @@ func printWorkflowProfiler(wf *wfv1.Workflow, outFmt string) {
 	if !wf.Status.StartedAt.IsZero() {
 		fmt.Printf(fmtStr, "Duration:", humanize.RelativeDuration(wf.Status.StartedAt.Time, wf.Status.FinishedAt.Time))
 	}
+	
+	if len(wf.Spec.Arguments.Parameters) > 0 {
+		fmt.Printf(fmtStr, "Parameters:", "")
+		for _, param := range wf.Spec.Arguments.Parameters {
+			if param.Value == nil {
+				continue
+			} else if *param.Value == "None" || *param.Value == "false" {
+				continue
+			}
+			fmt.Printf(fmtStr, "  "+param.Name+":", *param.Value)
+			if param.Name == "sequence" {
+				fmt.Printf(fmtStr,"  sequence-length:",len(*param.Value))
+			}
+		}
+	}
 
 	printProfile := true
 	if wf.Status.Nodes == nil {
@@ -113,12 +165,43 @@ func printWorkflowProfiler(wf *wfv1.Workflow, outFmt string) {
 		profileWriter := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		fmt.Println()
 		
-		fmt.Printf("\nWorflow Profile\n")
-		fmt.Fprintf(profileWriter,"STEP\t\t\t\t\tDURATION\t\t\tPARAMETERS\t\t\tARTIFACTS\t\t\t\t\t\t\t\t\t\t\tREQUESTED RESOURCES\t\t\tUSED RESOURCES\n")
+		fmt.Printf("\nWorflow Profile [Ordered by: DURATION]\n\n")
+		fmt.Fprintf(profileWriter,"STEP\t\t\t\t\tDURATION\t\t\tPARAMETERS\t\t\tARTIFACTS\t\t\t\t\t\t\t\t\t\t\t\tCPUs\t\t\tMEMORY\n")
+		
+		// Node Maps
+		idToName := make(map[string]string)
 		m := make(map[string]time.Duration)
 		artis := make(map[string]string)
 		parms := make(map[string]string)
-		// Get Node information 
+		cpus := make(map[string]string)
+		mems := make(map[string]string)
+
+		// // Get Node Metrics
+		// var master string
+		// kubeconfig := filepath.Join(os.Getenv("HOME"),".kube","config",)
+		// config, err := clientcmd.BuildConfigFromFlags(master, kubeconfig)
+		// if err != nil {
+		// 	panic(err.Error())
+		// }
+		// clientset, err := kubernetes.NewForConfig(config)
+		// if err != nil {
+		// 	panic(err.Error())
+		// }
+
+		// var pods PodMetricsList
+		// err = getMetrics(clientset, &pods)
+		// if err != nil {
+		// 	panic(err.Error())
+		// }
+		
+		// for _, m := range pods.Items {
+		// 	cpu := m.Containers[0].Usage.CPU
+		// 	mem := m.Containers[0].Usage.Memory
+		// 	// cpus[m.Metadata.Name] = cpu
+		// 	// mems[m.Metadata.Name] = mem	
+		// }
+
+		// Get Node information
 		for _, v := range wf.Status.Nodes{
 			if v.Successful() && v.Type == wfv1.NodeTypePod {
 				duration := v.FinishedAt.Time.Sub(v.StartedAt.Time)
@@ -127,17 +210,21 @@ func printWorkflowProfiler(wf *wfv1.Workflow, outFmt string) {
 						delete(m, v.TemplateName)
 						delete(artis,v.TemplateName)
 						delete(parms,v.TemplateName)
+						delete(idToName,v.TemplateName)
 						m[v.TemplateName] = duration
 						artis[v.TemplateName] = getArtifactsString(v)
 						parms[v.TemplateName] = getParametersString(v)
+						idToName[v.TemplateName] = v.ID
 					} 
 				} else {
 					m[v.TemplateName] = duration
 					artis[v.TemplateName] = getArtifactsString(v)
 					parms[v.TemplateName] = getParametersString(v)
+					idToName[v.TemplateName] = v.ID
 				}
 			}
 		}
+
 		// Create slice of template names and durations
 		var ss []kv
 		for k, d := range m {
@@ -148,16 +235,49 @@ func printWorkflowProfiler(wf *wfv1.Workflow, outFmt string) {
 		sort.Slice(ss,func(i,j int) bool { 
 			return int(ss[i].Value.Seconds()) > int(ss[j].Value.Seconds())
 		})
-		
+
+		// Get Node Metrics
+		var master string
+		kubeconfig := filepath.Join(os.Getenv("HOME"),".kube","config",)
+		config, err := clientcmd.BuildConfigFromFlags(master, kubeconfig)
+		if err != nil {
+			panic(err.Error())
+		}
+		clientset, err := kubernetes.NewForConfig(config)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		var pods PodMetricsList
+		err = getMetrics(clientset, &pods)
+		if err != nil {
+			panic(err.Error())
+		}
+		for name, id := range idToName {
+			for _, m := range pods.Items {
+				if m.Metadata.Name == id{
+					cpu := m.Containers[0].Usage.CPU
+					mem := m.Containers[0].Usage.Memory
+					cpus[name] = cpu
+					mems[name] = mem	
+				}
+			}
+		}
+		fmt.Println(cpus)
+		fmt.Println(mems)
+		fmt.Println(idToName)
 		// Print out runtimes and artifacts
 		for _, kv := range ss {
 			hours, mins, secs := timeStamp(kv.Value)
 			runtime := fmt.Sprintf("%02d:%02d.%02d",hours, mins, secs)
 			artifacts := artis[kv.Key]
 			parameters := parms[kv.Key]
+			cpu_usage := cpus[kv.Key]
+			mem_usage := mems[kv.Key]
 
-			args := []interface{}{kv.Key,runtime,parameters,artifacts}
-			fmt.Fprintf(profileWriter,"%s\t\t\t\t\t%s\t\t\t%s\t\t\t%s\n", args...)
+			args := []interface{}{kv.Key,runtime,parameters,artifacts,cpu_usage,mem_usage}
+			fmt.Fprintf(profileWriter,"%s\t\t\t\t\t%s\t\t\t%s\t\t\t%s\t\t\t\t\t\t\t\t\t\t\t\t%s\t\t\t%s\n", args...)
+			// fmt.Fprintf(profileWriter,"%s\t\t\t\t\t%s\t\t\t%s\t\t\t%s\n", args...)
 		}		
 	
 		_=profileWriter.Flush()

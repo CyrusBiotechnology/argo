@@ -1375,6 +1375,22 @@
   revision = "6b3d3b2d5666c5912bab8b7bf26bf50f75a8f887"
 
 [[projects]]
+  branch = "release-1.12"
+  digest = "1:9bd9145e5cba8803ada2c124fc7884b9b33d29f9723f3302a78542bf0c8bccdc"
+  name = "k8s.io/metrics"
+  packages = [
+    "pkg/apis/metrics",
+    "pkg/apis/metrics/v1alpha1",
+    "pkg/apis/metrics/v1beta1",
+    "pkg/client/clientset/versioned",
+    "pkg/client/clientset/versioned/scheme",
+    "pkg/client/clientset/versioned/typed/metrics/v1alpha1",
+    "pkg/client/clientset/versioned/typed/metrics/v1beta1",
+  ]
+  pruneopts = ""
+  revision = "3954d62a524dad50e7c4bcf91a26eeef011040e2"
+
+[[projects]]
   branch = "master"
   digest = "1:f6c19347011ba9a072aa55f5c7fa630c0b88303ac4ca83008454aef95b0c2078"
   name = "k8s.io/utils"
@@ -1466,6 +1482,7 @@
     "k8s.io/code-generator/cmd/informer-gen",
     "k8s.io/code-generator/cmd/lister-gen",
     "k8s.io/kube-openapi/pkg/common",
+    "k8s.io/metrics/pkg/client/clientset/versioned",
     "k8s.io/utils/pointer",
   ]
   solver-name = "gps-cdcl"
