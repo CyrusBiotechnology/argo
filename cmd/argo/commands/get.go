@@ -117,8 +117,9 @@ type PodMetricsList struct {
     } `json:"items"`
 }
 
-func getMetrics(clientset *kubernetes.Clientset, pods *PodMetricsList) error {
-    data, err := clientset.RESTClient().Get().AbsPath("apis/metrics.k8s.io/v1beta1/namespaces/default/pods").DoRaw()
+func getMetrics(clientset *kubernetes.Clientset, pods *PodMetricsList, podID string) error {
+	podPath := filepath.Join("apis/metrics.k8s.io/v1beta1/namespaces/default/pods", podID)
+    data, err := clientset.RESTClient().Get().AbsPath(podPath).DoRaw()
     if err != nil {
         return err
     }
@@ -173,10 +174,10 @@ func printWorkflowProfiler(wf *wfv1.Workflow, outFmt string) {
 		m := make(map[string]time.Duration)
 		artis := make(map[string]string)
 		parms := make(map[string]string)
-		cpus := make(map[string]string)
-		mems := make(map[string]string)
+		// cpus := make(map[string]string)
+		// mems := make(map[string]string)
 
-		// // Get Node Metrics
+		// Get Node Metrics
 		// var master string
 		// kubeconfig := filepath.Join(os.Getenv("HOME"),".kube","config",)
 		// config, err := clientcmd.BuildConfigFromFlags(master, kubeconfig)
@@ -197,14 +198,46 @@ func printWorkflowProfiler(wf *wfv1.Workflow, outFmt string) {
 		// for _, m := range pods.Items {
 		// 	cpu := m.Containers[0].Usage.CPU
 		// 	mem := m.Containers[0].Usage.Memory
-		// 	// cpus[m.Metadata.Name] = cpu
-		// 	// mems[m.Metadata.Name] = mem	
+		// 	cpus[m.Metadata.Name] = cpu
+		// 	mems[m.Metadata.Name] = mem	
+		// 	fmt.Println(m.Metadata.Name, cpu, mem)
 		// }
+
 
 		// Get Node information
 		for _, v := range wf.Status.Nodes{
 			if v.Successful() && v.Type == wfv1.NodeTypePod {
 				duration := v.FinishedAt.Time.Sub(v.StartedAt.Time)
+
+				// Get Node Metrics
+				var master string
+				kubeconfig := filepath.Join(os.Getenv("HOME"),".kube","config",)
+				config, err := clientcmd.BuildConfigFromFlags(master, kubeconfig)
+				if err != nil {
+					fmt.Println("failed at config build")
+					panic(err.Error())
+				}
+				clientset, err := kubernetes.NewForConfig(config)
+				if err != nil {
+					fmt.Println("failed at generating new for config")
+					panic(err)
+				}
+
+				var pods PodMetricsList
+				err = getMetrics(clientset, &pods, v.ID)
+				if err != nil {
+					panic(err)
+				}
+				for _, m := range pods.Items {
+					// if m.Metadata.Name == id{
+					// 	cpu := m.Containers[0].Usage.CPU
+					// 	mem := m.Containers[0].Usage.Memory
+					// 	cpus[name] = cpu
+					// 	mems[name] = mem	
+					// }
+					fmt.Println(m.Metadata.Name,m.Containers[0].Usage.CPU, m.Containers[0].Usage.Memory)
+				}
+				
 				if _, ok := m[v.TemplateName]; ok {
 					if int(duration.Seconds()) > int(m[v.TemplateName].Seconds()) {
 						delete(m, v.TemplateName)
@@ -236,35 +269,35 @@ func printWorkflowProfiler(wf *wfv1.Workflow, outFmt string) {
 			return int(ss[i].Value.Seconds()) > int(ss[j].Value.Seconds())
 		})
 
-		// Get Node Metrics
-		var master string
-		kubeconfig := filepath.Join(os.Getenv("HOME"),".kube","config",)
-		config, err := clientcmd.BuildConfigFromFlags(master, kubeconfig)
-		if err != nil {
-			panic(err.Error())
-		}
-		clientset, err := kubernetes.NewForConfig(config)
-		if err != nil {
-			panic(err.Error())
-		}
+		// // Get Node Metrics
+		// var master string
+		// kubeconfig := filepath.Join(os.Getenv("HOME"),".kube","config",)
+		// config, err := clientcmd.BuildConfigFromFlags(master, kubeconfig)
+		// if err != nil {
+		// 	panic(err.Error())
+		// }
+		// clientset, err := kubernetes.NewForConfig(config)
+		// if err != nil {
+		// 	panic(err)
+		// }
 
-		var pods PodMetricsList
-		err = getMetrics(clientset, &pods)
-		if err != nil {
-			panic(err.Error())
-		}
-		for name, id := range idToName {
-			for _, m := range pods.Items {
-				if m.Metadata.Name == id{
-					cpu := m.Containers[0].Usage.CPU
-					mem := m.Containers[0].Usage.Memory
-					cpus[name] = cpu
-					mems[name] = mem	
-				}
-			}
-		}
-		fmt.Println(cpus)
-		fmt.Println(mems)
+		// var pods PodMetricsList
+		// err = getMetrics(clientset, &pods)
+		// if err != nil {
+		// 	panic(err)
+		// }
+		// for name, id := range idToName {
+		// 	for _, m := range pods.Items {
+		// 		if m.Metadata.Name == id{
+		// 			cpu := m.Containers[0].Usage.CPU
+		// 			mem := m.Containers[0].Usage.Memory
+		// 			cpus[name] = cpu
+		// 			mems[name] = mem	
+		// 		}
+		// 	}
+		// }
+		// fmt.Println(cpus)
+		// fmt.Println(mems)
 		fmt.Println(idToName)
 		// Print out runtimes and artifacts
 		for _, kv := range ss {
@@ -272,12 +305,12 @@ func printWorkflowProfiler(wf *wfv1.Workflow, outFmt string) {
 			runtime := fmt.Sprintf("%02d:%02d.%02d",hours, mins, secs)
 			artifacts := artis[kv.Key]
 			parameters := parms[kv.Key]
-			cpu_usage := cpus[kv.Key]
-			mem_usage := mems[kv.Key]
+			// cpu_usage := cpus[kv.Key]
+			// mem_usage := mems[kv.Key]
 
-			args := []interface{}{kv.Key,runtime,parameters,artifacts,cpu_usage,mem_usage}
-			fmt.Fprintf(profileWriter,"%s\t\t\t\t\t%s\t\t\t%s\t\t\t%s\t\t\t\t\t\t\t\t\t\t\t\t%s\t\t\t%s\n", args...)
-			// fmt.Fprintf(profileWriter,"%s\t\t\t\t\t%s\t\t\t%s\t\t\t%s\n", args...)
+			args := []interface{}{kv.Key,runtime,parameters,artifacts}
+			// fmt.Fprintf(profileWriter,"%s\t\t\t\t\t%s\t\t\t%s\t\t\t%s\t\t\t\t\t\t\t\t\t\t\t\t%s\t\t\t%s\n", args...)
+			fmt.Fprintf(profileWriter,"%s\t\t\t\t\t%s\t\t\t%s\t\t\t%s\n", args...)
 		}		
 	
 		_=profileWriter.Flush()
