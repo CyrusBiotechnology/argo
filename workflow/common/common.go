@@ -66,6 +66,10 @@ const (
 	LabelKeyWorkflow = workflow.FullName + "/workflow"
 	// LabelKeyPhase is a label applied to workflows to indicate the current phase of the workflow (for filtering purposes)
 	LabelKeyPhase = workflow.FullName + "/phase"
+	// LabelKeyWorkflowType is the non-appended workflow name
+	LabelKeyWorkflowType = workflow.FullName + "/type"
+	// LabelKeyTemplate is the name of the template describing the step
+	LabelKeyTemplate = workflow.FullName + "/template"
 
 	// ExecutorArtifactBaseDir is the base directory in the init container in which artifacts will be copied to.
 	// Each artifact will be named according to its input name (e.g: /argo/inputs/artifacts/CODE)

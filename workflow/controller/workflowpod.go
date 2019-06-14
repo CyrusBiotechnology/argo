@@ -81,6 +81,9 @@ func (woc *wfOperationCtx) createWorkflowPod(nodeName string, mainCtr apiv1.Cont
 			Labels: map[string]string{
 				common.LabelKeyWorkflow:  woc.wf.ObjectMeta.Name, // Allows filtering by pods related to specific workflow
 				common.LabelKeyCompleted: "false",                // Allows filtering by incomplete workflow pods
+				common.LabelKeyWorkflowType: "???"                // Allows filtering by workflow type for VPA
+				common.LabelKeyTemplate: "???"                    // Allows filtering by workflow template for VPA
+
 			},
 			Annotations: map[string]string{
 				common.AnnotationKeyNodeName: nodeName,
