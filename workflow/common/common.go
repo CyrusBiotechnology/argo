@@ -1,7 +1,6 @@
 package common
 
 import (
-	"os"
 	"time"
 
 	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow"
@@ -131,14 +130,12 @@ const (
 	KubeConfigDefaultMountPath  = "/kube/config"
 	KubeConfigDefaultVolumeName = "kubeconfig"
 	SecretVolMountPath          = "/argo/secret"
+
 )
 
 // GlobalVarWorkflowRootTags is a list of root tags in workflow which could be used for variable reference
 var GlobalVarValidWorkflowVariablePrefix = []string{"item.", "steps.", "inputs.", "outputs.", "pod.", "workflow.", "tasks."}
 
-var (
-	GoogleSecretName = os.Getenv(EnvVarGoogleSecret)
-)
 
 // ExecutionControl contains execution control parameters for executor to decide how to execute the container
 type ExecutionControl struct {
