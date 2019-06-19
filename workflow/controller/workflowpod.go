@@ -6,6 +6,7 @@ import (
 	"io"
 	"path"
 	"path/filepath"
+	"strings"
 	"strconv"
 
 	log "github.com/sirupsen/logrus"
