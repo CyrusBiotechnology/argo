@@ -6,6 +6,7 @@ import (
 	"io"
 	"path"
 	"path/filepath"
+	"strings"
 	"strconv"
 
 	log "github.com/sirupsen/logrus"
@@ -81,7 +82,7 @@ func (woc *wfOperationCtx) createWorkflowPod(nodeName string, mainCtr apiv1.Cont
 			Labels: map[string]string{
 				common.LabelKeyWorkflow:  woc.wf.ObjectMeta.Name, 				// Allows filtering by pods related to specific workflow
 				common.LabelKeyCompleted: "false",                				// Allows filtering by incomplete workflow pods
-				common.LabelKeyWorkflowType: woc.wf.ObjectMeta.GenerateName,  	// Allows filtering by workflow type for VPA
+				common.LabelKeyWorkflowType: strings.Replace(woc.wf.ObjectMeta.GenerateName, "-", "", -1),  	// Allows filtering by workflow type for VPA
 				common.LabelKeyTemplate: tmpl.Name,                				// Allows filtering by workflow template for VPA
 
 			},
