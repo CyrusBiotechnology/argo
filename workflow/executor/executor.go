@@ -467,6 +467,10 @@ func (we *WorkflowExecutor) SaveLogs() (*wfv1.Artifact, error) {
 	log.Infof("Saving logs")
 	fileName := "main.log"
 	tempLogsDir := "/argo/outputs/logs"
+	err := os.MkdirAll(tempLogsDir, os.ModePerm)
+	if err != nil {
+		return nil, errors.InternalWrapError(err)
+	}
 
 	mainLog, err := we.saveLogsToPath(tempLogsDir, fileName)
 	if err != nil {

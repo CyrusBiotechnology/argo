@@ -188,14 +188,7 @@ func (woc *wfOperationCtx) createWorkflowPod(nodeName string, mainCtr apiv1.Cont
 	// Perform one last variable substitution here. Some variables come from the from workflow
 	// configmap (e.g. archive location) or volumes attribute, and were not substituted
 	// in executeTemplate.
-	podParams := make(map[string]string)
-	for gkey, gval := range woc.globalParams {
-		podParams[gkey] = gval
-	}
-	for _, inParam := range tmpl.Inputs.Parameters {
-		podParams["inputs.parameters."+inParam.Name] = *inParam.Value
-	}
-	pod, err = substitutePodParams(pod, podParams)
+	pod, err = substitutePodParams(pod, woc.globalParams, tmpl)
 	if err != nil {
 		return nil, err
 	}
@@ -232,13 +225,15 @@ func (woc *wfOperationCtx) createWorkflowPod(nodeName string, mainCtr apiv1.Cont
 }
 
 // substitutePodParams returns a pod spec with parameter references substituted as well as pod.name
-func substitutePodParams(pod *apiv1.Pod, podParams map[string]string) (*apiv1.Pod, error) {
-	newPodParams := make(map[string]string)
-	for k, v := range podParams {
-		newPodParams[k] = v
+func substitutePodParams(pod *apiv1.Pod, globalParams map[string]string, tmpl *wfv1.Template) (*apiv1.Pod, error) {
+	podParams := make(map[string]string)
+	for k, v := range globalParams {
+		podParams[k] = v
 	}
-	newPodParams[common.LocalVarPodName] = pod.Name
-	podParams = newPodParams
+	for _, inParam := range tmpl.Inputs.Parameters {
+		podParams["inputs.parameters."+inParam.Name] = *inParam.Value
+	}
+	podParams[common.LocalVarPodName] = pod.Name
 	specBytes, err := json.Marshal(pod)
 	if err != nil {
 		return nil, err
@@ -424,7 +419,6 @@ func (woc *wfOperationCtx) newExecContainer(name string) *apiv1.Container {
 		}
 		exec.Args = append(exec.Args, "--kubeconfig="+path)
 	}
-
 	return &exec
 }
 
@@ -510,11 +504,19 @@ func addVolumeReferences(pod *apiv1.Pod, vols []apiv1.Volume, tmpl *wfv1.Templat
 
 	// getVolByName is a helper to retrieve a volume by its name, either from the volumes or claims section
 	getVolByName := func(name string) *apiv1.Volume {
+		// Find a volume from template-local volumes.
+		for _, vol := range tmpl.Volumes {
+			if vol.Name == name {
+				return &vol
+			}
+		}
+		// Find a volume from global volumes.
 		for _, vol := range vols {
 			if vol.Name == name {
 				return &vol
 			}
 		}
+		// Find a volume from pvcs.
 		for _, pvc := range pvcs {
 			if pvc.Name == name {
 				return &pvc
@@ -554,6 +556,13 @@ func addVolumeReferences(pod *apiv1.Pod, vols []apiv1.Volume, tmpl *wfv1.Templat
 	}
 	if tmpl.Script != nil {
 		err := addVolumeRef(tmpl.Script.VolumeMounts)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, container := range tmpl.InitContainers {
+		err := addVolumeRef(container.VolumeMounts)
 		if err != nil {
 			return err
 		}
@@ -951,7 +960,7 @@ func createSecretVolume(volMap map[string]apiv1.Volume, art wfv1.Artifact, keyMa
 }
 
 func createSecretVal(volMap map[string]apiv1.Volume, secret *apiv1.SecretKeySelector, keyMap map[string]bool) {
-	if secret == nil {
+	if secret == nil || secret.Name == "" || secret.Key == "" {
 		return
 	}
 	if vol, ok := volMap[secret.Name]; ok {
