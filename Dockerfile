@@ -54,7 +54,7 @@ COPY --from=builder /usr/local/bin/docker /usr/local/bin/
 ####################################################################################################
 # Argo Build stage which performs the actual build of Argo binaries
 ####################################################################################################
-FROM builder as argo-build
+FROM builder as builder-base
 
 # A dummy directory is created under $GOPATH/src/dummy so we are able to use dep
 # to install all the packages of our dep lock file
@@ -66,9 +66,12 @@ RUN cd ${GOPATH}/src/dummy && \
     mv vendor/* ${GOPATH}/src/ && \
     rmdir vendor
 
-# Perform the build
 WORKDIR /go/src/github.com/cyrusbiotechnology/argo
 COPY . .
+
+FROM builder-base as argo-build
+# Perform the build
+
 ARG MAKE_TARGET="controller executor cli-linux-amd64"
 RUN make $MAKE_TARGET
 
