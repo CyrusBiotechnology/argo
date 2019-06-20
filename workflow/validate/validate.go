@@ -80,6 +80,10 @@ func ValidateWorkflow(wf *wfv1.Workflow, opts ValidateOpts) error {
 		ctx.globalParams["workflow.parameters."+param.Name] = placeholderValue
 	}
 
+	for _, artifact := range ctx.wf.Spec.Arguments.Artifacts {
+		ctx.globalParams["workflow.artifacts."+artifact.Path] = placeholderValue
+	}
+
 	for k := range ctx.wf.ObjectMeta.Annotations {
 		ctx.globalParams["workflow.annotations."+k] = placeholderValue
 	}
