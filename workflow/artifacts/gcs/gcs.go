@@ -4,11 +4,8 @@ import (
 	"github.com/argoproj/pkg/file"
 	argoErrors "github.com/cyrusbiotechnology/argo/errors"
 	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/cyrusbiotechnology/argo/util"
 	log "github.com/sirupsen/logrus"
-	"io"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"os"
 	"time"
 )
 
@@ -24,84 +21,6 @@ func (gcsDriver *GCSArtifactDriver) newGcsClient() (client GCSClient, err error)
 		return nil, argoErrors.InternalWrapError(err)
 	}
 	return
-
-}
-
-func (gcsDriver *GCSArtifactDriver) saveToFile(inputArtifact *wfv1.Artifact, filePath string) error {
-
-	log.Infof("Loading from GCS (gs://%s/%s) to %s",
-		inputArtifact.GCS.Bucket, inputArtifact.GCS.Key, filePath)
-
-	gcsClient, err := gcsDriver.newGcsClient()
-	if err != nil {
-		return err
-	}
-
-	bucket := gcsClient.Bucket(inputArtifact.GCS.Bucket)
-	object := bucket.Object(inputArtifact.GCS.Key)
-
-	r, err := object.NewReader(gcsDriver.Context)
-	if err != nil {
-		return err
-	}
-	defer util.Close(r)
-
-	_, err = io.Copy(outputFile, r)
-	if err != nil {
-		return err
-	}
-
-	err = outputFile.Close()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-
-func (gcsDriver *GCSArtifactDriver) saveToGCS(outputArtifact *wfv1.Artifact, filePath string) error {
-
-	log.Infof("Saving to GCS (gs://%s/%s)",
-		outputArtifact.GCS.Bucket, outputArtifact.GCS.Key)
-
-	gcsClient, err := gcsDriver.newGcsClient()
-	if err != nil {
-		return err
-	}
-
-	inputFile, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-
-	stat, err := os.Stat(filePath)
-	if err != nil {
-		return err
-	}
-
-	//if stat.IsDir() {
-	//	for putTask := range generatePutTasks(outputArtifact.GCS.Bucket, outputArtifact.GCS.Key, filePath) {
-	//		err :=
-	//	}
-	//	return errors.New("only single files can be saved to GCS, not entire directories")
-	//}
-
-	defer util.Close(inputFile)
-
-	bucket := gcsClient.Bucket(outputArtifact.GCS.Bucket)
-	object := bucket.Object(outputArtifact.GCS.Key)
-
-	w := object.NewWriter(gcsDriver.Context)
-	_, err = io.Copy(w, inputFile)
-	if err != nil {
-		return err
-	}
-
-	err = w.Close()
-	if err != nil {
-		return err
-	}
-	return nil
 
 }
 
