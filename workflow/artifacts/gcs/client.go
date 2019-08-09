@@ -90,7 +90,7 @@ func (g *gcsClient) PutFile(bucket, key, path string) error {
 	bucketHandle := g.client.Bucket(bucket)
 	object := bucketHandle.Object(key)
 
-	w := object.NewWriter(g.Context)
+	w := object.NewWriter(g.context)
 	_, err = io.Copy(w, inputFile)
 	if err != nil {
 		return err
@@ -123,7 +123,7 @@ func (g *gcsClient) GetFile(bucket, key, path string) error {
 	bucketHandle := g.client.Bucket(bucket)
 	object := bucketHandle.Object(key)
 
-	r, err := object.NewReader(g.Context)
+	r, err := object.NewReader(g.context)
 	if err != nil {
 		return err
 	}
@@ -144,7 +144,7 @@ func (g *gcsClient) GetFile(bucket, key, path string) error {
 func (g *gcsClient) GetDirectory(bucket, keyPrefix, path string) error {
 	log.Infof("Getting directory from gcs (bucket: %s, key: %s) to %s", bucket, keyPrefix, path)
 	bucketHandle := g.client.Bucket(bucket)
-	it := bucketHandle.Objects(g.Context, &storage.Query{Prefix: keyPrefix})
+	it := bucketHandle.Objects(g.context, &storage.Query{Prefix: keyPrefix})
 	for {
 		objAttrs, err := it.Next()
 		if err == iterator.Done {
@@ -167,7 +167,7 @@ func (g *gcsClient) GetDirectory(bucket, keyPrefix, path string) error {
 func (g *gcsClient) IsDirectory(bucket, key string) (bool, error) {
 	bucketHandle := g.client.Bucket(bucket)
 	// If the item in the query result has a name that matches the key, this is a file not a directory
-	it := bucketHandle.Objects(g.Context, &storage.Query{Prefix: key})
+	it := bucketHandle.Objects(g.context, &storage.Query{Prefix: key})
 	objectAttrs,  err := it.Next()
 	if err != nil {
 		return false, err

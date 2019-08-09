@@ -1,21 +1,14 @@
 package gcs
 
 import (
-	"cloud.google.com/go/storage"
-	"context"
-	"errors"
 	"github.com/argoproj/pkg/file"
 	argoErrors "github.com/cyrusbiotechnology/argo/errors"
 	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/cyrusbiotechnology/argo/util"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/api/option"
 	"io"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"os"
-	"path"
-	"path/filepath"
-	"strings"
 	"time"
 )
 
