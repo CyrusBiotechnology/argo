@@ -54,7 +54,6 @@ func NewGCSClient(opts GCSClientOpts) (client GCSClient, err error) {
 	return
 }
 
-
 //plagiarized from github.com/argoproj/pkg/s3
 func generatePutTasks(keyPrefix, rootPath string) chan uploadTask {
 	rootPath = filepath.Clean(rootPath) + "/"
@@ -177,6 +176,7 @@ func (g *gcsClient) IsDirectory(bucket, key string) (bool, error) {
 	if objectAttrs.Name == key {
 		return false, nil
 	}
+	log.Infof("%s != %s", objectAttrs.Name, key)
 	return true, nil
 
 }
