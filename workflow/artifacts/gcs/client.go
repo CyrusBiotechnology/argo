@@ -49,6 +49,8 @@ func NewGCSClient(opts GCSClientOpts) (client GCSClient, err error) {
 	if err != nil {
 		return
 	}
+
+	client = &gcs
 	return
 }
 
