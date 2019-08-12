@@ -1523,6 +1523,7 @@ func (woc *wfOperationCtx) processAggregateNodeOutputs(templateName string, scop
 	artifactJSON, _ := json.Marshal(artifactsList)
 	artifactKey := fmt.Sprintf("%s.outputs.artifacts", prefix)
 	scope.addParamToScope(artifactKey, string(artifactJSON))
+	log.Infof("artifact to scope %s => %s", artifactKey, artifactJSON)
 }
 
 // addParamToGlobalScope exports any desired node outputs to the global scope, and adds it to the global outputs.
