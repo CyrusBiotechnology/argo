@@ -190,5 +190,3 @@ func (g *gcsClient) IsDirectory(bucket, key string) (bool, error) {
 	return true, nil
 
 }
-
-@tr
