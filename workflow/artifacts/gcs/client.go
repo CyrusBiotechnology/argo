@@ -116,6 +116,16 @@ func (g *gcsClient) PutDirectory(bucket, key, path string) error {
 
 func (g *gcsClient) GetFile(bucket, key, path string) error {
 	log.Infof("Getting from GCS (bucket: %s, key: %s) to %s", bucket, key, path)
+
+	// Extract top level directory.
+	objectDir, _ := filepath.Split(path)
+	if objectDir != "" {
+		// Create any missing top level directories.
+		if err := os.MkdirAll(objectDir, 0700); err != nil {
+			return err
+		}
+	}
+
 	outputFile, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
 		return err
@@ -181,3 +191,4 @@ func (g *gcsClient) IsDirectory(bucket, key string) (bool, error) {
 
 }
 
+@tr
