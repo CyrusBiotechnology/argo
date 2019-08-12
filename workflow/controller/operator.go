@@ -1479,6 +1479,7 @@ func (woc *wfOperationCtx) processAggregateNodeOutputs(templateName string, scop
 	sort.Sort(loopNodes(childNodes))
 	paramList := make([]map[string]string, 0)
 	resultsList := make([]wfv1.Item, 0)
+	artifactList := make([]map[string]wfv1.Artifact, 0)
 	for _, node := range childNodes {
 		if node.Outputs == nil {
 			continue
@@ -1500,6 +1501,15 @@ func (woc *wfOperationCtx) processAggregateNodeOutputs(templateName string, scop
 				resultsList = append(resultsList, wfv1.Item{Value: *node.Outputs.Result})
 			}
 		}
+
+		if len(node.Outputs.Artifacts) > 0 {
+			artifact := make(map[string]wfv1.Artifact)
+			for _, a := range node.Outputs.Artifacts {
+				artifact[a.Name] = a
+			}
+			artifactList = append(artifactList, artifact)
+
+		}
 	}
 	tmplType := woc.wf.GetTemplate(templateName).GetType()
 	if tmplType == wfv1.TemplateTypeScript {
@@ -1510,6 +1520,11 @@ func (woc *wfOperationCtx) processAggregateNodeOutputs(templateName string, scop
 	outputsJSON, _ := json.Marshal(paramList)
 	key := fmt.Sprintf("%s.outputs.parameters", prefix)
 	scope.addParamToScope(key, string(outputsJSON))
+
+	artifactJSON, _ := json.Marshal(artifactList)
+	artifactKey := fmt.Sprintf("%s.outputs.artifacts", prefix)
+	scope.addParamToScope(artifactKey, string(artifactJSON))
+	log.Infof("artifact to scope %s => %s", artifactKey, artifactJSON)
 }
 
 // addParamToGlobalScope exports any desired node outputs to the global scope, and adds it to the global outputs.
