@@ -1479,7 +1479,7 @@ func (woc *wfOperationCtx) processAggregateNodeOutputs(templateName string, scop
 	sort.Sort(loopNodes(childNodes))
 	paramList := make([]map[string]string, 0)
 	resultsList := make([]wfv1.Item, 0)
-	artifactsList := make([]map[string]wfv1.Artifact, 0)
+	artifactList := make([]map[string]wfv1.Artifact, 0)
 	for _, node := range childNodes {
 		if node.Outputs == nil {
 			continue
@@ -1507,6 +1507,7 @@ func (woc *wfOperationCtx) processAggregateNodeOutputs(templateName string, scop
 			for _, a := range node.Outputs.Artifacts {
 				artifact[a.Name] = a
 			}
+			artifactList = append(artifactList, artifact)
 
 		}
 	}
@@ -1520,7 +1521,7 @@ func (woc *wfOperationCtx) processAggregateNodeOutputs(templateName string, scop
 	key := fmt.Sprintf("%s.outputs.parameters", prefix)
 	scope.addParamToScope(key, string(outputsJSON))
 
-	artifactJSON, _ := json.Marshal(artifactsList)
+	artifactJSON, _ := json.Marshal(artifactList)
 	artifactKey := fmt.Sprintf("%s.outputs.artifacts", prefix)
 	scope.addParamToScope(artifactKey, string(artifactJSON))
 	log.Infof("artifact to scope %s => %s", artifactKey, artifactJSON)
