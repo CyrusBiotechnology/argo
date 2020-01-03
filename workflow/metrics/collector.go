@@ -146,6 +146,8 @@ func (wc *workflowCollector) collectWorkflow(ch chan<- prometheus.Metric, wf wfv
 		username = wf.Labels["user"]
 	}
 
-	addGauge(descWorkflowCyrusInfo, 1 /*A dummy value since this metric doesnt really have numeric data*/, username, wf.ObjectMeta.GenerateName)
+	workflowType := strings.TrimSuffix(wf.ObjectMeta.GenerateName, "-")
+
+	addGauge(descWorkflowCyrusInfo, 1 /*A dummy value since this metric doesnt really have numeric data*/, username, workflowType)
 
 }
