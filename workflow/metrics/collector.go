@@ -48,7 +48,7 @@ var (
 	descWorkflowCyrusInfo = prometheus.NewDesc(
 		"argo_workflow_cyrus_info",
 		"Cyrus specific workflow information.",
-		append(descWorkflowDefaultLabels, "user", "workflow_type"),
+		append(descWorkflowDefaultLabels, "user", "project_id", "protocol_name"),
 		nil,
 		)
 )
@@ -140,14 +140,26 @@ func (wc *workflowCollector) collectWorkflow(ch chan<- prometheus.Metric, wf wfv
 	}
 
 	var username string
-	if wf.Labels["user"] == ""{
+	var projectId string
+	var protocolName string
+	if wf.Labels["user"] == "" {
 		username = "UNKNOWN"
 	} else {
 		username = wf.Labels["user"]
 	}
 
-	workflowType := strings.TrimSuffix(wf.ObjectMeta.GenerateName, "-")
+	if wf.Labels["project-id"] == "" {
+		projectId = "UNKNOWN"
+	} else {
+		projectId = wf.Labels["project-id"]
+	}
 
-	addGauge(descWorkflowCyrusInfo, 1 /*A dummy value since this metric doesnt really have numeric data*/, username, workflowType)
+	if wf.Labels["protocol-name"] == "" {
+		protocolName = "UNKNOWN"
+	} else {
+		protocolName = wf.Labels["protocol-name"]
+	}
+
+	addGauge(descWorkflowCyrusInfo, 1 /*A dummy value since this metric doesnt really have numeric data*/, username, projectId, protocolName)
 
 }
