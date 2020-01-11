@@ -270,6 +270,11 @@ func (woc *wfOperationCtx) setGlobalParameters() {
 	for _, param := range woc.wf.Spec.Arguments.Parameters {
 		woc.globalParams["workflow.parameters."+param.Name] = *param.Value
 	}
+
+	for _, artifact := range woc.wf.Spec.Arguments.Artifacts {
+		woc.globalParams["workflow.artifacts."+artifact.Name] = artifact.Path
+	}
+
 	for k, v := range woc.wf.ObjectMeta.Annotations {
 		woc.globalParams["workflow.annotations."+k] = v
 	}
