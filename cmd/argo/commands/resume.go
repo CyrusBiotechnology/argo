@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/argoproj/argo/workflow/util"
+	"github.com/cyrusbiotechnology/argo/workflow/util"
 	"github.com/spf13/cobra"
 )
 

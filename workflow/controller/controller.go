@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	wfextv "github.com/argoproj/argo/pkg/client/informers/externalversions"
-	wfextvv1alpha1 "github.com/argoproj/argo/pkg/client/informers/externalversions/workflow/v1alpha1"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	wfextv "github.com/cyrusbiotechnology/argo/pkg/client/informers/externalversions"
+	wfextvv1alpha1 "github.com/cyrusbiotechnology/argo/pkg/client/informers/externalversions/workflow/v1alpha1"
 	log "github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	apierr "k8s.io/apimachinery/pkg/api/errors"
@@ -25,14 +25,14 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
-	"github.com/argoproj/argo"
-	wfclientset "github.com/argoproj/argo/pkg/client/clientset/versioned"
-	"github.com/argoproj/argo/workflow/common"
-	"github.com/argoproj/argo/workflow/config"
-	"github.com/argoproj/argo/workflow/metrics"
-	"github.com/argoproj/argo/workflow/persist/sqldb"
-	"github.com/argoproj/argo/workflow/ttlcontroller"
-	"github.com/argoproj/argo/workflow/util"
+	"github.com/cyrusbiotechnology/argo"
+	wfclientset "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned"
+	"github.com/cyrusbiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/workflow/config"
+	"github.com/cyrusbiotechnology/argo/workflow/metrics"
+	"github.com/cyrusbiotechnology/argo/workflow/persist/sqldb"
+	"github.com/cyrusbiotechnology/argo/workflow/ttlcontroller"
+	"github.com/cyrusbiotechnology/argo/workflow/util"
 )
 
 // WorkflowController is the controller for workflow resources

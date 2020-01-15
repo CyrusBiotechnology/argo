@@ -5,7 +5,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/argoproj/argo/errors"
+	"github.com/cyrusbiotechnology/argo/errors"
 )
 
 type KubeletExecutor struct {

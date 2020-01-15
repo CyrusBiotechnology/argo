@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/argoproj/argo/errors"
+	"github.com/cyrusbiotechnology/argo/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )

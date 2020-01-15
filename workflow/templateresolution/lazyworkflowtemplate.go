@@ -1,9 +1,9 @@
 package templateresolution
 
 import (
-	"github.com/argoproj/argo/pkg/apis/workflow"
-	v1alpha1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow"
+	v1alpha1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 

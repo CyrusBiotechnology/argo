@@ -11,11 +11,11 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/argoproj/argo/errors"
-	"github.com/argoproj/argo/util"
-	"github.com/argoproj/argo/util/file"
-	"github.com/argoproj/argo/workflow/common"
-	execcommon "github.com/argoproj/argo/workflow/executor/common"
+	"github.com/cyrusbiotechnology/argo/errors"
+	"github.com/cyrusbiotechnology/argo/util"
+	"github.com/cyrusbiotechnology/argo/util/file"
+	"github.com/cyrusbiotechnology/argo/workflow/common"
+	execcommon "github.com/cyrusbiotechnology/argo/workflow/executor/common"
 )
 
 type DockerExecutor struct{}

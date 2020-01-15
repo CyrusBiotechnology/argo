@@ -8,9 +8,9 @@ import (
 	"upper.io/db.v3/mysql"
 	"upper.io/db.v3/postgresql"
 
-	"github.com/argoproj/argo/errors"
-	"github.com/argoproj/argo/util"
-	"github.com/argoproj/argo/workflow/config"
+	"github.com/cyrusbiotechnology/argo/errors"
+	"github.com/cyrusbiotechnology/argo/util"
+	"github.com/cyrusbiotechnology/argo/workflow/config"
 )
 
 const (

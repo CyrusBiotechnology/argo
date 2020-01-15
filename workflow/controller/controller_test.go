@@ -18,10 +18,10 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
 
-	wfv1 "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	fakewfclientset "github.com/argoproj/argo/pkg/client/clientset/versioned/fake"
-	wfextv "github.com/argoproj/argo/pkg/client/informers/externalversions"
-	"github.com/argoproj/argo/workflow/config"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	fakewfclientset "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/fake"
+	wfextv "github.com/cyrusbiotechnology/argo/pkg/client/informers/externalversions"
+	"github.com/cyrusbiotechnology/argo/workflow/config"
 )
 
 var helloWorldWf = `

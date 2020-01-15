@@ -3,7 +3,7 @@ package common
 import (
 	"testing"
 
-	"github.com/argoproj/argo/test/util"
+	"github.com/cyrusbiotechnology/argo/test/util"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/kubernetes/fake"
 )

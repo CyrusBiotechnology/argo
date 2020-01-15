@@ -3,8 +3,8 @@ package commands
 import (
 	"os"
 
-	"github.com/argoproj/argo/cmd/argo/commands/template"
-	"github.com/argoproj/argo/util/cmd"
+	"github.com/cyrusbiotechnology/argo/cmd/argo/commands/template"
+	"github.com/cyrusbiotechnology/argo/util/cmd"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
 )
