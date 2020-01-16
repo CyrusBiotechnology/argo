@@ -32,7 +32,7 @@ func (wfc *WorkflowController) ResyncConfig() error {
 		if err != nil {
 			return errors.InternalWrapError(err)
 		}
-		return wfc.updateConfig(cm)
+		return wfc.updateConfigFromConfigMap(cm)
 	}
 }
 
@@ -46,18 +46,24 @@ func (wfc *WorkflowController) updateConfigFromFile(filePath string) error {
 
 }
 
-func (wfc *WorkflowController) updateConfig(cm *apiv1.ConfigMap) error {
-	configStr, ok := cm.Data[common.WorkflowControllerConfigMapKey]
+func (wfc *WorkflowController) updateConfigFromConfigMap(cm *apiv1.ConfigMap) error {
+	configString, ok := cm.Data[common.WorkflowControllerConfigMapKey]
 	if !ok {
 		log.Warnf("ConfigMap '%s' does not have key '%s'", wfc.configMap, common.WorkflowControllerConfigMapKey)
 		return nil
 	}
+
+	return wfc.updateConfig(configString)
+}
+
+func (wfc *WorkflowController) updateConfig(configString string) error {
+
 	var config config.WorkflowControllerConfig
-	err := yaml.Unmarshal([]byte(configStr), &config)
+	err := yaml.Unmarshal([]byte(configString), &config)
 	if err != nil {
 		return errors.InternalWrapError(err)
 	}
-	log.Printf("workflow controller configuration from %s:\n%s", wfc.configMap, configStr)
+	log.Printf("workflow controller configuration from %s:\n%s", wfc.configMap, configString)
 	if wfc.cliExecutorImage == "" && config.ExecutorImage == "" {
 		return errors.Errorf(errors.CodeBadRequest, "ConfigMap '%s' does not have executorImage", wfc.configMap)
 	}
