@@ -191,21 +191,6 @@ type WorkflowSpec struct {
 	// those generated from DNSPolicy.
 	DNSConfig *apiv1.PodDNSConfig `json:"dnsConfig,omitempty"`
 
-	// Host networking requested for this workflow pod. Default to false.
-	HostNetwork *bool `json:"hostNetwork,omitempty"`
-
-	// Set DNS policy for the pod.
-	// Defaults to "ClusterFirst".
-	// Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'.
-	// DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy.
-	// To have DNS options set along with hostNetwork, you have to specify DNS policy
-	// explicitly to 'ClusterFirstWithHostNet'.
-	DNSPolicy *apiv1.DNSPolicy `json:"dnsPolicy,omitempty"`
-
-	// PodDNSConfig defines the DNS parameters of a pod in addition to
-	// those generated from DNSPolicy.
-	DNSConfig *apiv1.PodDNSConfig `json:"dnsConfig,omitempty"`
-
 	// OnExit is a template reference which is invoked at the end of the
 	// workflow, irrespective of the success, failure, or error of the
 	// primary workflow.
@@ -387,6 +372,9 @@ type Template struct {
 	// PodSpecPatch holds strategic merge patch to apply against the pod spec. Allows parameterization of
 	// container fields which are not strings (e.g. resource limits).
 	PodSpecPatch string `json:"podSpecPatch,omitempty"`
+
+	Errors   []ExceptionCondition `json:"errors,omitempty"`
+	Warnings []ExceptionCondition `json:"warnings,omitempty"`
 }
 
 var _ TemplateHolder = &Template{}
@@ -932,6 +920,26 @@ func (s *S3Artifact) String() string {
 }
 
 func (s *S3Artifact) HasLocation() bool {
+	return s != nil && s.Bucket != ""
+}
+
+// GCSBucket contains the access information required for acting with a GCS bucket
+type GCSBucket struct {
+	Bucket            string                  `json:"bucket"`
+	CredentialsSecret apiv1.SecretKeySelector `json:"credentialsSecret"`
+}
+
+// GCSArtifact is the location of a GCS artifact
+type GCSArtifact struct {
+	GCSBucket `json:",inline"`
+	Key       string `json:"key"`
+}
+
+func (s *GCSArtifact) String() string {
+	return fmt.Sprintf("gs://%s/%s", s.Bucket, s.Key)
+}
+
+func (s *GCSArtifact) HasLocation() bool {
 	return s != nil && s.Bucket != ""
 }
 

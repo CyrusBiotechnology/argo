@@ -1,18 +1,16 @@
 package validate
 
 import (
-	"testing"
-
-	"sigs.k8s.io/yaml"
-	"github.com/stretchr/testify/assert"
-	apierr "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 	fakewfclientset "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/fake"
 	"github.com/cyrusbiotechnology/argo/test"
 	"github.com/cyrusbiotechnology/argo/workflow/common"
 	"github.com/cyrusbiotechnology/argo/workflow/templateresolution"
+	"github.com/stretchr/testify/assert"
+	apierr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
+	"testing"
 )
 
 var wfClientset = fakewfclientset.NewSimpleClientset()
@@ -401,7 +399,6 @@ spec:
       artifacts:
       - name: generated_hosts
         path: /etc/hosts
-
   - name: echo
     inputs:
       parameters:
@@ -420,7 +417,6 @@ spec:
       artifacts:
       - name: someoutput
         path: /tmp/passthrough
-
   - name: stepref
     steps:
     - - name: one
@@ -478,7 +474,6 @@ spec:
       value: hello world
     - name: message2
       value: foo bar
-
   templates:
   - name: test-workflow
     inputs:
@@ -499,8 +494,6 @@ spec:
             value: "{{workflow.parameters.message2}}"
           - name: message4
             value: "{{inputs.parameters.message-internal}}"
-
-
   - name: whalesay
     inputs:
       parameters:
@@ -579,7 +572,6 @@ spec:
     - name: "&-kubectl"
       http:
         url: https://storage.googleapis.com/kubernetes-release/release/v1.8.0/bin/linux/amd64/kubectl
-
   templates:
   - name: kubectl-input-artifact
     inputs:
@@ -607,7 +599,6 @@ metadata:
   generateName: steps-
 spec:
   entrypoint: hello-hello-hello
-
   templates:
   - name: hello-hello-hello
     steps:
@@ -629,7 +620,6 @@ spec:
           parameters:
           - name: message
             value: "hello2b"
-
   - name: whalesay
     inputs:
       parameters:
@@ -680,7 +670,6 @@ metadata:
   generateName: steps-
 spec:
   entrypoint: hello-hello-hello
-
   templates:
   - name: hello-hello-hello
     steps:
@@ -702,7 +691,6 @@ spec:
           parameters:
           - name: message
             value: "hello2b"
-
   - name: whalesay
     inputs:
       parameters:
@@ -1000,7 +988,7 @@ spec:
       - name: argo-source
         path: /src
         git:
-          repo: https://github.com/cyrusbiotechnology/argo.git
+          repo: https://github.com/argoproj/argo.git
     container:
       image: alpine:latest
       command: [sh, -c]
@@ -1113,7 +1101,6 @@ spec:
         arguments:
           artifacts:
           - name: art
-
   - name: whalesay
     input:
       artifacts:
@@ -1141,7 +1128,6 @@ spec:
         arguments:
           artifacts:
           - name: art
-
   - name: whalesay
     input:
       artifacts:
@@ -1179,7 +1165,6 @@ spec:
         arguments:
           parameters:
           - name: art
-
   - name: whalesay
     input:
       parameters:
@@ -1218,7 +1203,6 @@ spec:
         - false
         - string
         - 1.2
-
   - name: whalesay
     inputs:
       parameters:
@@ -1249,7 +1233,6 @@ spec:
         - hello world
         - goodbye world
         - [a, b, c]
-
   - name: whalesay
     inputs:
       parameters:
@@ -1406,149 +1389,6 @@ func TestSpecBadSequenceCountAndEnd(t *testing.T) {
 	wf := unmarshalWf(specBadSequenceCountAndEnd)
 	err := ValidateWorkflow(wftmplGetter, wf, ValidateOpts{Lint: true})
 	assert.Error(t, err)
-}
-
-var customVariableInput = `
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: hello-world-
-spec:
-  entrypoint: whalesay
-  templates:
-  - name: whalesay
-    container:
-      image: docker/whalesay:{{user.username}}
-`
-
-// TestCustomTemplatVariable verifies custom template variable
-func TestCustomTemplatVariable(t *testing.T) {
-	wf := unmarshalWf(customVariableInput)
-	err := ValidateWorkflow(wf, ValidateOpts{Lint: true})
-	assert.Equal(t, err, nil)
-}
-
-var baseImageOutputArtifact = `
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: base-image-out-art-
-spec:
-  entrypoint: base-image-out-art
-  templates:
-  - name: base-image-out-art
-    container:
-      image: alpine:latest
-      command: [echo, hello]
-    outputs:
-      artifacts:
-      - name: tmp
-        path: /tmp
-`
-
-var baseImageOutputParameter = `
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: base-image-out-art-
-spec:
-  entrypoint: base-image-out-art
-  templates:
-  - name: base-image-out-art
-    container:
-      image: alpine:latest
-      command: [echo, hello]
-    outputs:
-      parameters:
-      - name: tmp
-        valueFrom:
-          path: /tmp/file
-`
-
-var volumeMountOutputArtifact = `
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: base-image-out-art-
-spec:
-  entrypoint: base-image-out-art
-  volumes:
-  - name: workdir
-    emptyDir: {}
-  templates:
-  - name: base-image-out-art
-    container:
-      image: alpine:latest
-      command: [echo, hello]
-      volumeMounts:
-      - name: workdir
-        mountPath: /mnt/vol
-    outputs:
-      artifacts:
-      - name: workdir
-        path: /mnt/vol
-`
-
-var baseImageDirWithEmptyDirOutputArtifact = `
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: base-image-out-art-
-spec:
-  entrypoint: base-image-out-art
-  volumes:
-  - name: workdir
-    emptyDir: {}
-  templates:
-  - name: base-image-out-art
-    container:
-      image: alpine:latest
-      command: [echo, hello]
-      volumeMounts:
-      - name: workdir
-        mountPath: /mnt/vol
-    outputs:
-      artifacts:
-      - name: workdir
-        path: /mnt
-`
-
-// TestBaseImageOutputVerify verifies we error when we detect the condition when the container
-// runtime executor doesn't support output artifacts from a base image layer, and fails validation
-func TestBaseImageOutputVerify(t *testing.T) {
-	wfBaseOutArt := unmarshalWf(baseImageOutputArtifact)
-	wfBaseOutParam := unmarshalWf(baseImageOutputParameter)
-	wfEmptyDirOutArt := unmarshalWf(volumeMountOutputArtifact)
-	wfBaseWithEmptyDirOutArt := unmarshalWf(baseImageDirWithEmptyDirOutputArtifact)
-	var err error
-
-	for _, executor := range []string{common.ContainerRuntimeExecutorK8sAPI, common.ContainerRuntimeExecutorKubelet, common.ContainerRuntimeExecutorPNS, common.ContainerRuntimeExecutorDocker, ""} {
-		switch executor {
-		case common.ContainerRuntimeExecutorK8sAPI, common.ContainerRuntimeExecutorKubelet:
-			err = ValidateWorkflow(wfBaseOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
-			assert.Error(t, err)
-			err = ValidateWorkflow(wfBaseOutParam, ValidateOpts{ContainerRuntimeExecutor: executor})
-			assert.Error(t, err)
-			err = ValidateWorkflow(wfBaseWithEmptyDirOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
-			assert.Error(t, err)
-		case common.ContainerRuntimeExecutorPNS:
-			err = ValidateWorkflow(wfBaseOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
-			assert.NoError(t, err)
-			err = ValidateWorkflow(wfBaseOutParam, ValidateOpts{ContainerRuntimeExecutor: executor})
-			assert.NoError(t, err)
-			err = ValidateWorkflow(wfBaseWithEmptyDirOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
-			assert.Error(t, err)
-		case common.ContainerRuntimeExecutorDocker, "":
-			err = ValidateWorkflow(wfBaseOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
-			assert.NoError(t, err)
-			err = ValidateWorkflow(wfBaseOutParam, ValidateOpts{ContainerRuntimeExecutor: executor})
-			assert.NoError(t, err)
-			err = ValidateWorkflow(wfBaseWithEmptyDirOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
-			assert.NoError(t, err)
-		}
-		err = ValidateWorkflow(wfEmptyDirOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
-		assert.NoError(t, err)
-	}
 }
 
 var customVariableInput = `

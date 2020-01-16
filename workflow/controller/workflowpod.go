@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/cyrusbiotechnology/argo/errors"
 	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow"

@@ -588,9 +588,9 @@ func (woc *wfOperationCtx) podReconciliation() error {
 	seenPodLock := &sync.Mutex{}
 	wfNodesLock := &sync.RWMutex{}
 
-	performAssessment := func(pod *apiv1.Pod) {
+	performAssessment := func(pod *apiv1.Pod) error {
 		if pod == nil {
-			return
+			return nil
 		}
 		nodeNameForPod := pod.Annotations[common.AnnotationKeyNodeName]
 		nodeID := woc.wf.NodeID(nodeNameForPod)
@@ -610,7 +610,7 @@ func (woc *wfOperationCtx) podReconciliation() error {
 			if node.Completed() && !node.IsDaemoned() {
 				if tmpVal, tmpOk := pod.Labels[common.LabelKeyCompleted]; tmpOk {
 					if tmpVal == "true" {
-						return
+						return nil
 					}
 				}
 				woc.completedPods[pod.ObjectMeta.Name] = true
@@ -634,7 +634,11 @@ func (woc *wfOperationCtx) podReconciliation() error {
 		wg.Add(1)
 		go func(tmpPod apiv1.Pod) {
 			defer wg.Done()
-			performAssessment(&tmpPod)
+			err = performAssessment(&tmpPod)
+			if err != nil {
+				woc.log.Errorf("Failed to collect extended errors and warnings from pod %s: %s", pod.Name, err.Error())
+			}
+
 			err = woc.applyExecutionControl(&tmpPod, wfNodesLock)
 			if err != nil {
 				woc.log.Warnf("Failed to apply execution control to pod %s", tmpPod.Name)
@@ -888,9 +892,9 @@ func getPendingReason(pod *apiv1.Pod) string {
 	return ""
 }
 
-// handlePodFailures returns metadata about a Failed pod to be used in its NodeStatus
+// inferFailedReason returns metadata about a Failed pod to be used in its NodeStatus
 // Returns a tuple of the new phase and message
-func handlePodFailures(pod *apiv1.Pod) (wfv1.NodePhase, string) {
+func inferFailedReason(pod *apiv1.Pod) (wfv1.NodePhase, string) {
 	if pod.Status.Message != "" {
 		// Pod has a nice error message. Use that.
 		return wfv1.NodeFailed, pod.Status.Message

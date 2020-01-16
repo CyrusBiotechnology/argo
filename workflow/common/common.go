@@ -51,7 +51,6 @@ const (
 	// set by the controller and obeyed by the executor. For example, the controller will use this annotation to
 	// signal the executors of daemoned containers that it should terminate.
 	AnnotationKeyExecutionControl = workflow.WorkflowFullName + "/execution"
-	AnnotationKeyExecutionControl = workflow.WorkflowFullName + "/execution"
 	//AnnotationKeyErrors is the annotation key containing extended fatal error information
 	AnnotationKeyErrors = workflow.WorkflowFullName + "/errors"
 	//AnnotationKeyWarnings is the annotation key containing extended
@@ -149,13 +148,6 @@ type ExecutionControl struct {
 	Deadline *time.Time `json:"deadline,omitempty"`
 	// IncludeScriptOutput is containing flag to include script output
 	IncludeScriptOutput bool `json:"includeScriptOutput,omitempty"`
-}
-
-type ResourceInterface interface {
-	GetNamespace() string
-	GetSecrets(namespace, name, key string) ([]byte, error)
-	GetSecretFromVolMount(name, key string) ([]byte, error)
-	GetConfigMapKey(namespace, name, key string) (string, error)
 }
 
 type ResourceInterface interface {

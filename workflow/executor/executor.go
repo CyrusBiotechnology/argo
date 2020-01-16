@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cyrusbiotechnology/argo/workflow/artifacts/gcs"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -494,11 +495,6 @@ func (we *WorkflowExecutor) SaveLogs() (*wfv1.Artifact, error) {
 	fileName := "main.log"
 	mainLog := path.Join(tempLogsDir, fileName)
 	err = we.saveLogToFile(mainCtrID, mainLog)
-
-	mainLog, err := we.savebLogsToPath(tempLogsDir, fileName)
-	if err != nil {
-		return nil, err
-	}
 
 	art := wfv1.Artifact{
 		Name:             "main-logs",
