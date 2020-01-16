@@ -114,7 +114,7 @@ func (wfc *WorkflowController) watchControllerConfigMap(ctx context.Context) (ca
 			AddFunc: func(obj interface{}) {
 				if cm, ok := obj.(*apiv1.ConfigMap); ok {
 					log.Infof("Detected ConfigMap update. Updating the controller config.")
-					err := wfc.updateConfig(cm)
+					err := wfc.updateConfigFromConfigMap(cm)
 					if err != nil {
 						log.Errorf("Update of config failed due to: %v", err)
 					}
@@ -128,7 +128,7 @@ func (wfc *WorkflowController) watchControllerConfigMap(ctx context.Context) (ca
 				}
 				if newCm, ok := new.(*apiv1.ConfigMap); ok {
 					log.Infof("Detected ConfigMap update. Updating the controller config.")
-					err := wfc.updateConfig(newCm)
+					err := wfc.updateConfigFromConfigMap(newCm)
 					if err != nil {
 						log.Errorf("Update of config failed due to: %v", err)
 					}
