@@ -1074,6 +1074,8 @@ func createArchiveLocationSecret(tmpl *wfv1.Template, volMap map[string]apiv1.Vo
 		createSecretVal(volMap, gitRepo.UsernameSecret, uniqueKeyMap)
 		createSecretVal(volMap, gitRepo.PasswordSecret, uniqueKeyMap)
 		createSecretVal(volMap, gitRepo.SSHPrivateKeySecret, uniqueKeyMap)
+	} else if gcsRepo := tmpl.ArchiveLocation.GCS; gcsRepo != nil {
+		createSecretVal(volMap, &gcsRepo.CredentialsSecret, uniqueKeyMap)
 	}
 }
 
@@ -1091,6 +1093,8 @@ func createSecretVolume(volMap map[string]apiv1.Volume, art wfv1.Artifact, keyMa
 	} else if art.HDFS != nil {
 		createSecretVal(volMap, art.HDFS.KrbCCacheSecret, keyMap)
 		createSecretVal(volMap, art.HDFS.KrbKeytabSecret, keyMap)
+	} else if art.GCS != nil {
+		createSecretVal(volMap, &art.GCS.CredentialsSecret, keyMap)
 	}
 }
 
