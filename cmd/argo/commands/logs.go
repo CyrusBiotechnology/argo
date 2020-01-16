@@ -23,10 +23,10 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/watch"
 
-	"github.com/argoproj/pkg/errors"
 	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 	workflowv1 "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	"github.com/cyrusbiotechnology/argo/workflow/util"
+	"github.com/argoproj/pkg/errors"
 )
 
 type logEntry struct {
@@ -86,6 +86,7 @@ func NewLogsCommand() *cobra.Command {
 	command.Flags().StringVar(&sinceTime, "since-time", "", "Only return logs after a specific date (RFC3339). Defaults to all logs. Only one of since-time / since may be used.")
 	command.Flags().Int64Var(&tail, "tail", -1, "Lines of recent log file to display. Defaults to -1 with no selector, showing all log lines otherwise 10, if a selector is provided.")
 	command.Flags().BoolVar(&printer.timestamps, "timestamps", false, "Include timestamps on each line in the log output")
+	command.Flags().BoolVar(&noColor, "no-color", false, "Disable colorized output")
 	return command
 }
 
@@ -204,7 +205,7 @@ func (p *logPrinter) printLiveWorkflowLogs(workflowName string, wfClient workflo
 		}
 		for id := range wf.Status.Nodes {
 			node := wf.Status.Nodes[id]
-			if node.Type == v1alpha1.NodeTypePod && node.Phase != v1alpha1.NodeError && streamedPods[node.ID] == false {
+			if node.Type == v1alpha1.NodeTypePod && node.Phase != v1alpha1.NodeError && !streamedPods[node.ID] {
 				streamedPods[node.ID] = true
 				go func() {
 					var sinceTimePtr *metav1.Time
@@ -355,6 +356,12 @@ func (p *logPrinter) getPodLogs(
 						})
 					}
 				}
+			} else {
+				callback(logEntry{
+					pod:         podName,
+					displayName: displayName,
+					line:        line,
+				})
 			}
 		}
 	}
@@ -369,7 +376,7 @@ func mergeSorted(logs [][]logEntry) []logEntry {
 		left := logs[0]
 		right := logs[1]
 		size, i, j := len(left)+len(right), 0, 0
-		merged := make([]logEntry, size, size)
+		merged := make([]logEntry, size)
 
 		for k := 0; k < size; k++ {
 			if i > len(left)-1 && j <= len(right)-1 {

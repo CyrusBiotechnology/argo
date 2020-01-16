@@ -6,6 +6,9 @@ import (
 	"strings"
 	"time"
 
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	wfextv "github.com/cyrusbiotechnology/argo/pkg/client/informers/externalversions"
+	wfextvv1alpha1 "github.com/cyrusbiotechnology/argo/pkg/client/informers/externalversions/workflow/v1alpha1"
 	log "github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	apierr "k8s.io/apimachinery/pkg/api/errors"
@@ -25,7 +28,9 @@ import (
 	"github.com/cyrusbiotechnology/argo"
 	wfclientset "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned"
 	"github.com/cyrusbiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/workflow/config"
 	"github.com/cyrusbiotechnology/argo/workflow/metrics"
+	"github.com/cyrusbiotechnology/argo/workflow/persist/sqldb"
 	"github.com/cyrusbiotechnology/argo/workflow/ttlcontroller"
 	"github.com/cyrusbiotechnology/argo/workflow/util"
 )
@@ -39,7 +44,7 @@ type WorkflowController struct {
 	// configFile is the path to a configuration file
 	configFile string
 	// Config is the workflow controller's configuration
-	Config WorkflowControllerConfig
+	Config config.WorkflowControllerConfig
 
 	// cliExecutorImage is the executor image as specified from the command line
 	cliExecutorImage string
@@ -53,18 +58,22 @@ type WorkflowController struct {
 	wfclientset   wfclientset.Interface
 
 	// datastructures to support the processing of workflows and workflow pods
-	wfInformer    cache.SharedIndexInformer
-	podInformer   cache.SharedIndexInformer
-	wfQueue       workqueue.RateLimitingInterface
-	podQueue      workqueue.RateLimitingInterface
-	completedPods chan string
-	throttler     Throttler
+	wfInformer     cache.SharedIndexInformer
+	wftmplInformer wfextvv1alpha1.WorkflowTemplateInformer
+	podInformer    cache.SharedIndexInformer
+	wfQueue        workqueue.RateLimitingInterface
+	podQueue       workqueue.RateLimitingInterface
+	completedPods  chan string
+	gcPods         chan string // pods to be deleted depend on GC strategy
+	throttler      Throttler
+	wfDBctx        sqldb.DBRepository
 }
 
 const (
-	workflowResyncPeriod        = 20 * time.Minute
-	workflowMetricsResyncPeriod = 1 * time.Minute
-	podResyncPeriod             = 30 * time.Minute
+	workflowResyncPeriod         = 20 * time.Minute
+	workflowTemplateResyncPeriod = 20 * time.Minute
+	workflowMetricsResyncPeriod  = 1 * time.Minute
+	podResyncPeriod              = 30 * time.Minute
 )
 
 // NewWorkflowController instantiates a new WorkflowController
@@ -91,6 +100,7 @@ func NewWorkflowController(
 		wfQueue:                    workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter()),
 		podQueue:                   workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter()),
 		completedPods:              make(chan string, 512),
+		gcPods:                     make(chan string, 512),
 	}
 	wfc.throttler = NewThrottler(0, wfc.wfQueue)
 	return &wfc
@@ -148,16 +158,19 @@ func (wfc *WorkflowController) Run(ctx context.Context, wfWorkers, podWorkers in
 	}
 
 	wfc.wfInformer = util.NewWorkflowInformer(wfc.restConfig, wfc.Config.Namespace, workflowResyncPeriod, wfc.tweakWorkflowlist)
+	wfc.wftmplInformer = wfc.newWorkflowTemplateInformer()
 
 	wfc.addWorkflowInformerHandler()
 	wfc.podInformer = wfc.newPodInformer()
 
 	go wfc.wfInformer.Run(ctx.Done())
+	go wfc.wftmplInformer.Informer().Run(ctx.Done())
 	go wfc.podInformer.Run(ctx.Done())
 	go wfc.podLabeler(ctx.Done())
+	go wfc.podGarbageCollector(ctx.Done())
 
 	// Wait for all involved caches to be synced, before processing items from the queue is started
-	for _, informer := range []cache.SharedIndexInformer{wfc.wfInformer, wfc.podInformer} {
+	for _, informer := range []cache.SharedIndexInformer{wfc.wfInformer, wfc.wftmplInformer.Informer(), wfc.podInformer} {
 		if !cache.WaitForCacheSync(ctx.Done(), informer.HasSynced) {
 			log.Error("Timed out waiting for caches to sync")
 			return
@@ -194,6 +207,30 @@ func (wfc *WorkflowController) podLabeler(stopCh <-chan struct{}) {
 				}
 			} else {
 				log.Infof("Labeled pod %s/%s completed", namespace, podName)
+			}
+		}
+	}
+}
+
+// podGarbageCollector will delete all pods on the controllers gcPods channel as completed
+func (wfc *WorkflowController) podGarbageCollector(stopCh <-chan struct{}) {
+	for {
+		select {
+		case <-stopCh:
+			return
+		case pod := <-wfc.gcPods:
+			parts := strings.Split(pod, "/")
+			if len(parts) != 2 {
+				log.Warnf("Unexpected item on gcPods channel: %s", pod)
+				continue
+			}
+			namespace := parts[0]
+			podName := parts[1]
+			err := common.DeletePod(wfc.kubeclientset, podName, namespace)
+			if err != nil {
+				log.Errorf("Failed to delete pod %s/%s for gc: %+v", namespace, podName, err)
+			} else {
+				log.Infof("Delete pod %s/%s for gc successfully", namespace, podName)
 			}
 		}
 	}
@@ -252,6 +289,17 @@ func (wfc *WorkflowController) processNextItem() bool {
 		return true
 	}
 
+	// Loading running workflow from persistence storage if NodeStatusOffload enabled
+	if wfc.wfDBctx != nil && wfc.wfDBctx.IsNodeStatusOffload() {
+		wfDB, err := wfc.wfDBctx.Get(string(wf.UID))
+		if err != nil {
+			log.Warnf("DB get operation failed. %v", err)
+		}
+		if wfDB != nil && wfDB.UID != "" {
+			wf = wfDB
+		}
+	}
+
 	woc := newWorkflowOperationCtx(wf, wfc)
 
 	// Decompress the node if it is compressed
@@ -266,6 +314,24 @@ func (wfc *WorkflowController) processNextItem() bool {
 	woc.operate()
 	if woc.wf.Status.Completed() {
 		wfc.throttler.Remove(key)
+		// Send all completed pods to gcPods channel to delete it later depend on the PodGCStrategy.
+		var doPodGC bool
+		if woc.wf.Spec.PodGC != nil {
+			switch woc.wf.Spec.PodGC.Strategy {
+			case wfv1.PodGCOnWorkflowCompletion:
+				doPodGC = true
+			case wfv1.PodGCOnWorkflowSuccess:
+				if woc.wf.Status.Successful() {
+					doPodGC = true
+				}
+			}
+		}
+		if doPodGC {
+			for podName := range woc.completedPods {
+				pod := fmt.Sprintf("%s/%s", woc.wf.ObjectMeta.Namespace, podName)
+				woc.controller.gcPods <- pod
+			}
+		}
 	}
 
 	// TODO: operate should return error if it was unable to operate properly
@@ -448,4 +514,32 @@ func (wfc *WorkflowController) newPodInformer() cache.SharedIndexInformer {
 		},
 	)
 	return informer
+}
+
+func (wfc *WorkflowController) newWorkflowTemplateInformer() wfextvv1alpha1.WorkflowTemplateInformer {
+	var informerFactory wfextv.SharedInformerFactory
+	if wfc.Config.Namespace != "" {
+		informerFactory = wfextv.NewFilteredSharedInformerFactory(wfc.wfclientset, workflowTemplateResyncPeriod, wfc.Config.Namespace, func(opts *metav1.ListOptions) {})
+	} else {
+		informerFactory = wfextv.NewSharedInformerFactory(wfc.wfclientset, workflowTemplateResyncPeriod)
+	}
+	return informerFactory.Argoproj().V1alpha1().WorkflowTemplates()
+}
+
+func (wfc *WorkflowController) createPersistenceContext() (*sqldb.WorkflowDBContext, error) {
+
+	var wfDBCtx sqldb.WorkflowDBContext
+	var err error
+
+	//wfDBCtx.TableName = wfc.Config.Persistence.TableName
+	wfDBCtx.NodeStatusOffload = wfc.Config.Persistence.NodeStatusOffload
+
+	wfDBCtx.Session, wfDBCtx.TableName, err = sqldb.CreateDBSession(wfc.kubeclientset, wfc.namespace, wfc.Config.Persistence)
+
+	if err != nil {
+		log.Errorf("Error in createPersistenceContext. %v", err)
+		return nil, err
+	}
+
+	return &wfDBCtx, nil
 }

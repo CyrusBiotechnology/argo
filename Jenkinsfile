@@ -44,7 +44,7 @@ pipeline {
 
         stage('build utility container') {
             steps {
-                sh "docker build -t builder-base --target builder-base ."
+                sh "docker build -t builder-base --target argo-build ."
             }
         }
 

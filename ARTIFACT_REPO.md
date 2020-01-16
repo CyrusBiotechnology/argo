@@ -123,7 +123,7 @@ data:
           name: my-minio-cred
           key: secretkey
 ```
-The secrets are retrieve from the namespace you use to run your workflows. Note that you can specify a `keyPrefix`.
+The secrets are retrieved from the namespace you use to run your workflows. Note that you can specify a `keyPrefix`.
 
 # Accessing Non-Default Artifact Repositories
 
@@ -154,7 +154,7 @@ The `endpoint`, `accessKeySecret` and `secretKeySecret` are the same as for conf
         path: /my-ouput-artifact
         s3:
           endpoint: storage.googleapis.com
-          bucket: my-aws-bucket-name
+          bucket: my-gcs-bucket-name
           # NOTE that all output artifacts are automatically tarred and
           # gzipped before saving. So as a best practice, .tgz or .tar.gz
           # should be incorporated into the key name so the resulting file

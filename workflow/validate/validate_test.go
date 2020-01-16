@@ -1,21 +1,42 @@
 package validate
 
 import (
-	"testing"
-
-	"github.com/ghodss/yaml"
-	"github.com/stretchr/testify/assert"
-
 	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	fakewfclientset "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/fake"
 	"github.com/cyrusbiotechnology/argo/test"
 	"github.com/cyrusbiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/workflow/templateresolution"
+	"github.com/stretchr/testify/assert"
+	apierr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
+	"testing"
 )
 
-// validate is a test helper to accept YAML as a string and return
+var wfClientset = fakewfclientset.NewSimpleClientset()
+var wftmplGetter = templateresolution.WrapWorkflowTemplateInterface(wfClientset.ArgoprojV1alpha1().WorkflowTemplates(metav1.NamespaceDefault))
+
+func createWorkflowTemplate(yamlStr string) error {
+	wftmpl := unmarshalWftmpl(yamlStr)
+	_, err := wfClientset.ArgoprojV1alpha1().WorkflowTemplates(metav1.NamespaceDefault).Create(wftmpl)
+	if err != nil && apierr.IsAlreadyExists(err) {
+		return nil
+	}
+	return err
+}
+
+// validate is a test helper to accept Workflow YAML as a string and return
 // its validation result.
 func validate(yamlStr string) error {
 	wf := unmarshalWf(yamlStr)
-	return ValidateWorkflow(wf, ValidateOpts{})
+	return ValidateWorkflow(wftmplGetter, wf, ValidateOpts{})
+}
+
+// validateWorkflowTemplate is a test helper to accept WorkflowTemplate YAML as a string and return
+// its validation result.
+func validateWorkflowTemplate(yamlStr string) error {
+	wftmpl := unmarshalWftmpl(yamlStr)
+	return ValidateWorkflowTemplate(wftmplGetter, wftmpl)
 }
 
 func unmarshalWf(yamlStr string) *wfv1.Workflow {
@@ -25,6 +46,15 @@ func unmarshalWf(yamlStr string) *wfv1.Workflow {
 		panic(err)
 	}
 	return &wf
+}
+
+func unmarshalWftmpl(yamlStr string) *wfv1.WorkflowTemplate {
+	var wftmpl wfv1.WorkflowTemplate
+	err := yaml.Unmarshal([]byte(yamlStr), &wftmpl)
+	if err != nil {
+		panic(err)
+	}
+	return &wftmpl
 }
 
 const invalidErr = "is invalid"
@@ -239,7 +269,7 @@ var stepOutputReferences = `
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
-  generateName: hello-world-
+  generateName: step-output-ref-
 spec:
   entrypoint: whalesay
   templates:
@@ -264,11 +294,146 @@ spec:
         arguments:
           parameters:
           - name: message
-            value: "{{steps.one.outparam}}"
+            value: "{{steps.one.outputs.parameters.outparam}}"
 `
 
-func TestStepReference(t *testing.T) {
+func TestStepOutputReference(t *testing.T) {
 	err := validate(stepOutputReferences)
+	assert.Nil(t, err)
+}
+
+
+var stepStatusReferences = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: status-ref-
+spec:
+  entrypoint: statusref
+  templates:
+  - name: statusref
+    steps:
+    - - name: one
+        template: say
+        arguments:
+          parameters:
+          - name: message
+            value: "Hello, world"
+    - - name: two
+        template: say
+        arguments:
+          parameters:
+          - name: message
+            value: "{{steps.one.status}}"
+  - name: say
+    inputs:
+      parameters:
+      - name: message
+        value: "value"
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args: ["echo {{inputs.parameters.message}}"]
+`
+
+func TestStepStatusReference(t *testing.T) {
+	err := validate(stepStatusReferences)
+	assert.Nil(t, err)
+}
+
+
+var stepStatusReferencesNoFutureReference = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: status-ref-
+spec:
+  entrypoint: statusref
+  templates:
+  - name: statusref
+    steps:
+    - - name: one
+        template: say
+        arguments:
+          parameters:
+          - name: message
+            value: "{{steps.two.status}}"
+    - - name: two
+        template: say
+        arguments:
+          parameters:
+          - name: message
+            value: "{{steps.one.status}}"
+  - name: say
+    inputs:
+      parameters:
+      - name: message
+        value: "value"
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args: ["echo {{inputs.parameters.message}}"]
+`
+
+func TestStepStatusReferenceNoFutureReference(t *testing.T) {
+	err := validate(stepStatusReferencesNoFutureReference)
+	// Can't reference the status of steps that have not run yet
+	if assert.NotNil(t, err) {
+		assert.Contains(t, err.Error(), "failed to resolve {{steps.two.status}}")
+	}
+}
+
+var stepArtReferences = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: step-art-ref-
+spec:
+  entrypoint: stepref
+  templates:
+  - name: generate
+    container:
+      image: alpine:3.7
+      command: [echo, generate]
+    outputs:
+      artifacts:
+      - name: generated_hosts
+        path: /etc/hosts
+  - name: echo
+    inputs:
+      parameters:
+      - name: message
+      artifacts:
+      - name: passthrough
+        path: /tmp/passthrough
+    container:
+      image: alpine:3.7
+      command: [echo, "{{inputs.parameters.message}}"]
+    outputs:
+      parameters:
+      - name: hosts
+        valueFrom:
+          path: /etc/hosts
+      artifacts:
+      - name: someoutput
+        path: /tmp/passthrough
+  - name: stepref
+    steps:
+    - - name: one
+        template: generate
+    - - name: two
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: val
+          artifacts:
+          - name: passthrough
+            from: "{{steps.one.outputs.artifacts.generated_hosts}}"
+`
+
+func TestStepArtReference(t *testing.T) {
+	err := validate(stepArtReferences)
 	assert.Nil(t, err)
 }
 
@@ -301,6 +466,7 @@ kind: Workflow
 metadata:
   generateName: global-parameters-complex-
 spec:
+  priority: 100
   entrypoint: test-workflow
   arguments:
     parameters:
@@ -308,7 +474,6 @@ spec:
       value: hello world
     - name: message2
       value: foo bar
-
   templates:
   - name: test-workflow
     inputs:
@@ -329,8 +494,6 @@ spec:
             value: "{{workflow.parameters.message2}}"
           - name: message4
             value: "{{inputs.parameters.message-internal}}"
-
-
   - name: whalesay
     inputs:
       parameters:
@@ -409,7 +572,6 @@ spec:
     - name: "&-kubectl"
       http:
         url: https://storage.googleapis.com/kubernetes-release/release/v1.8.0/bin/linux/amd64/kubectl
-
   templates:
   - name: kubectl-input-artifact
     inputs:
@@ -437,7 +599,6 @@ metadata:
   generateName: steps-
 spec:
   entrypoint: hello-hello-hello
-
   templates:
   - name: hello-hello-hello
     steps:
@@ -459,7 +620,6 @@ spec:
           parameters:
           - name: message
             value: "hello2b"
-
   - name: whalesay
     inputs:
       parameters:
@@ -510,7 +670,6 @@ metadata:
   generateName: steps-
 spec:
   entrypoint: hello-hello-hello
-
   templates:
   - name: hello-hello-hello
     steps:
@@ -532,7 +691,6 @@ spec:
           parameters:
           - name: message
             value: "hello2b"
-
   - name: whalesay
     inputs:
       parameters:
@@ -695,7 +853,7 @@ func TestInvalidOutputParam(t *testing.T) {
 	}
 	err = validate(invalidOutputMissingValueFrom)
 	if assert.NotNil(t, err) {
-		assert.Contains(t, err.Error(), "valueFrom not specified")
+		assert.Contains(t, err.Error(), "does not have valueFrom or value specified")
 	}
 	err = validate(invalidOutputMultipleValueFrom)
 	if assert.NotNil(t, err) {
@@ -786,6 +944,28 @@ func TestExitHandler(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+var workflowWithPriority = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: with-priority-
+spec:
+  entrypoint: whalesay
+  priority: 100
+  templates:
+  - name: whalesay
+    container:
+      image: docker/whalesay:latest
+      command: [cowsay]
+      args: ["{{workflow.priority}}"]
+`
+
+func TestPriorityVariable(t *testing.T) {
+	err := validate(workflowWithPriority)
+	assert.Nil(t, err)
+}
+
+
 var volumeMountArtifactPathCollision = `
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
@@ -808,7 +988,7 @@ spec:
       - name: argo-source
         path: /src
         git:
-          repo: https://github.com/cyrusbiotechnology/argo.git
+          repo: https://github.com/argoproj/argo.git
     container:
       image: alpine:latest
       command: [sh, -c]
@@ -821,14 +1001,14 @@ spec:
 func TestVolumeMountArtifactPathCollision(t *testing.T) {
 	// ensure we detect and reject path collisions
 	wf := unmarshalWf(volumeMountArtifactPathCollision)
-	err := ValidateWorkflow(wf, ValidateOpts{})
+	err := ValidateWorkflow(wftmplGetter, wf, ValidateOpts{})
 	if assert.NotNil(t, err) {
 		assert.Contains(t, err.Error(), "already mounted")
 	}
 	// tweak the mount path and validation should now be successful
 	wf.Spec.Templates[0].Container.VolumeMounts[0].MountPath = "/differentpath"
-	err = ValidateWorkflow(wf, ValidateOpts{})
-	assert.Nil(t, err)
+	err = ValidateWorkflow(wftmplGetter, wf, ValidateOpts{})
+	assert.NoError(t, err)
 }
 
 var activeDeadlineSeconds = `
@@ -921,7 +1101,6 @@ spec:
         arguments:
           artifacts:
           - name: art
-
   - name: whalesay
     input:
       artifacts:
@@ -949,7 +1128,6 @@ spec:
         arguments:
           artifacts:
           - name: art
-
   - name: whalesay
     input:
       artifacts:
@@ -987,7 +1165,6 @@ spec:
         arguments:
           parameters:
           - name: art
-
   - name: whalesay
     input:
       parameters:
@@ -1026,7 +1203,6 @@ spec:
         - false
         - string
         - 1.2
-
   - name: whalesay
     inputs:
       parameters:
@@ -1057,7 +1233,6 @@ spec:
         - hello world
         - goodbye world
         - [a, b, c]
-
   - name: whalesay
     inputs:
       parameters:
@@ -1113,8 +1288,10 @@ func TestPodNameVariable(t *testing.T) {
 }
 
 func TestGlobalParamWithVariable(t *testing.T) {
-	err := ValidateWorkflow(test.LoadE2EWorkflow("functional/global-outputs-variable.yaml"), ValidateOpts{})
-	assert.Nil(t, err)
+
+	err := ValidateWorkflow(wftmplGetter, test.LoadE2EWorkflow("functional/global-outputs-variable.yaml"), ValidateOpts{})
+	assert.NoError(t, err)
+
 }
 
 var specArgumentNoValue = `
@@ -1138,9 +1315,9 @@ spec:
 // TestSpecArgumentNoValue we allow parameters to have no value at the spec level during linting
 func TestSpecArgumentNoValue(t *testing.T) {
 	wf := unmarshalWf(specArgumentNoValue)
-	err := ValidateWorkflow(wf, ValidateOpts{Lint: true})
-	assert.Nil(t, err)
-	err = ValidateWorkflow(wf, ValidateOpts{})
+	err := ValidateWorkflow(wftmplGetter, wf, ValidateOpts{Lint: true})
+	assert.NoError(t, err)
+	err = ValidateWorkflow(wftmplGetter, wf, ValidateOpts{})
 	assert.NotNil(t, err)
 }
 
@@ -1175,8 +1352,8 @@ spec:
 // TestSpecArgumentSnakeCase we allow parameter and artifact names to be snake case
 func TestSpecArgumentSnakeCase(t *testing.T) {
 	wf := unmarshalWf(specArgumentSnakeCase)
-	err := ValidateWorkflow(wf, ValidateOpts{Lint: true})
-	assert.Nil(t, err)
+	err := ValidateWorkflow(wftmplGetter, wf, ValidateOpts{Lint: true})
+	assert.NoError(t, err)
 }
 
 var specBadSequenceCountAndEnd = `
@@ -1210,7 +1387,7 @@ spec:
 // TestSpecBadSequenceCountAndEnd verifies both count and end cannot be defined
 func TestSpecBadSequenceCountAndEnd(t *testing.T) {
 	wf := unmarshalWf(specBadSequenceCountAndEnd)
-	err := ValidateWorkflow(wf, ValidateOpts{Lint: true})
+	err := ValidateWorkflow(wftmplGetter, wf, ValidateOpts{Lint: true})
 	assert.Error(t, err)
 }
 
@@ -1230,7 +1407,7 @@ spec:
 // TestCustomTemplatVariable verifies custom template variable
 func TestCustomTemplatVariable(t *testing.T) {
 	wf := unmarshalWf(customVariableInput)
-	err := ValidateWorkflow(wf, ValidateOpts{Lint: true})
+	err := ValidateWorkflow(wftmplGetter, wf, ValidateOpts{Lint: true})
 	assert.Equal(t, err, nil)
 }
 
@@ -1331,28 +1508,392 @@ func TestBaseImageOutputVerify(t *testing.T) {
 	for _, executor := range []string{common.ContainerRuntimeExecutorK8sAPI, common.ContainerRuntimeExecutorKubelet, common.ContainerRuntimeExecutorPNS, common.ContainerRuntimeExecutorDocker, ""} {
 		switch executor {
 		case common.ContainerRuntimeExecutorK8sAPI, common.ContainerRuntimeExecutorKubelet:
-			err = ValidateWorkflow(wfBaseOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
+			err = ValidateWorkflow(wftmplGetter, wfBaseOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
 			assert.Error(t, err)
-			err = ValidateWorkflow(wfBaseOutParam, ValidateOpts{ContainerRuntimeExecutor: executor})
+			err = ValidateWorkflow(wftmplGetter, wfBaseOutParam, ValidateOpts{ContainerRuntimeExecutor: executor})
 			assert.Error(t, err)
-			err = ValidateWorkflow(wfBaseWithEmptyDirOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
+			err = ValidateWorkflow(wftmplGetter, wfBaseWithEmptyDirOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
 			assert.Error(t, err)
 		case common.ContainerRuntimeExecutorPNS:
-			err = ValidateWorkflow(wfBaseOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
+			err = ValidateWorkflow(wftmplGetter, wfBaseOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
 			assert.NoError(t, err)
-			err = ValidateWorkflow(wfBaseOutParam, ValidateOpts{ContainerRuntimeExecutor: executor})
+			err = ValidateWorkflow(wftmplGetter, wfBaseOutParam, ValidateOpts{ContainerRuntimeExecutor: executor})
 			assert.NoError(t, err)
-			err = ValidateWorkflow(wfBaseWithEmptyDirOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
+			err = ValidateWorkflow(wftmplGetter, wfBaseWithEmptyDirOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
 			assert.Error(t, err)
 		case common.ContainerRuntimeExecutorDocker, "":
-			err = ValidateWorkflow(wfBaseOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
+			err = ValidateWorkflow(wftmplGetter, wfBaseOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
 			assert.NoError(t, err)
-			err = ValidateWorkflow(wfBaseOutParam, ValidateOpts{ContainerRuntimeExecutor: executor})
+			err = ValidateWorkflow(wftmplGetter, wfBaseOutParam, ValidateOpts{ContainerRuntimeExecutor: executor})
 			assert.NoError(t, err)
-			err = ValidateWorkflow(wfBaseWithEmptyDirOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
+			err = ValidateWorkflow(wftmplGetter, wfBaseWithEmptyDirOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
 			assert.NoError(t, err)
 		}
-		err = ValidateWorkflow(wfEmptyDirOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
+		err = ValidateWorkflow(wftmplGetter, wfEmptyDirOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
 		assert.NoError(t, err)
+	}
+}
+
+var localTemplateRef = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: local-template-ref-
+spec:
+  entrypoint: A
+  templates:
+  - name: A
+    template: B
+  - name: B
+    container:
+      image: alpine:latest
+      command: [echo, hello]
+`
+
+func TestLocalTemplateRef(t *testing.T) {
+	err := validate(localTemplateRef)
+	assert.Nil(t, err)
+}
+
+var undefinedLocalTemplateRef = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: undefined-local-template-ref-
+spec:
+  entrypoint: A
+  templates:
+  - name: A
+    template: undef
+`
+
+func TestUndefinedLocalTemplateRef(t *testing.T) {
+	err := validate(undefinedLocalTemplateRef)
+	if assert.NotNil(t, err) {
+		assert.Contains(t, err.Error(), "not found")
+	}
+}
+
+var templateRefTarget = `
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: template-ref-target
+spec:
+  templates:
+  - name: A
+    container:
+      image: alpine:latest
+      command: [echo, hello]
+`
+
+var templateRef = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: template-ref-
+spec:
+  entrypoint: A
+  templates:
+  - name: A
+    templateRef:
+      name: template-ref-target
+      template: A
+`
+
+func TestWorkflowTemplate(t *testing.T) {
+	err := validateWorkflowTemplate(templateRefTarget)
+	assert.Nil(t, err)
+}
+
+func TestTemplateRef(t *testing.T) {
+	err := createWorkflowTemplate(templateRefTarget)
+	assert.Nil(t, err)
+	err = validate(templateRef)
+	assert.Nil(t, err)
+}
+
+var templateRefNestedTarget = `
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: template-ref-nested-target
+spec:
+  templates:
+  - name: A
+    templateRef:
+      name: template-ref-target
+      template: A
+`
+
+var nestedTemplateRef = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: template-ref-
+spec:
+  entrypoint: A
+  templates:
+  - name: A
+    templateRef:
+      name: template-ref-nested-target
+      template: A
+`
+
+func TestNestedTemplateRef(t *testing.T) {
+	err := createWorkflowTemplate(templateRefTarget)
+	assert.Nil(t, err)
+	err = createWorkflowTemplate(templateRefNestedTarget)
+	assert.Nil(t, err)
+	err = validate(nestedTemplateRef)
+	assert.Nil(t, err)
+}
+
+var templateRefNestedLocalTarget = `
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: template-ref-nested-local-target
+spec:
+  templates:
+  - name: A
+    template: B
+  - name: B
+    container:
+      image: alpine:latest
+      command: [echo, hello]
+`
+
+var nestedLocalTemplateRef = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: template-ref-
+spec:
+  entrypoint: A
+  templates:
+  - name: A
+    templateRef:
+      name: template-ref-nested-local-target
+      template: A
+`
+
+func TestNestedLocalTemplateRef(t *testing.T) {
+	err := createWorkflowTemplate(templateRefNestedLocalTarget)
+	assert.Nil(t, err)
+	err = validate(nestedLocalTemplateRef)
+	assert.Nil(t, err)
+}
+
+var undefinedTemplateRef = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: undefined-template-ref-
+spec:
+  entrypoint: A
+  templates:
+  - name: A
+    templateRef:
+      name: foo
+      template: echo
+`
+
+func TestUndefinedTemplateRef(t *testing.T) {
+	err := validate(undefinedTemplateRef)
+	if assert.NotNil(t, err) {
+		assert.Contains(t, err.Error(), "not found")
+	}
+}
+
+var validResourceWorkflow = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: valid-resource-
+spec:
+  entrypoint: whalesay
+  templates:
+  - name: whalesay
+    resource:
+      action: create
+      manifest: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: whalesay-cm
+`
+
+// TestValidResourceWorkflow verifies a workflow of a valid resource.
+func TestValidResourceWorkflow(t *testing.T) {
+	wf := unmarshalWf(validResourceWorkflow)
+	err := ValidateWorkflow(wftmplGetter, wf, ValidateOpts{})
+	assert.Equal(t, err, nil)
+}
+
+var invalidResourceWorkflow = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: invalid-resource-
+spec:
+  entrypoint: whalesay
+  templates:
+  - name: whalesay
+    resource:
+      action: apply
+      manifest: |
+        invalid-yaml-line
+        kind: ConfigMap
+        metadata:
+          name: whalesay-cm
+`
+
+var invalidActionResourceWorkflow = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: invalid-resource-
+spec:
+  entrypoint: whalesay
+  templates:
+  - name: whalesay
+    resource:
+      action: foo
+      manifest: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: whalesay-cm
+`
+
+// TestInvalidResourceWorkflow verifies an error against a workflow of an invalid resource.
+func TestInvalidResourceWorkflow(t *testing.T) {
+	wf := unmarshalWf(invalidResourceWorkflow)
+	err := ValidateWorkflow(wftmplGetter, wf, ValidateOpts{})
+	assert.EqualError(t, err, "templates.whalesay.resource.manifest must be a valid yaml")
+
+	wf = unmarshalWf(invalidActionResourceWorkflow)
+	err = ValidateWorkflow(wftmplGetter, wf, ValidateOpts{})
+	assert.EqualError(t, err, "templates.whalesay.resource.action must be one of: get, create, apply, delete, replace, patch")
+}
+
+var invalidPodGC = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: pod-gc-strategy-unknown-
+spec:
+  podGC:
+    strategy: Foo
+  entrypoint: whalesay
+  templates:
+  - name: whalesay
+    container:
+      image: docker/whalesay:latest
+      command: [cowsay]
+      args: ["hello world"]
+`
+
+// TestUnknownPodGCStrategy verifies pod gc strategy is correct.
+func TestUnknownPodGCStrategy(t *testing.T) {
+	wf := unmarshalWf(invalidPodGC)
+	err := ValidateWorkflow(wftmplGetter, wf, ValidateOpts{})
+	assert.EqualError(t, err, "podGC.strategy unknown strategy 'Foo'")
+
+	for _, strat := range []wfv1.PodGCStrategy{wfv1.PodGCOnPodCompletion, wfv1.PodGCOnPodSuccess, wfv1.PodGCOnWorkflowCompletion, wfv1.PodGCOnWorkflowSuccess} {
+		wf.Spec.PodGC.Strategy = strat
+		err = ValidateWorkflow(wftmplGetter, wf, ValidateOpts{})
+		assert.NoError(t, err)
+	}
+}
+
+var validAutomountServiceAccountTokenUseWfLevel = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: valid-automount-service-account-token-use-wf-level-
+spec:
+  entrypoint: whalesay
+  templates:
+  - name: whalesay
+    container:
+      image: alpine:latest
+  - name: per-tmpl-automount
+    container:
+      image: alpine:latest
+    automountServiceAccountToken: true
+    executor:
+      ServiceAccountName: ""
+  automountServiceAccountToken: false
+  executor:
+    ServiceAccountName: foo
+`
+
+var validAutomountServiceAccountTokenUseTmplLevel = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: valid-automount-service-account-token-use-tmpl-level-
+spec:
+  entrypoint: whalesay
+  templates:
+  - name: whalesay
+    container:
+      image: alpine:latest
+    executor:
+      ServiceAccountName: foo
+  automountServiceAccountToken: false
+`
+
+var invalidAutomountServiceAccountTokenUseWfLevel = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: invalid-automount-service-account-token-use-wf-level-
+spec:
+  entrypoint: whalesay
+  templates:
+  - name: whalesay
+    container:
+      image: alpine:latest
+  automountServiceAccountToken: false
+`
+
+var invalidAutomountServiceAccountTokenUseTmplLevel = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: invalid-automount-service-account-token-use-tmpl-level-
+spec:
+  entrypoint: whalesay
+  templates:
+  - name: whalesay
+    container:
+      image: alpine:latest
+    automountServiceAccountToken: false
+`
+
+// TestAutomountServiceAccountTokenUse verifies an error against a workflow of an invalid automountServiceAccountToken use.
+func TestAutomountServiceAccountTokenUse(t *testing.T) {
+	{
+		wf := unmarshalWf(validAutomountServiceAccountTokenUseWfLevel)
+		err := ValidateWorkflow(wftmplGetter, wf, ValidateOpts{})
+		assert.NoError(t, err)
+	}
+	{
+		wf := unmarshalWf(validAutomountServiceAccountTokenUseTmplLevel)
+		err := ValidateWorkflow(wftmplGetter, wf, ValidateOpts{})
+		assert.NoError(t, err)
+	}
+	{
+		wf := unmarshalWf(invalidAutomountServiceAccountTokenUseWfLevel)
+		err := ValidateWorkflow(wftmplGetter, wf, ValidateOpts{})
+		assert.EqualError(t, err, "templates.whalesay.executor.serviceAccountName must not be empty if automountServiceAccountToken is false")
+	}
+	{
+		wf := unmarshalWf(invalidAutomountServiceAccountTokenUseTmplLevel)
+		err := ValidateWorkflow(wftmplGetter, wf, ValidateOpts{})
+		assert.EqualError(t, err, "templates.whalesay.executor.serviceAccountName must not be empty if automountServiceAccountToken is false")
 	}
 }

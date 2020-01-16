@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/argoproj/pkg/cli"
-	kubecli "github.com/argoproj/pkg/kube/cli"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/cyrusbiotechnology/argo"
+	"github.com/cyrusbiotechnology/argo/util"
 	"github.com/cyrusbiotechnology/argo/util/cmd"
 	"github.com/cyrusbiotechnology/argo/workflow/common"
 	"github.com/cyrusbiotechnology/argo/workflow/executor"
@@ -19,6 +18,8 @@ import (
 	"github.com/cyrusbiotechnology/argo/workflow/executor/k8sapi"
 	"github.com/cyrusbiotechnology/argo/workflow/executor/kubelet"
 	"github.com/cyrusbiotechnology/argo/workflow/executor/pns"
+	"github.com/argoproj/pkg/cli"
+	kubecli "github.com/argoproj/pkg/kube/cli"
 )
 
 const (
@@ -105,6 +106,7 @@ func initExecutor() *executor.WorkflowExecutor {
 // checkErr is a convenience function to panic upon error
 func checkErr(err error) {
 	if err != nil {
+		util.WriteTeriminateMessage(err.Error())
 		panic(err.Error())
 	}
 }

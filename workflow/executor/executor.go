@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cyrusbiotechnology/argo/workflow/artifacts/gcs"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -21,7 +22,6 @@ import (
 	"syscall"
 	"time"
 
-	argofile "github.com/argoproj/pkg/file"
 	log "github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,22 +32,23 @@ import (
 
 	"github.com/cyrusbiotechnology/argo/errors"
 	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/util"
 	"github.com/cyrusbiotechnology/argo/util/archive"
 	"github.com/cyrusbiotechnology/argo/util/retry"
 	artifact "github.com/cyrusbiotechnology/argo/workflow/artifacts"
 	"github.com/cyrusbiotechnology/argo/workflow/artifacts/artifactory"
-	"github.com/cyrusbiotechnology/argo/workflow/artifacts/gcs"
 	"github.com/cyrusbiotechnology/argo/workflow/artifacts/git"
 	"github.com/cyrusbiotechnology/argo/workflow/artifacts/hdfs"
 	"github.com/cyrusbiotechnology/argo/workflow/artifacts/http"
 	"github.com/cyrusbiotechnology/argo/workflow/artifacts/raw"
 	"github.com/cyrusbiotechnology/argo/workflow/artifacts/s3"
 	"github.com/cyrusbiotechnology/argo/workflow/common"
+	argofile "github.com/argoproj/pkg/file"
 )
 
 const (
 	// This directory temporarily stores the tarballs of the artifacts before uploading
-	tempOutArtDir = "/argo/outputs/artifacts"
+	tempOutArtDir = "/tmp/argo/outputs/artifacts"
 )
 
 // WorkflowExecutor is program which runs as the init/wait container
@@ -115,9 +116,11 @@ func NewExecutor(clientset kubernetes.Interface, podName, namespace, podAnnotati
 func (we *WorkflowExecutor) HandleError() {
 	if r := recover(); r != nil {
 		_ = we.AddAnnotation(common.AnnotationKeyNodeMessage, fmt.Sprintf("%v", r))
+		util.WriteTeriminateMessage(fmt.Sprintf("%v", r))
 		log.Fatalf("executor panic: %+v\n%s", r, debug.Stack())
 	} else {
 		if len(we.errors) > 0 {
+			util.WriteTeriminateMessage(we.errors[0].Error())
 			_ = we.AddAnnotation(common.AnnotationKeyNodeMessage, we.errors[0].Error())
 		}
 	}
@@ -390,8 +393,23 @@ func (we *WorkflowExecutor) stageArchiveFile(mainCtrID string, art *wfv1.Artifac
 	return fileName, localArtPath, nil
 }
 
+// isBaseImagePath checks if the given artifact path resides in the base image layer of the container
+// versus a shared volume mount between the wait and main container
 func (we *WorkflowExecutor) isBaseImagePath(path string) bool {
-	return common.FindOverlappingVolume(&we.Template, path) == nil
+	// first check if path overlaps with a user-specified volumeMount
+	if common.FindOverlappingVolume(&we.Template, path) != nil {
+		return false
+	}
+	// next check if path overlaps with a shared input-artifact emptyDir mounted by argo
+	for _, inArt := range we.Template.Inputs.Artifacts {
+		if path == inArt.Path {
+			return false
+		}
+		if strings.HasPrefix(path, inArt.Path+"/") {
+			return false
+		}
+	}
+	return true
 }
 
 // SaveParameters will save the content in the specified file path as output parameter value
@@ -465,17 +483,18 @@ func (we *WorkflowExecutor) SaveLogs() (*wfv1.Artifact, error) {
 		return nil, nil
 	}
 	log.Infof("Saving logs")
-	fileName := "main.log"
-	tempLogsDir := "/argo/outputs/logs"
-	err := os.MkdirAll(tempLogsDir, os.ModePerm)
-	if err != nil {
-		return nil, errors.InternalWrapError(err)
-	}
-
-	mainLog, err := we.saveLogsToPath(tempLogsDir, fileName)
+	mainCtrID, err := we.GetMainContainerID()
 	if err != nil {
 		return nil, err
 	}
+	tempLogsDir := "/tmp/argo/outputs/logs"
+	err = os.MkdirAll(tempLogsDir, os.ModePerm)
+	if err != nil {
+		return nil, errors.InternalWrapError(err)
+	}
+	fileName := "main.log"
+	mainLog := path.Join(tempLogsDir, fileName)
+	err = we.saveLogToFile(mainCtrID, mainLog)
 
 	art := wfv1.Artifact{
 		Name:             "main-logs",
@@ -513,7 +532,7 @@ func (we *WorkflowExecutor) SaveLogs() (*wfv1.Artifact, error) {
 	return &art, nil
 }
 
-// GetSecretFromVolMount will retrive the Secrets from VolumeMount
+// GetSecretFromVolMount will retrieve the Secrets from VolumeMount
 func (we *WorkflowExecutor) GetSecretFromVolMount(accessKeyName string, accessKey string) ([]byte, error) {
 	return ioutil.ReadFile(filepath.Join(common.SecretVolMountPath, accessKeyName, accessKey))
 }
@@ -560,8 +579,9 @@ func (we *WorkflowExecutor) InitDriver(art wfv1.Artifact) (artifact.ArtifactDriv
 			Endpoint:  art.S3.Endpoint,
 			AccessKey: accessKey,
 			SecretKey: secretKey,
-			Secure:    art.S3.Insecure == nil || *art.S3.Insecure == false,
+			Secure:    art.S3.Insecure == nil || !*art.S3.Insecure,
 			Region:    art.S3.Region,
+			RoleARN:   art.S3.RoleARN,
 		}
 		return &driver, nil
 	}
@@ -765,6 +785,11 @@ func (we *WorkflowExecutor) GetMainContainerID() (string, error) {
 
 // CaptureScriptResult will add the stdout of a script template as output result
 func (we *WorkflowExecutor) CaptureScriptResult() error {
+
+	if we.ExecutionControl == nil || !we.ExecutionControl.IncludeScriptOutput {
+		log.Infof("No Script output reference in workflow. Capturing script output ignored")
+		return nil
+	}
 	if we.Template.Script == nil {
 		return nil
 	}
@@ -1047,7 +1072,14 @@ func (we *WorkflowExecutor) Wait() error {
 	annotationUpdatesCh := we.monitorAnnotations(ctx)
 	go we.monitorDeadline(ctx, annotationUpdatesCh)
 
-	err = we.RuntimeExecutor.Wait(mainContainerID)
+	_ = wait.ExponentialBackoff(retry.DefaultRetry, func() (bool, error) {
+		err = we.RuntimeExecutor.Wait(mainContainerID)
+		if err != nil {
+			log.Warnf("Failed to wait for container id '%s': %v", mainContainerID, err)
+			return false, err
+		}
+		return true, nil
+	})
 	if err != nil {
 		return err
 	}
@@ -1236,10 +1268,6 @@ func (we *WorkflowExecutor) monitorDeadline(ctx context.Context, annotationsUpda
 
 // KillSidecars kills any sidecars to the main container
 func (we *WorkflowExecutor) KillSidecars() error {
-	if len(we.Template.Sidecars) == 0 {
-		log.Infof("No sidecars")
-		return nil
-	}
 	log.Infof("Killing sidecars")
 	pod, err := we.getPod()
 	if err != nil {

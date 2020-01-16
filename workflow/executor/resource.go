@@ -20,7 +20,8 @@ import (
 )
 
 // ExecResource will run kubectl action against a manifest
-func (we *WorkflowExecutor) ExecResource(action string, manifestPath string, isDelete bool) (string, string, error) {
+func (we *WorkflowExecutor) ExecResource(action string, manifestPath string) (string, string, error) {
+	isDelete := action == "delete"
 	args := []string{
 		action,
 	}
@@ -294,8 +295,5 @@ func (we *WorkflowExecutor) SaveResourceParameters(resourceNamespace string, res
 		log.Infof("Saved output parameter: %s, value: %s", param.Name, output)
 	}
 	err := we.AnnotateOutputs(nil)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }

@@ -1,5 +1,8 @@
 [![slack](https://img.shields.io/badge/slack-argoproj-brightgreen.svg?logo=slack)](https://argoproj.github.io/community/join-slack)
 
+# Argoproj - Get stuff done with Kubernetes
+[![slack](https://img.shields.io/badge/slack-argoproj-brightgreen.svg?logo=slack)](https://argoproj.github.io/community/join-slack)
+
 # Cyrus specific developer notes
 
 To cut a version tag to release to rc run, `./cut_version_tag.sh --environment=rc`.  This script will switch to the master branch, pull and then 
@@ -16,6 +19,12 @@ Merges to master in this repository are not automatically deployed. a tag is req
 # Argoproj - Get stuff done with Kubernetes
 
 ![Argo Image](argo.png)
+
+## Quickstart
+```bash
+kubectl create namespace argo
+kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/stable/manifests/install.yaml
+```
 
 ## News
 
@@ -34,9 +43,10 @@ If you actively use Argo in your organization and your organization would be int
 ## What is Argoproj?
 
 Argoproj is a collection of tools for getting work done with Kubernetes.
-* [Argo Workflows](https://github.com/cyrusbiotechnology/argo) - Container-native Workflow Engine
-* [Argo CD](https://github.com/cyrusbiotechnology/argo-cd) - Declarative GitOps Continuous Delivery
-* [Argo Events](https://github.com/cyrusbiotechnology/argo-events) - Event-based Dependency Manager
+* [Argo Workflows](https://github.com/argoproj/argo) - Container-native Workflow Engine
+* [Argo CD](https://github.com/argoproj/argo-cd) - Declarative GitOps Continuous Delivery
+* [Argo Events](https://github.com/argoproj/argo-events) - Event-based Dependency Manager
+* [Argo Rollouts](https://github.com/argoproj/argo-rollouts) - Deployment CR with support for Canary and Blue Green deployment strategies
 
 ## What is Argo Workflows?
 Argo Workflows is an open source container-native workflow engine for orchestrating parallel jobs on Kubernetes. Argo Workflows is implemented as a Kubernetes CRD (Custom Resource Definition).
@@ -84,32 +94,46 @@ As the Argo Community grows, we'd like to keep track of our users. Please send a
 
 Currently **officially** using Argo:
 
+1. [Adevinta](https://www.adevinta.com/)
 1. [Admiralty](https://admiralty.io/)
-1. [Adobe](https://www.adobe.com/) 
+1. [Adobe](https://www.adobe.com/)
 1. [Alibaba Cloud](https://www.alibabacloud.com/about)
 1. [BlackRock](https://www.blackrock.com/)
 1. [Canva](https://www.canva.com/)
+1. [Codec](https://www.codec.ai/)
 1. [CoreFiling](https://www.corefiling.com/)
 1. [Cratejoy](https://www.cratejoy.com/)
 1. [Cyrus Biotechnology](https://cyrusbio.com/)
 1. [Datadog](https://www.datadoghq.com/)
+1. [DataStax](https://www.datastax.com/)
 1. [Equinor](https://www.equinor.com/)
 1. [Gardener](https://gardener.cloud/)
 1. [Gladly](https://gladly.com/)
 1. [GitHub](https://github.com/)
 1. [Google](https://www.google.com/intl/en/about/our-company/)
+1. [IBM](https://ibm.com)
 1. [Interline Technologies](https://www.interline.io/blog/scaling-openstreetmap-data-workflows/)
 1. [Intuit](https://www.intuit.com/)
 1. [Karius](https://www.kariusdx.com/)
 1. [KintoHub](https://www.kintohub.com/)
 1. [Localytics](https://www.localytics.com/)
+1. [Max Kelsen](https://maxkelsen.com/)
+1. [Mirantis](https://mirantis.com/)
 1. [NVIDIA](https://www.nvidia.com/)
+1. [OVH](https://www.ovh.com/)
 1. [Preferred Networks](https://www.preferred-networks.jp/en/)
 1. [Quantibio](http://quantibio.com/us/en/)
+1. [SAP Fieldglass](https://www.fieldglass.com/)
 1. [SAP Hybris](https://cx.sap.com/)
 1. [Styra](https://www.styra.com/)
+1. [Threekit](https://www.threekit.com/)
+1. [Commodus Tech](https://www.commodus.tech)
+
 
 ## Community Blogs and Presentations
+* [Argo Ansible role: Provisioning Argo Workflows on OpenShift](https://medium.com/@marekermk/provisioning-argo-on-openshift-with-ansible-and-kustomize-340a1fda8b50)
+* [Argo Workflows vs Apache Airflow](http://bit.ly/30YNIvT)
+* [CI/CD with Argo on Kubernetes](https://medium.com/@bouwe.ceunen/ci-cd-with-argo-on-kubernetes-28c1a99616a9)
 * [Running Argo Workflows Across Multiple Kubernetes Clusters](https://admiralty.io/blog/running-argo-workflows-across-multiple-kubernetes-clusters/)
 * [Open Source Model Management Roundup: Polyaxon, Argo, and Seldon](https://www.anaconda.com/blog/developer-blog/open-source-model-management-roundup-polyaxon-argo-and-seldon/)
 * [Producing 200 OpenStreetMap extracts in 35 minutes using a scalable data workflow](https://www.interline.io/blog/scaling-openstreetmap-data-workflows/)
@@ -120,4 +144,4 @@ Currently **officially** using Argo:
 ## Project Resources
 * Argo GitHub:  https://github.com/argoproj
 * Argo website: https://argoproj.github.io/
-* Argo Slack:   [click here to join](https://join.slack.com/t/argoproj/shared_invite/enQtMzExODU3MzIyNjYzLTA5MTFjNjI0Nzg3NzNiMDZiNmRiODM4Y2M1NWQxOGYzMzZkNTc1YWVkYTZkNzdlNmYyZjMxNWI3NjY2MDc1MzI)
+* Argo Slack:   [click here to join](https://join.slack.com/t/argoproj/shared_invite/enQtMzExODU3MzIyNjYzLWUxZDYyODIyYzY3N2RjOWMyNDA4NmFjMTNkMTE1ODI2OGY3MzgyMWFmMmY3N2UzNWRmOWFmMGY4NTBhZGQxYWY)

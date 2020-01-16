@@ -6,9 +6,9 @@ Argo is an open source project that provides container-native workflows for Kube
 
 Argo is implemented as a Kubernetes CRD (Custom Resource Definition). As a result, Argo workflows can be managed using `kubectl` and natively integrates with other Kubernetes services such as volumes, secrets, and RBAC. The new Argo software is light-weight and installs in under a minute, and provides complete workflow features including parameter substitution, artifacts, fixtures, loops and recursive workflows.
 
-Many of the Argo examples used in this walkthrough are available at https://github.com/cyrusbiotechnology/argo/tree/master/examples.  If you like this project, please give us a star!
+Many of the Argo examples used in this walkthrough are available at https://github.com/argoproj/argo/tree/master/examples. If you like this project, please give us a star!
 
-For a complete description of the Argo workflow spec, please refer to https://github.com/argoproj/argo/blob/master/pkg/apis/workflow/v1alpha1/types.go
+For a complete description of the Argo workflow spec, please refer to https://github.com/argoproj/argo/blob/master/pkg/apis/workflow/v1alpha1/workflow_types.go
 
 ## Table of Contents
 
@@ -313,11 +313,13 @@ spec:
 
 The dependency graph may have [multiple roots](./dag-multiroot.yaml). The templates called from a DAG or steps template can themselves be DAG or steps templates. This can allow for complex workflows to be split into manageable pieces.
 
+The DAG logic has a built-in `fail fast` feature to stop scheduling new steps, as soon as it detects that one of the DAG nodes is failed. Then it waits until all DAG nodes are completed before failing the DAG itself.
+The [FailFast](./dag-disable-failFast.yaml) flag default is `true`,  if set to `false`, it will allow a DAG to run all branches of the DAG to completion (either success or failure), regardless of the failed outcomes of branches in the DAG. More info and example about this feature at [here](https://github.com/argoproj/argo/issues/1442).
 ## Artifacts
 
 **Note:**
-You will need to have configured an artifact repository to run this example.
-[Configuring an artifact repository here](https://github.com/cyrusbiotechnology/argo/blob/master/ARTIFACT_REPO.md).
+You will need to configure an artifact repository to run this example.
+[Configuring an artifact repository here](https://github.com/argoproj/argo/blob/master/ARTIFACT_REPO.md).
 
 When running workflows, it is very common to have steps that generate or consume artifacts. Often, the output artifacts of one step may be used as input artifacts to a subsequent step.
 

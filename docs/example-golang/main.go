@@ -3,12 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
+	"os/user"
 	"path/filepath"
 
-	"github.com/argoproj/pkg/errors"
 	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 	wfclientset "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned"
+	"github.com/argoproj/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -36,8 +36,12 @@ var (
 )
 
 func main() {
-	// use the current context in kubeconfig
-	kubeconfig := flag.String("kubeconfig", filepath.Join(os.Getenv("HOME"), ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	// get current user to determine home directory
+	usr, err := user.Current()
+	checkErr(err)
+
+	// get kubeconfig file location
+	kubeconfig := flag.String("kubeconfig", filepath.Join(usr.HomeDir, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
 	flag.Parse()
 
 	// use the current context in kubeconfig

@@ -139,11 +139,7 @@ func (p *PNSExecutor) CopyFile(containerID string, sourcePath string, destPath s
 	}
 
 	err = archive.TarGzToWriter(sourcePath, w)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (p *PNSExecutor) WaitInit() error {
@@ -224,6 +220,7 @@ func (p *PNSExecutor) GetOutputStream(containerID string, combinedOutput bool) (
 	}
 	opts := v1.PodLogOptions{
 		Container: common.MainContainerName,
+		Follow:    true,
 	}
 	return p.clientset.CoreV1().Pods(p.namespace).GetLogs(p.podName, &opts).Stream()
 }

@@ -13,15 +13,41 @@ spec:
   scope: Namespaced
   version: v1alpha1
 ---
-apiVersion: v1
-kind: ServiceAccount
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
 metadata:
-  name: argo-ui
+  name: workflowtemplates.argoproj.io
+spec:
+  group: argoproj.io
+  names:
+    kind: WorkflowTemplate
+    plural: workflowtemplates
+    shortNames:
+    - wftmpl
+  scope: Namespaced
+  version: v1alpha1
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: argo
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argo-ui
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: argo-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -35,6 +61,8 @@ rules:
   resources:
   - workflows
   - workflows/finalizers
+  - workflowtemplates
+  - workflowtemplates/finalizers
   verbs:
   - create
   - delete
@@ -57,6 +85,8 @@ rules:
   resources:
   - workflows
   - workflows/finalizers
+  - workflowtemplates
+  - workflowtemplates/finalizers
   verbs:
   - create
   - delete
@@ -79,6 +109,8 @@ rules:
   resources:
   - workflows
   - workflows/finalizers
+  - workflowtemplates
+  - workflowtemplates/finalizers
   verbs:
   - get
   - list
@@ -129,6 +161,22 @@ rules:
   - update
   - patch
   - delete
+- apiGroups:
+  - argoproj.io
+  resources:
+  - workflowtemplates
+  - workflowtemplates/finalizers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - get
+  - list
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -155,10 +203,23 @@ rules:
   - argoproj.io
   resources:
   - workflows
+  - workflowtemplates
   verbs:
   - get
   - list
   - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argo-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: argo-role
+subjects:
+- kind: ServiceAccount
+  name: argo
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -228,7 +289,7 @@ spec:
           value: "false"
         - name: BASE_HREF
           value: /
-        image: argoproj/argoui:v2.3.0
+        image: argoproj/argoui:v2.4.3
         name: argo-ui
       serviceAccountName: argo-ui
 ---
@@ -250,9 +311,9 @@ spec:
         - --configmap
         - workflow-controller-configmap
         - --executor-image
-        - argoproj/argoexec:v2.3.0
+        - argoproj/argoexec:v2.4.3
         command:
         - workflow-controller
-        image: argoproj/workflow-controller:v2.3.0
+        image: argoproj/workflow-controller:v2.4.3
         name: workflow-controller
       serviceAccountName: argo

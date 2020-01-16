@@ -3,13 +3,15 @@ package file_test
 import (
 	"archive/tar"
 	"bytes"
-	"github.com/cyrusbiotechnology/argo/util/file"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/cyrusbiotechnology/argo/util/file"
 )
 
-// TestResubmitWorkflowWithOnExit ensures we do not carry over the onExit node even if successful
+// TestCompressContentString ensures compressing then decompressing a content string works as expected
 func TestCompressContentString(t *testing.T) {
 	content := "{\"pod-limits-rrdm8-591645159\":{\"id\":\"pod-limits-rrdm8-591645159\",\"name\":\"pod-limits-rrdm8[0]." +
 		"run-pod(0:0)\",\"displayName\":\"run-pod(0:0)\",\"type\":\"Pod\",\"templateName\":\"run-pod\",\"phase\":" +
@@ -95,16 +97,14 @@ func TestExistsInTar(t *testing.T) {
 			},
 		},
 		{
-			sourcePath: "/empty.txt", expected: false,
+			sourcePath: "/empty.txt", expected: true,
 			files: []fakeFile{
-				// fails because empty.txt is empty
 				{name: "empty.txt", body: ""},
 			},
 		},
 		{
-			sourcePath: "/tmp/empty.txt", expected: false,
+			sourcePath: "/tmp/empty.txt", expected: true,
 			files: []fakeFile{
-				// fails because empty.txt is empty
 				{name: "empty.txt", body: ""},
 			},
 		},

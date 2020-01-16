@@ -3,8 +3,9 @@ package kubelet
 import (
 	"io"
 
-	"github.com/cyrusbiotechnology/argo/errors"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/cyrusbiotechnology/argo/errors"
 )
 
 type KubeletExecutor struct {

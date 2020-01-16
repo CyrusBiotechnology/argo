@@ -1,21 +1,23 @@
-PACKAGE=github.com/cyrusbiotechnology/argo
-CURRENT_DIR=$(shell pwd)
-DIST_DIR=${CURRENT_DIR}/dist
-ARGO_CLI_NAME=argo
+PACKAGE                = github.com/argoproj/argo
+CURRENT_DIR            = $(shell pwd)
+DIST_DIR               = ${CURRENT_DIR}/dist
+ARGO_CLI_NAME          = argo
 
-VERSION=$(shell cat ${CURRENT_DIR}/VERSION)
-BUILD_DATE=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
-GIT_COMMIT=$(shell git rev-parse HEAD)
-GIT_TAG=$(shell if [ -z "`git status --porcelain`" ]; then git describe --exact-match --tags HEAD 2>/dev/null; fi)
-GIT_TREE_STATE=$(shell if [ -z "`git status --porcelain`" ]; then echo "clean" ; else echo "dirty"; fi)
+VERSION                = $(shell cat ${CURRENT_DIR}/VERSION)
+BUILD_DATE             = $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
+GIT_COMMIT             = $(shell git rev-parse HEAD)
+GIT_TAG                = $(shell if [ -z "`git status --porcelain`" ]; then git describe --exact-match --tags HEAD 2>/dev/null; fi)
+GIT_TREE_STATE         = $(shell if [ -z "`git status --porcelain`" ]; then echo "clean" ; else echo "dirty"; fi)
 
 # docker image publishing options
-DOCKER_PUSH=false
-IMAGE_TAG=latest
+DOCKER_PUSH           ?= false
+IMAGE_TAG             ?= latest
 # perform static compilation
-STATIC_BUILD=true
+STATIC_BUILD          ?= true
 # build development images
-DEV_IMAGE=false
+DEV_IMAGE             ?= false
+
+GOLANGCI_EXISTS := $(shell command -v golangci-lint 2> /dev/null)
 
 override LDFLAGS += \
   -X ${PACKAGE}.version=${VERSION} \
@@ -28,7 +30,7 @@ override LDFLAGS += -extldflags "-static"
 endif
 
 ifneq (${GIT_TAG},)
-IMAGE_TAG=${GIT_TAG}
+IMAGE_TAG = ${GIT_TAG}
 override LDFLAGS += -X ${PACKAGE}.gitTag=${GIT_TAG}
 endif
 
@@ -39,7 +41,7 @@ endif
 endif
 
 ifdef IMAGE_NAMESPACE
-IMAGE_PREFIX=${IMAGE_NAMESPACE}/
+IMAGE_PREFIX = ${IMAGE_NAMESPACE}/
 endif
 
 # Build the project
@@ -127,11 +129,20 @@ endif
 
 .PHONY: lint
 lint:
+ifdef GOLANGCI_EXISTS
+	golangci-lint run --config golangci.yml
+else
+	# Remove gometalinter after a migration time.
 	gometalinter --config gometalinter.json ./...
+endif
 
 .PHONY: test
 test:
-	go test ./...
+	go test -covermode=count -coverprofile=coverage.out ./...
+
+.PHONY: cover
+cover:
+	go tool cover -html=coverage.out
 
 .PHONY: codegen
 codegen:
@@ -169,8 +180,8 @@ release-clis: cli-image
 	docker build --iidfile /tmp/argo-cli-build --target argo-build --build-arg MAKE_TARGET="cli-darwin cli-windows" .
 	docker create --name tmp-cli `cat /tmp/argo-cli-build`
 	mkdir -p ${DIST_DIR}
-	docker cp tmp-cli:/go/src/github.com/cyrusbiotechnology/argo/dist/argo-darwin-amd64 ${DIST_DIR}/argo-darwin-amd64
-	docker cp tmp-cli:/go/src/github.com/cyrusbiotechnology/argo/dist/argo-windows-amd64 ${DIST_DIR}/argo-windows-amd64
+	docker cp tmp-cli:/go/src/github.com/argoproj/argo/dist/argo-darwin-amd64 ${DIST_DIR}/argo-darwin-amd64
+	docker cp tmp-cli:/go/src/github.com/argoproj/argo/dist/argo-windows-amd64 ${DIST_DIR}/argo-windows-amd64
 	docker rm tmp-cli
 	docker create --name tmp-cli $(IMAGE_PREFIX)argocli:$(IMAGE_TAG)
 	docker cp tmp-cli:/bin/argo ${DIST_DIR}/argo-linux-amd64
