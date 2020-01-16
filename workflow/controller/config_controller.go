@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,26 +22,48 @@ import (
 
 // ResyncConfig reloads the controller config from the configmap
 func (wfc *WorkflowController) ResyncConfig() error {
-	cmClient := wfc.kubeclientset.CoreV1().ConfigMaps(wfc.namespace)
-	cm, err := cmClient.Get(wfc.configMap, metav1.GetOptions{})
-	if err != nil {
-		return errors.InternalWrapError(err)
+
+	if wfc.configFile != "" {
+		log.Infof("Loading configfile from %s", wfc.configFile)
+		return wfc.updateConfigFromFile(wfc.configFile)
+	} else {
+		cmClient := wfc.kubeclientset.CoreV1().ConfigMaps(wfc.namespace)
+		cm, err := cmClient.Get(wfc.configMap, metav1.GetOptions{})
+		if err != nil {
+			return errors.InternalWrapError(err)
+		}
+		return wfc.updateConfigFromConfigMap(cm)
 	}
-	return wfc.updateConfig(cm)
 }
 
-func (wfc *WorkflowController) updateConfig(cm *apiv1.ConfigMap) error {
-	configStr, ok := cm.Data[common.WorkflowControllerConfigMapKey]
+func (wfc *WorkflowController) updateConfigFromFile(filePath string) error {
+	fileData, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		log.Errorf("Error reading config file %s", filePath)
+		return err
+	}
+	return wfc.updateConfig(string(fileData))
+
+}
+
+func (wfc *WorkflowController) updateConfigFromConfigMap(cm *apiv1.ConfigMap) error {
+	configString, ok := cm.Data[common.WorkflowControllerConfigMapKey]
 	if !ok {
 		log.Warnf("ConfigMap '%s' does not have key '%s'", wfc.configMap, common.WorkflowControllerConfigMapKey)
 		return nil
 	}
+
+	return wfc.updateConfig(configString)
+}
+
+func (wfc *WorkflowController) updateConfig(configString string) error {
+
 	var config config.WorkflowControllerConfig
-	err := yaml.Unmarshal([]byte(configStr), &config)
+	err := yaml.Unmarshal([]byte(configString), &config)
 	if err != nil {
 		return errors.InternalWrapError(err)
 	}
-	log.Printf("workflow controller configuration from %s:\n%s", wfc.configMap, configStr)
+	log.Printf("workflow controller configuration from %s:\n%s", wfc.configMap, configString)
 	if wfc.cliExecutorImage == "" && config.ExecutorImage == "" {
 		return errors.Errorf(errors.CodeBadRequest, "ConfigMap '%s' does not have executorImage", wfc.configMap)
 	}
@@ -91,7 +114,7 @@ func (wfc *WorkflowController) watchControllerConfigMap(ctx context.Context) (ca
 			AddFunc: func(obj interface{}) {
 				if cm, ok := obj.(*apiv1.ConfigMap); ok {
 					log.Infof("Detected ConfigMap update. Updating the controller config.")
-					err := wfc.updateConfig(cm)
+					err := wfc.updateConfigFromConfigMap(cm)
 					if err != nil {
 						log.Errorf("Update of config failed due to: %v", err)
 					}
@@ -105,7 +128,7 @@ func (wfc *WorkflowController) watchControllerConfigMap(ctx context.Context) (ca
 				}
 				if newCm, ok := new.(*apiv1.ConfigMap); ok {
 					log.Infof("Detected ConfigMap update. Updating the controller config.")
-					err := wfc.updateConfig(newCm)
+					err := wfc.updateConfigFromConfigMap(newCm)
 					if err != nil {
 						log.Errorf("Update of config failed due to: %v", err)
 					}
