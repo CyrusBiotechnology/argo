@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,28 +21,12 @@ import (
 
 // ResyncConfig reloads the controller config from the configmap
 func (wfc *WorkflowController) ResyncConfig() error {
-
-	if wfc.configFile != "" {
-		log.Infof("Loading configfile from %s", wfc.configFile)
-		return wfc.updateConfigFromFile(wfc.configFile)
-	} else {
-		cmClient := wfc.kubeclientset.CoreV1().ConfigMaps(wfc.namespace)
-		cm, err := cmClient.Get(wfc.configMap, metav1.GetOptions{})
-		if err != nil {
-			return errors.InternalWrapError(err)
-		}
-		return wfc.updateConfig(cm)
-	}
-}
-
-func (wfc *WorkflowController) updateConfigFromFile(filePath string) error {
-	fileData, err := ioutil.ReadFile(filePath)
+	cmClient := wfc.kubeclientset.CoreV1().ConfigMaps(wfc.namespace)
+	cm, err := cmClient.Get(wfc.configMap, metav1.GetOptions{})
 	if err != nil {
-		log.Errorf("Error reading config file %s", filePath)
-		return err
+		return errors.InternalWrapError(err)
 	}
-	return wfc.updateConfig(string(fileData))
-
+	return wfc.updateConfig(cm)
 }
 
 func (wfc *WorkflowController) updateConfig(cm *apiv1.ConfigMap) error {
