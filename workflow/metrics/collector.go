@@ -44,6 +44,13 @@ var (
 		append(descWorkflowDefaultLabels, "phase"),
 		nil,
 	)
+
+	descWorkflowCyrusInfo = prometheus.NewDesc(
+		"argo_workflow_cyrus_info",
+		"Cyrus specific workflow information.",
+		append(descWorkflowDefaultLabels, "user", "project_id", "protocol_name"),
+		nil,
+		)
 )
 
 func boolFloat64(b bool) float64 {
@@ -81,6 +88,7 @@ func (wc *workflowCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- descWorkflowFinishedAt
 	ch <- descWorkflowCreated
 	ch <- descWorkflowStatusPhase
+	ch <- descWorkflowCyrusInfo
 }
 
 // Collect implements the prometheus.Collector interface
@@ -130,5 +138,28 @@ func (wc *workflowCollector) collectWorkflow(ch chan<- prometheus.Metric, wf wfv
 	if !wf.Status.FinishedAt.IsZero() {
 		addGauge(descWorkflowFinishedAt, float64(wf.Status.FinishedAt.Unix()))
 	}
+
+	var username string
+	var projectId string
+	var protocolName string
+	if wf.Labels["user"] == "" {
+		username = "UNKNOWN"
+	} else {
+		username = wf.Labels["user"]
+	}
+
+	if wf.Labels["project-id"] == "" {
+		projectId = "UNKNOWN"
+	} else {
+		projectId = wf.Labels["project-id"]
+	}
+
+	if wf.Labels["protocol-name"] == "" {
+		protocolName = "UNKNOWN"
+	} else {
+		protocolName = wf.Labels["protocol-name"]
+	}
+
+	addGauge(descWorkflowCyrusInfo, 1 /*A dummy value since this metric doesnt really have numeric data*/, username, projectId, protocolName)
 
 }

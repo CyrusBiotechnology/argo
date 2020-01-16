@@ -3,6 +3,7 @@ package executor
 import (
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime/debug"
 	"strings"
 	"syscall"
@@ -276,6 +278,10 @@ func (we *WorkflowExecutor) saveArtifact(mainCtrID string, art *wfv1.Artifact) e
 			shallowCopy := *we.Template.ArchiveLocation.HDFS
 			art.HDFS = &shallowCopy
 			art.HDFS.Path = path.Join(art.HDFS.Path, fileName)
+		} else if we.Template.ArchiveLocation.GCS != nil {
+			shallowCopy := *we.Template.ArchiveLocation.GCS
+			art.GCS = &shallowCopy
+			art.GCS.Key = path.Join(art.GCS.Key, fileName)
 		} else {
 			return errors.Errorf(errors.CodeBadRequest, "Unable to determine path to store %s. Archive location provided no information", art.Name)
 		}
@@ -452,6 +458,24 @@ func (we *WorkflowExecutor) SaveParameters() error {
 	return nil
 }
 
+func (we *WorkflowExecutor) saveLogsToPath(logDir string, fileName string) (outputPath string, err error) {
+	mainCtrID, err := we.GetMainContainerID()
+	if err != nil {
+		return
+	}
+	err = os.MkdirAll(logDir, os.ModePerm)
+	if err != nil {
+		err = errors.InternalWrapError(err)
+		return
+	}
+	outputPath = path.Join(logDir, fileName)
+	err = we.saveLogToFile(mainCtrID, outputPath)
+	if err != nil {
+		return
+	}
+	return
+}
+
 // SaveLogs saves logs
 func (we *WorkflowExecutor) SaveLogs() (*wfv1.Artifact, error) {
 	if we.Template.ArchiveLocation == nil || we.Template.ArchiveLocation.ArchiveLogs == nil || !*we.Template.ArchiveLocation.ArchiveLogs {
@@ -470,9 +494,12 @@ func (we *WorkflowExecutor) SaveLogs() (*wfv1.Artifact, error) {
 	fileName := "main.log"
 	mainLog := path.Join(tempLogsDir, fileName)
 	err = we.saveLogToFile(mainCtrID, mainLog)
+
+	mainLog, err := we.savebLogsToPath(tempLogsDir, fileName)
 	if err != nil {
 		return nil, err
 	}
+
 	art := wfv1.Artifact{
 		Name:             "main-logs",
 		ArtifactLocation: *we.Template.ArchiveLocation,
@@ -560,6 +587,20 @@ func (we *WorkflowExecutor) InitDriver(art wfv1.Artifact) (artifact.ArtifactDriv
 			Region:    art.S3.Region,
 			RoleARN:   art.S3.RoleARN,
 		}
+		return &driver, nil
+	}
+	if art.GCS != nil {
+		credsJSONData, err := we.GetSecretFromVolMount(art.GCS.CredentialsSecret.Name, art.GCS.CredentialsSecret.Key)
+		if err != nil {
+			return nil, err
+		}
+		driver := gcs.GCSArtifactDriver{
+			CredsJSONData: credsJSONData,
+		}
+		return &driver, nil
+	}
+	if art.GCS != nil {
+		driver := gcs.GCSArtifactDriver{}
 		return &driver, nil
 	}
 	if art.HTTP != nil {
@@ -807,6 +848,153 @@ func (we *WorkflowExecutor) AddError(err error) {
 // AddAnnotation adds an annotation to the workflow pod
 func (we *WorkflowExecutor) AddAnnotation(key, value string) error {
 	return common.AddPodAnnotation(we.ClientSet, we.PodName, we.Namespace, key, value)
+}
+
+type ConditionType string
+
+const (
+	ConditionTypeError   ConditionType = "error"
+	ConditionTypeWarning ConditionType = "warning"
+)
+
+func (we *WorkflowExecutor) EvaluateConditions(conditionMode ConditionType) error {
+
+	var resultsLocation *[]wfv1.ExceptionCondition
+	var annotationKey string
+
+	if conditionMode == ConditionTypeError {
+		resultsLocation = &we.Template.Errors
+		annotationKey = common.AnnotationKeyErrors
+
+	} else if conditionMode == ConditionTypeWarning {
+		resultsLocation = &we.Template.Warnings
+		annotationKey = common.AnnotationKeyWarnings
+	} else {
+		return errors.InternalErrorf("The valid condition types are 'error' or 'warning', got %s instead", string(conditionMode))
+	}
+
+	results, err := we.evaluatePatternConditions(resultsLocation)
+	if err != nil {
+		return errors.InternalWrapError(err)
+	}
+
+	if results != nil {
+		errorResultBytes, err := json.Marshal(results)
+		if err != nil {
+			return errors.InternalWrapError(err)
+		}
+
+		return we.AddAnnotation(annotationKey, string(errorResultBytes))
+	}
+	return nil
+}
+
+func (we *WorkflowExecutor) fetchFileForErrorHandling(fileSource string) (logData []byte, err error) {
+
+	var logPath string
+
+	if fileSource[0] == '/' {
+		mainCtrID, err := we.GetMainContainerID()
+		if err != nil {
+			return nil, err
+		}
+		baseDir := "/argo/logs/"
+		uncompressedLogPath := baseDir + filepath.Base(fileSource)
+
+		// RuntimeExecutor.CopyFile gzips the file
+		logPath = uncompressedLogPath + ".gz"
+
+		if _, err := os.Stat(logPath); os.IsNotExist(err) {
+			err = os.MkdirAll(baseDir, os.ModePerm)
+			if err != nil {
+				err = errors.InternalWrapError(err)
+				return nil, err
+			}
+			err = we.RuntimeExecutor.CopyFile(mainCtrID, fileSource, logPath)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+	} else if fileSource == "stdout" {
+
+		logPath = "/argo/logs/main.log"
+		if _, err := os.Stat(logPath); os.IsNotExist(err) {
+			_, err = we.saveLogsToPath("/argo/logs", "main.log")
+			if err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		err = errors.InternalErrorf("fileSource must be an absolute path or 'stdout', got %s instead", fileSource)
+		return
+
+	}
+
+	logFile, err := os.Open(logPath)
+	if err != nil {
+		log.Errorf("Error attempting to open logfile %s", logPath)
+		return
+	}
+	defer logFile.Close()
+
+	if strings.HasSuffix(logPath, ".gz") {
+		decompressed, err := gzip.NewReader(logFile)
+		if err != nil {
+			return nil, err
+		}
+		logData, err = ioutil.ReadAll(decompressed)
+	} else {
+		logData, err = ioutil.ReadAll(logFile)
+	}
+
+	return
+}
+
+func (we *WorkflowExecutor) evaluatePatternConditions(conditions *[]wfv1.ExceptionCondition) (results []wfv1.ExceptionResult, err error) {
+
+	for _, condition := range *conditions {
+		if condition.PatternMatched != "" && condition.PatternUnmatched != "" {
+			errorMessage := fmt.Sprintf("Error condition %s cannot specify both match and unmatch simultaneously", condition.Name)
+			err = errors.InternalError(errorMessage)
+			return
+		}
+
+		logData, err := we.fetchFileForErrorHandling(condition.Source)
+		if err != nil {
+			return nil, err
+		}
+
+		result := wfv1.ExceptionResult{
+			Name:     condition.Name,
+			Message:  condition.Message,
+			PodName:  we.PodName,
+			StepName: we.Template.Name,
+		}
+
+		if condition.PatternMatched != "" {
+			regex, err := regexp.Compile(condition.PatternMatched)
+			if err != nil {
+				return nil, err
+			}
+			regexMatch := regex.Find(logData)
+			if regexMatch != nil {
+
+				results = append(results, result)
+			}
+		} else if condition.PatternUnmatched != "" {
+			regex, err := regexp.Compile(condition.PatternUnmatched)
+			if err != nil {
+				return nil, err
+			}
+			regexMatch := regex.Find(logData)
+			if regexMatch == nil {
+				results = append(results, result)
+			}
+		}
+	}
+
+	return
 }
 
 // isTarball returns whether or not the file is a tarball

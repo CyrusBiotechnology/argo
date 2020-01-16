@@ -97,8 +97,11 @@ func (woc *wfOperationCtx) createWorkflowPod(nodeName string, mainCtr apiv1.Cont
 			Name:      nodeID,
 			Namespace: woc.wf.ObjectMeta.Namespace,
 			Labels: map[string]string{
-				common.LabelKeyWorkflow:  woc.wf.ObjectMeta.Name, // Allows filtering by pods related to specific workflow
-				common.LabelKeyCompleted: "false",                // Allows filtering by incomplete workflow pods
+				common.LabelKeyWorkflow:  woc.wf.ObjectMeta.Name, 				// Allows filtering by pods related to specific workflow
+				common.LabelKeyCompleted: "false",                				// Allows filtering by incomplete workflow pods
+				common.LabelKeyWorkflowType: strings.Replace(woc.wf.ObjectMeta.GenerateName, "-", "", -1),  	// Allows filtering by workflow type for VPA
+				common.LabelKeyTemplate: tmpl.Name,                				// Allows filtering by workflow template for VPA
+
 			},
 			Annotations: map[string]string{
 				common.AnnotationKeyNodeName: nodeName,
@@ -872,6 +875,13 @@ func (woc *wfOperationCtx) addArchiveLocation(pod *apiv1.Pod, tmpl *wfv1.Templat
 			HDFSConfig: hdfsLocation.HDFSConfig,
 			Path:       hdfsLocation.PathFormat,
 			Force:      hdfsLocation.Force,
+		}
+	} else if woc.controller.Config.ArtifactRepository.GCS != nil {
+		log.Debugf("Setting GCS artifact repository information")
+		artLocationKey := fmt.Sprintf("%s/%s", woc.wf.ObjectMeta.Name, pod.ObjectMeta.Name)
+		tmpl.ArchiveLocation.GCS = &wfv1.GCSArtifact{
+			GCSBucket: woc.controller.Config.ArtifactRepository.GCS.GCSBucket,
+			Key:       artLocationKey,
 		}
 	} else {
 		return errors.Errorf(errors.CodeBadRequest, "controller is not configured with a default archive location")

@@ -1424,6 +1424,149 @@ spec:
 // TestCustomTemplatVariable verifies custom template variable
 func TestCustomTemplatVariable(t *testing.T) {
 	wf := unmarshalWf(customVariableInput)
+	err := ValidateWorkflow(wf, ValidateOpts{Lint: true})
+	assert.Equal(t, err, nil)
+}
+
+var baseImageOutputArtifact = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: base-image-out-art-
+spec:
+  entrypoint: base-image-out-art
+  templates:
+  - name: base-image-out-art
+    container:
+      image: alpine:latest
+      command: [echo, hello]
+    outputs:
+      artifacts:
+      - name: tmp
+        path: /tmp
+`
+
+var baseImageOutputParameter = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: base-image-out-art-
+spec:
+  entrypoint: base-image-out-art
+  templates:
+  - name: base-image-out-art
+    container:
+      image: alpine:latest
+      command: [echo, hello]
+    outputs:
+      parameters:
+      - name: tmp
+        valueFrom:
+          path: /tmp/file
+`
+
+var volumeMountOutputArtifact = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: base-image-out-art-
+spec:
+  entrypoint: base-image-out-art
+  volumes:
+  - name: workdir
+    emptyDir: {}
+  templates:
+  - name: base-image-out-art
+    container:
+      image: alpine:latest
+      command: [echo, hello]
+      volumeMounts:
+      - name: workdir
+        mountPath: /mnt/vol
+    outputs:
+      artifacts:
+      - name: workdir
+        path: /mnt/vol
+`
+
+var baseImageDirWithEmptyDirOutputArtifact = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: base-image-out-art-
+spec:
+  entrypoint: base-image-out-art
+  volumes:
+  - name: workdir
+    emptyDir: {}
+  templates:
+  - name: base-image-out-art
+    container:
+      image: alpine:latest
+      command: [echo, hello]
+      volumeMounts:
+      - name: workdir
+        mountPath: /mnt/vol
+    outputs:
+      artifacts:
+      - name: workdir
+        path: /mnt
+`
+
+// TestBaseImageOutputVerify verifies we error when we detect the condition when the container
+// runtime executor doesn't support output artifacts from a base image layer, and fails validation
+func TestBaseImageOutputVerify(t *testing.T) {
+	wfBaseOutArt := unmarshalWf(baseImageOutputArtifact)
+	wfBaseOutParam := unmarshalWf(baseImageOutputParameter)
+	wfEmptyDirOutArt := unmarshalWf(volumeMountOutputArtifact)
+	wfBaseWithEmptyDirOutArt := unmarshalWf(baseImageDirWithEmptyDirOutputArtifact)
+	var err error
+
+	for _, executor := range []string{common.ContainerRuntimeExecutorK8sAPI, common.ContainerRuntimeExecutorKubelet, common.ContainerRuntimeExecutorPNS, common.ContainerRuntimeExecutorDocker, ""} {
+		switch executor {
+		case common.ContainerRuntimeExecutorK8sAPI, common.ContainerRuntimeExecutorKubelet:
+			err = ValidateWorkflow(wfBaseOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
+			assert.Error(t, err)
+			err = ValidateWorkflow(wfBaseOutParam, ValidateOpts{ContainerRuntimeExecutor: executor})
+			assert.Error(t, err)
+			err = ValidateWorkflow(wfBaseWithEmptyDirOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
+			assert.Error(t, err)
+		case common.ContainerRuntimeExecutorPNS:
+			err = ValidateWorkflow(wfBaseOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
+			assert.NoError(t, err)
+			err = ValidateWorkflow(wfBaseOutParam, ValidateOpts{ContainerRuntimeExecutor: executor})
+			assert.NoError(t, err)
+			err = ValidateWorkflow(wfBaseWithEmptyDirOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
+			assert.Error(t, err)
+		case common.ContainerRuntimeExecutorDocker, "":
+			err = ValidateWorkflow(wfBaseOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
+			assert.NoError(t, err)
+			err = ValidateWorkflow(wfBaseOutParam, ValidateOpts{ContainerRuntimeExecutor: executor})
+			assert.NoError(t, err)
+			err = ValidateWorkflow(wfBaseWithEmptyDirOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
+			assert.NoError(t, err)
+		}
+		err = ValidateWorkflow(wfEmptyDirOutArt, ValidateOpts{ContainerRuntimeExecutor: executor})
+		assert.NoError(t, err)
+	}
+}
+
+var customVariableInput = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: hello-world-
+spec:
+  entrypoint: whalesay
+  templates:
+  - name: whalesay
+    container:
+      image: docker/whalesay:{{user.username}}
+`
+
+// TestCustomTemplatVariable verifies custom template variable
+func TestCustomTemplatVariable(t *testing.T) {
+	wf := unmarshalWf(customVariableInput)
 	err := ValidateWorkflow(wftmplGetter, wf, ValidateOpts{Lint: true})
 	assert.Equal(t, err, nil)
 }

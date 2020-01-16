@@ -539,6 +539,42 @@ func (woc *wfOperationCtx) processNodeRetries(node *wfv1.NodeStatus, retryStrate
 	return node, nil
 }
 
+func (woc *wfOperationCtx) collectConditionResults(pod *apiv1.Pod, currentResults *[]wfv1.ExceptionResult, annotationKey string) error {
+
+	if resultString, ok := pod.Annotations[annotationKey]; ok {
+
+		uniqueConditionNames := make(map[string]bool)
+		for _, result := range *currentResults {
+			uniqueConditionNames[result.Name] = true
+		}
+
+		var newResults []wfv1.ExceptionResult
+		err := json.Unmarshal([]byte(resultString), &newResults)
+		if err != nil {
+			return err
+		}
+
+		// Only add the new result to the list if we don't already have an error result with that name
+		for _, newResult := range newResults {
+			if _, ok := uniqueConditionNames[newResult.Name]; !ok {
+				*currentResults = append(*currentResults, newResult)
+			}
+		}
+	}
+	return nil
+}
+
+func (woc *wfOperationCtx) collectPodErrorsAndWarnings(pod *apiv1.Pod) error {
+
+	err := woc.collectConditionResults(pod, &woc.wf.Status.Errors, common.AnnotationKeyErrors)
+	if err != nil {
+		return err
+	}
+
+	err = woc.collectConditionResults(pod, &woc.wf.Status.Warnings, common.AnnotationKeyWarnings)
+	return err
+}
+
 // podReconciliation is the process by which a workflow will examine all its related
 // pods and update the node state before continuing the evaluation of the workflow.
 // Records all pods which were observed completed, which will be labeled completed=true
@@ -578,11 +614,16 @@ func (woc *wfOperationCtx) podReconciliation() error {
 					}
 				}
 				woc.completedPods[pod.ObjectMeta.Name] = true
+				err := woc.collectPodErrorsAndWarnings(pod)
+				if err != nil {
+					return err
+				}
 			}
 			if node.Successful() {
 				woc.succeededPods[pod.ObjectMeta.Name] = true
 			}
 		}
+		return nil
 	}
 
 	parallelPodNum := make(chan string, 500)
@@ -847,9 +888,9 @@ func getPendingReason(pod *apiv1.Pod) string {
 	return ""
 }
 
-// inferFailedReason returns metadata about a Failed pod to be used in its NodeStatus
+// handlePodFailures returns metadata about a Failed pod to be used in its NodeStatus
 // Returns a tuple of the new phase and message
-func inferFailedReason(pod *apiv1.Pod) (wfv1.NodePhase, string) {
+func handlePodFailures(pod *apiv1.Pod) (wfv1.NodePhase, string) {
 	if pod.Status.Message != "" {
 		// Pod has a nice error message. Use that.
 		return wfv1.NodeFailed, pod.Status.Message
@@ -949,6 +990,27 @@ func inferFailedReason(pod *apiv1.Pod) (wfv1.NodePhase, string) {
 	for _, failMsg := range failMessages {
 		return wfv1.NodeFailed, failMsg
 	}
+
+	// If we get here, check the extended failure conditions and mark the node as failed if any exist
+
+	if resultString, ok := pod.Annotations[common.AnnotationKeyErrors]; ok {
+		var errorResults []wfv1.ExceptionResult
+		err := json.Unmarshal([]byte(resultString), &errorResults)
+
+		if err != nil {
+			failMsg := fmt.Sprintf("Failed to deserialize Extended error descriptions: %s", err.Error())
+			return wfv1.NodeFailed, failMsg
+		}
+
+		if len(errorResults) > 0 {
+			failMsg := "failed for the following reasons: "
+			for _, result := range errorResults {
+				failMsg += fmt.Sprintf("%s - %s ", result.Name, result.Message)
+			}
+			return wfv1.NodeFailed, failMsg
+		}
+	}
+
 	// If we get here, we have detected that the main/wait containers succeed but the sidecar(s)
 	// were  SIGKILL'd. The executor may have had to forcefully terminate the sidecar (kill -9),
 	// resulting in a 137 exit code (which we had ignored earlier). If failMessages is empty, it
@@ -1387,6 +1449,14 @@ func (woc *wfOperationCtx) markNodePhase(nodeName string, phase wfv1.NodePhase, 
 	}
 	woc.wf.Status.Nodes[node.ID] = *node
 	return node
+}
+
+// markNodeErrorClearOuput is a convenience method to mark a node with an error and clear the output
+func (woc *wfOperationCtx) markNodeErrorClearOuput(nodeName string, err error) *wfv1.NodeStatus {
+	nodeStatus := woc.markNodeError(nodeName, err)
+	nodeStatus.Outputs = nil
+	woc.wf.Status.Nodes[nodeStatus.ID] = *nodeStatus
+	return nodeStatus
 }
 
 // markNodeError is a convenience method to mark a node with an error and set the message from the error

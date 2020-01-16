@@ -52,9 +52,9 @@ argo submit --serviceaccount <name>
 
 ## 4. Run Simple Example Workflows
 ```
-argo submit --watch https://raw.githubusercontent.com/argoproj/argo/master/examples/hello-world.yaml
-argo submit --watch https://raw.githubusercontent.com/argoproj/argo/master/examples/coinflip.yaml
-argo submit --watch https://raw.githubusercontent.com/argoproj/argo/master/examples/loops-maps.yaml
+argo submit --watch https://raw.githubusercontent.com/cyrusbiotechnology/argo/master/examples/hello-world.yaml
+argo submit --watch https://raw.githubusercontent.com/cyrusbiotechnology/argo/master/examples/coinflip.yaml
+argo submit --watch https://raw.githubusercontent.com/cyrusbiotechnology/argo/master/examples/loops-maps.yaml
 argo list
 argo get xxx-workflow-name-xxx
 argo logs xxx-pod-name-xxx #from get command above
@@ -64,20 +64,20 @@ You can also create workflows directly with kubectl. However, the Argo CLI offer
 that kubectl does not, such as YAML validation, workflow visualization, parameter passing, retries
 and resubmits, suspend and resume, and more.
 ```
-kubectl create -f https://raw.githubusercontent.com/argoproj/argo/master/examples/hello-world.yaml
+kubectl create -f https://raw.githubusercontent.com/cyrusbiotechnology/argo/master/examples/hello-world.yaml
 kubectl get wf
 kubectl get wf hello-world-xxx
 kubectl get po --selector=workflows.argoproj.io/workflow=hello-world-xxx --show-all
 kubectl logs hello-world-yyy -c main
 ```
 
-Additional examples are available [here](https://github.com/argoproj/argo/blob/master/examples/README.md).
+Additional examples are available [here](https://github.com/cyrusbiotechnology/argo/blob/master/examples/README.md).
 
 ## 5. Install an Artifact Repository
 
 Argo supports S3 (AWS, GCS, Minio) as well as Artifactory as artifact repositories. This tutorial
 uses Minio for the sake of portability. Instructions on how to configure other artifact repositories
-are [here](https://github.com/argoproj/argo/blob/master/ARTIFACT_REPO.md).
+are [here](https://github.com/cyrusbiotechnology/argo/blob/master/ARTIFACT_REPO.md).
 ```
 helm install stable/minio \
   --name argo-artifacts \
@@ -137,7 +137,7 @@ namespace you use for workflows.
 
 ## 7. Run a workflow which uses artifacts
 ```
-argo submit https://raw.githubusercontent.com/argoproj/argo/master/examples/artifact-passing.yaml
+argo submit https://raw.githubusercontent.com/cyrusbiotechnology/argo/master/examples/artifact-passing.yaml
 ```
 
 ## 8. Access the Argo UI

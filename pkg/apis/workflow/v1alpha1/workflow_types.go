@@ -191,6 +191,21 @@ type WorkflowSpec struct {
 	// those generated from DNSPolicy.
 	DNSConfig *apiv1.PodDNSConfig `json:"dnsConfig,omitempty"`
 
+	// Host networking requested for this workflow pod. Default to false.
+	HostNetwork *bool `json:"hostNetwork,omitempty"`
+
+	// Set DNS policy for the pod.
+	// Defaults to "ClusterFirst".
+	// Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'.
+	// DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy.
+	// To have DNS options set along with hostNetwork, you have to specify DNS policy
+	// explicitly to 'ClusterFirstWithHostNet'.
+	DNSPolicy *apiv1.DNSPolicy `json:"dnsPolicy,omitempty"`
+
+	// PodDNSConfig defines the DNS parameters of a pod in addition to
+	// those generated from DNSPolicy.
+	DNSConfig *apiv1.PodDNSConfig `json:"dnsConfig,omitempty"`
+
 	// OnExit is a template reference which is invoked at the end of the
 	// workflow, irrespective of the success, failure, or error of the
 	// primary workflow.
@@ -531,6 +546,9 @@ type ArtifactLocation struct {
 
 	// Raw contains raw artifact location details
 	Raw *RawArtifact `json:"raw,omitempty"`
+
+	// GCS contains GCS artifact location details
+	GCS *GCSArtifact `json:"gcs,omitempty"`
 }
 
 type ArtifactRepositoryRef struct {
@@ -723,6 +741,9 @@ type WorkflowStatus struct {
 
 	// Outputs captures output values and artifact locations produced by the workflow via global outputs
 	Outputs *Outputs `json:"outputs,omitempty"`
+
+	Errors   []ExceptionResult `json:"errors,omitempty"`
+	Warnings []ExceptionResult `json:"warnings,omitempty"`
 }
 
 // RetryStrategy provides controls on how to retry a workflow step
@@ -1095,6 +1116,23 @@ type ResourceTemplate struct {
 	FailureCondition string `json:"failureCondition,omitempty"`
 }
 
+// ExceptionCondition is a container for defining an error or warning rule
+type ExceptionCondition struct {
+	Name             string `json:"name"`
+	PatternMatched   string `json:"patternMatched,omitempty"`
+	PatternUnmatched string `json:"patternUnmatched,omitempty"`
+	Source           string `json:"source,omitempty"`
+	Message          string `json:"message,omitempty"`
+}
+
+// ExceptionResult contains the results on an extended error or warning condition evaluation
+type ExceptionResult struct {
+	Name     string `json:"name"`
+	Message  string `json:"message"`
+	PodName  string `json:"podName"`
+	StepName string `json:"stepName"`
+}
+
 // GetType returns the type of this template
 func (tmpl *Template) GetType() TemplateType {
 	if tmpl.Container != nil {
@@ -1282,7 +1320,8 @@ func (a *Artifact) HasLocation() bool {
 		a.HTTP.HasLocation() ||
 		a.Artifactory.HasLocation() ||
 		a.Raw.HasLocation() ||
-		a.HDFS.HasLocation()
+		a.HDFS.HasLocation() ||
+		a.GCS.HasLocation()
 }
 
 // GetTemplateByName retrieves a defined template by its name

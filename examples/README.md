@@ -40,7 +40,7 @@ For a complete description of the Argo workflow spec, please refer to https://gi
 
 In case you want to follow along with this walkthrough, here's a quick overview of the most useful argo command line interface (CLI) commands.
 
-[Install Argo here](https://github.com/argoproj/argo/blob/master/demo.md)
+[Install Argo here](https://github.com/cyrusbiotechnology/argo/blob/master/demo.md)
 
 ```sh
 argo submit hello-world.yaml    # submit a workflow spec to Kubernetes
@@ -1131,7 +1131,7 @@ spec:
       - name: argo-source
         path: /src
         git:
-          repo: https://github.com/argoproj/argo.git
+          repo: https://github.com/cyrusbiotechnology/argo.git
           revision: "master"
       # Download kubectl 1.8.0 and place it at /bin/kubectl
       - name: kubectl
@@ -1315,4 +1315,4 @@ spec:
 
 Continuous integration is a popular application for workflows. Currently, Argo does not provide event triggers for automatically kicking off your CI jobs, but we plan to do so in the near future. Until then, you can easily write a cron job that checks for new commits and kicks off the needed workflow, or use your existing Jenkins server to kick off the workflow.
 
-A good example of a CI workflow spec is provided at https://github.com/argoproj/argo/tree/master/examples/influxdb-ci.yaml. Because it just uses the concepts that we've already covered and is somewhat long, we don't go into details here.
+A good example of a CI workflow spec is provided at https://github.com/cyrusbiotechnology/argo/tree/master/examples/influxdb-ci.yaml. Because it just uses the concepts that we've already covered and is somewhat long, we don't go into details here.

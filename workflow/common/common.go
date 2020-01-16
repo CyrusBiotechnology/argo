@@ -32,6 +32,11 @@ const (
 	// DockerSockVolumeName is the volume name for the /var/run/docker.sock host path volume
 	DockerSockVolumeName = "docker-sock"
 
+	// GoogleSecretVolumeName is the volume name for the /var/secrets/google volume
+	GoogleSecretVolumeName = "google-cloud-key"
+	// EvnVarGoogleSecret contains the name of the google credentials file used fro GCS access
+	EnvVarGoogleSecret = "GOOGLE_CREDENTIALS_SECRET"
+
 	// AnnotationKeyNodeName is the pod metadata annotation key containing the workflow node name
 	AnnotationKeyNodeName = workflow.WorkflowFullName + "/node-name"
 
@@ -46,6 +51,11 @@ const (
 	// set by the controller and obeyed by the executor. For example, the controller will use this annotation to
 	// signal the executors of daemoned containers that it should terminate.
 	AnnotationKeyExecutionControl = workflow.WorkflowFullName + "/execution"
+	AnnotationKeyExecutionControl = workflow.WorkflowFullName + "/execution"
+	//AnnotationKeyErrors is the annotation key containing extended fatal error information
+	AnnotationKeyErrors = workflow.WorkflowFullName + "/errors"
+	//AnnotationKeyWarnings is the annotation key containing extended
+	AnnotationKeyWarnings = workflow.WorkflowFullName + "/warnings"
 
 	// LabelKeyControllerInstanceID is the label the controller will carry forward to workflows/pod labels
 	// for the purposes of workflow segregation
@@ -57,6 +67,10 @@ const (
 	LabelKeyWorkflow = workflow.WorkflowFullName + "/workflow"
 	// LabelKeyPhase is a label applied to workflows to indicate the current phase of the workflow (for filtering purposes)
 	LabelKeyPhase = workflow.WorkflowFullName + "/phase"
+	// LabelKeyWorkflowType is the non-appended workflow name
+	LabelKeyWorkflowType = workflow.WorkflowFullName + "/type"
+	// LabelKeyTemplate is the name of the template describing the step
+	LabelKeyTemplate = workflow.WorkflowFullName + "/template"
 
 	// ExecutorArtifactBaseDir is the base directory in the init container in which artifacts will be copied to.
 	// Each artifact will be named according to its input name (e.g: /argo/inputs/artifacts/CODE)
@@ -135,6 +149,13 @@ type ExecutionControl struct {
 	Deadline *time.Time `json:"deadline,omitempty"`
 	// IncludeScriptOutput is containing flag to include script output
 	IncludeScriptOutput bool `json:"includeScriptOutput,omitempty"`
+}
+
+type ResourceInterface interface {
+	GetNamespace() string
+	GetSecrets(namespace, name, key string) ([]byte, error)
+	GetSecretFromVolMount(name, key string) ([]byte, error)
+	GetConfigMapKey(namespace, name, key string) (string, error)
 }
 
 type ResourceInterface interface {
