@@ -70,8 +70,8 @@ pipeline {
 
         stage('build Linux and MacOS CLIs') {
             steps {
-                runUtilityCommand("make cli CGO_ENABLED=0  LDFLAGS='-extldflags \"-static\"' ARGO_CLI_NAME=argo-linux-amd64")
-                runUtilityCommand("make cli CGO_ENABLED=0  LDFLAGS='-extldflags \"-static\"' ARGO_CLI_NAME=argo-darwin-amd64")
+                runUtilityCommand("make cli-linux-amd64")
+                runUtilityCommand("make cli-darwin")
             }
         }
 
