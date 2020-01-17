@@ -40,6 +40,7 @@ func NewCommand() *cobra.Command {
 	command.AddCommand(NewTerminateCommand())
 	command.AddCommand(cmd.NewVersionCmd(CLIName))
 	command.AddCommand(template.NewTemplateCommand())
+	command.AddCommand(NewCostCommand())
 
 	addKubectlFlagsToCmd(command)
 	return command
