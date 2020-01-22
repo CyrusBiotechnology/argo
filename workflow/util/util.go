@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -725,4 +726,77 @@ func PodSpecPatchMerge(wf *wfv1.Workflow, tmpl *wfv1.Template) (string, error) {
 func ValidateJsonStr(jsonStr string, schema interface{}) bool {
 	err := json.Unmarshal([]byte(jsonStr), &schema)
 	return err == nil
+}
+
+type TemplateDuration struct {
+	Name     string
+	Duration time.Duration
+	Cost     float64
+}
+
+type WorkflowCost struct {
+	TotalCost     float64
+	TotalDuration time.Duration
+	TemplateCosts []TemplateDuration
+}
+
+func getTemplateRuntimes(wf *wfv1.Workflow) []TemplateDuration {
+
+	perTemplateTotals := map[string]time.Duration{}
+
+	for _, node := range wf.Status.Nodes {
+		if node.Type != wfv1.NodeTypePod {
+			continue
+		}
+
+		if node.Phase != wfv1.NodeSucceeded {
+			continue
+		}
+
+		startTime := node.StartedAt
+		endTime := node.FinishedAt
+
+		duration := endTime.Sub(startTime.Time)
+		if _, ok := perTemplateTotals[node.TemplateName]; ok {
+			perTemplateTotals[node.TemplateName] = perTemplateTotals[node.TemplateName] + duration
+		} else {
+			perTemplateTotals[node.TemplateName] = duration
+		}
+
+	}
+
+	var templateDurations []TemplateDuration
+
+	for templateName, duration := range perTemplateTotals {
+		templateDurations = append(templateDurations, TemplateDuration{
+			Name:     templateName,
+			Duration: duration,
+		})
+	}
+
+	sort.Slice(templateDurations, func(i, j int) bool {
+		return templateDurations[i].Duration > templateDurations[j].Duration
+	})
+
+	return templateDurations
+}
+
+func ComputeWorkflowCost(wf *wfv1.Workflow, cpuCost float64) WorkflowCost {
+	templateRuntimes := getTemplateRuntimes(wf)
+
+	workflowCost := WorkflowCost{
+		TotalCost:     0.0,
+		TotalDuration: time.Duration(0),
+		TemplateCosts: []TemplateDuration{},
+	}
+
+	for _, templateDuration := range templateRuntimes {
+		templateCost := templateDuration.Duration.Hours() * cpuCost
+		workflowCost.TotalDuration += templateDuration.Duration
+		workflowCost.TotalCost += templateCost
+
+		templateDuration.Cost = templateCost
+		workflowCost.TemplateCosts = append(workflowCost.TemplateCosts, templateDuration)
+	}
+	return workflowCost
 }

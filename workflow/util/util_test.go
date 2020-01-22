@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 	fakeClientset "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/fake"
@@ -194,4 +195,97 @@ func TestPodSpecPatchMerge(t *testing.T) {
 	assert.Equal(t, "1.000", spec.Containers[0].Resources.Limits.Cpu().AsDec().String())
 	assert.Equal(t, "104857600", spec.Containers[0].Resources.Limits.Memory().AsDec().String())
 
+}
+
+func TestComputeWorkflowCost(t *testing.T) {
+
+	startTime := time.Now()
+	endTime := startTime.Add(1 * time.Hour)
+	wf := wfv1.Workflow{
+		Status: wfv1.WorkflowStatus{
+			Nodes: map[string]wfv1.NodeStatus{
+				"step-1": {
+					Type:         wfv1.NodeTypePod,
+					TemplateName: "step-1-template",
+					Phase:        wfv1.NodeSucceeded,
+					StartedAt: metav1.Time{
+						Time: startTime,
+					},
+					FinishedAt: metav1.Time{
+						Time: endTime,
+					},
+				},
+				"step-1a": {
+					Type:         wfv1.NodeTypePod,
+					TemplateName: "step-1-template",
+					Phase:        wfv1.NodeSucceeded,
+					StartedAt: metav1.Time{
+						Time: startTime,
+					},
+					FinishedAt: metav1.Time{
+						Time: endTime,
+					},
+				},
+				"step-2": {
+					Type:         wfv1.NodeTypePod,
+					TemplateName: "step-2-template",
+					Phase:        wfv1.NodeSucceeded,
+					StartedAt: metav1.Time{
+						Time: startTime,
+					},
+					FinishedAt: metav1.Time{
+						Time: endTime,
+					},
+				},
+				// This step shouldn't be included in runtime summaries
+				"step-dag": {
+					Type:         wfv1.NodeTypeDAG,
+					TemplateName: "step-dag",
+					Phase:        wfv1.NodeSucceeded,
+					StartedAt: metav1.Time{
+						Time: startTime,
+					},
+					FinishedAt: metav1.Time{
+						Time: endTime,
+					},
+				},
+				// This step shouldn't be included in runtime summaries
+				"step-running": {
+					Type:         wfv1.NodeTypeDAG,
+					TemplateName: "step-running",
+					Phase:        wfv1.NodeRunning,
+					StartedAt: metav1.Time{
+						Time: startTime,
+					},
+					FinishedAt: metav1.Time{
+						Time: endTime,
+					},
+				},
+			},
+		},
+	}
+
+	result := ComputeWorkflowCost(&wf, 0.10)
+	expected := WorkflowCost{
+		TotalCost:     0.30,
+		TotalDuration: 3 * time.Hour,
+		TemplateCosts: []TemplateDuration{
+			{
+				Name:     "step-1-template",
+				Duration: 2 * time.Hour,
+				Cost:     0.20,
+			},
+			{
+				Name:     "step-2-template",
+				Duration: 1 * time.Hour,
+				Cost:     0.10,
+			},
+		},
+	}
+
+	assert.InDelta(t, expected.TotalCost, result.TotalCost, 0.001)
+	assert.Equal(t, expected.TotalDuration, result.TotalDuration)
+	assert.Len(t, result.TemplateCosts, 2)
+	assert.Equal(t, expected.TemplateCosts[0], result.TemplateCosts[0])
+	assert.Equal(t, expected.TemplateCosts[1], result.TemplateCosts[1])
 }

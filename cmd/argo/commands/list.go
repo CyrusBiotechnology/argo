@@ -33,6 +33,7 @@ type listFlags struct {
 	since         string   // --since
 	chunkSize     int64    // --chunk-size
 	noHeaders     bool     // --no-headers
+	costPerHour   float64
 }
 
 func NewListCommand() *cobra.Command {
@@ -135,6 +136,7 @@ func NewListCommand() *cobra.Command {
 	command.Flags().StringVar(&listArgs.since, "since", "", "Show only workflows newer than a relative duration")
 	command.Flags().Int64VarP(&listArgs.chunkSize, "chunk-size", "", 500, "Return large lists in chunks rather than all at once. Pass 0 to disable.")
 	command.Flags().BoolVar(&listArgs.noHeaders, "no-headers", false, "Don't print headers (default print headers).")
+	command.Flags().Float64Var(&listArgs.costPerHour, "cost", 0.01, "Cost per hour in dollars (Default $0.01)")
 	return command
 }
 
@@ -144,13 +146,15 @@ func printTable(wfList []wfv1.Workflow, listArgs *listFlags) {
 		if listArgs.allNamespaces {
 			fmt.Fprint(w, "NAMESPACE\t")
 		}
-		fmt.Fprint(w, "NAME\tSTATUS\tAGE\tDURATION\tPRIORITY")
+		fmt.Fprint(w, "NAME\tSTATUS\tAGE\tDURATION\tPRIORITY\tCOST")
 		if listArgs.output == "wide" {
 			fmt.Fprint(w, "\tP/R/C\tPARAMETERS")
 		}
 		fmt.Fprint(w, "\n")
 	}
 	for _, wf := range wfList {
+
+		workflowCost := util.ComputeWorkflowCost(&wf, listArgs.costPerHour)
 		ageStr := humanize.RelativeDurationShort(wf.ObjectMeta.CreationTimestamp.Time, time.Now())
 		durationStr := humanize.RelativeDurationShort(wf.Status.StartedAt.Time, wf.Status.FinishedAt.Time)
 		if listArgs.allNamespaces {
@@ -160,7 +164,7 @@ func printTable(wfList []wfv1.Workflow, listArgs *listFlags) {
 		if wf.Spec.Priority != nil {
 			priority = int(*wf.Spec.Priority)
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d", wf.ObjectMeta.Name, workflowStatus(&wf), ageStr, durationStr, priority)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\t$%f", wf.ObjectMeta.Name, workflowStatus(&wf), ageStr, durationStr, priority, workflowCost.TotalCost)
 		if listArgs.output == "wide" {
 			pending, running, completed := countPendingRunningCompleted(&wf)
 			fmt.Fprintf(w, "\t%d/%d/%d", pending, running, completed)
