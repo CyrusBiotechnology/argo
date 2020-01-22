@@ -38,7 +38,7 @@ func NewCostCommand() *cobra.Command {
 				if err != nil {
 					log.Fatal(err)
 				}
-				templateRuntimes := getTemplateRuntimes(wf)
+				workflowCost := util.ComputeWorkflowCost(wf, costPerHour)
 				const fmtStr = "%-20s %v\n"
 
 				fmt.Printf("Assuming a total cost of $%f per CPU Hour and fully utilized nodes\n\n", costPerHour)
@@ -46,19 +46,17 @@ func NewCostCommand() *cobra.Command {
 				w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 				fmt.Fprint(w, "TEMPLATE\tDURATION\tCOST\n")
 
-				totalDuration := time.Duration(0)
-				for _, templateDuration := range templateRuntimes {
-					totalDuration += templateDuration.Duration
+				for _, templateDuration := range workflowCost.TemplateCosts {
 					fmt.Fprintf(w,
 						"%s\t%v\t$%f\n",
 						templateDuration.Name,
 						templateDuration.Duration,
-						templateDuration.Duration.Hours()*costPerHour)
+						templateDuration.Cost)
 				}
 				_ = w.Flush()
 				fmt.Print("\n")
-				fmt.Printf("%-15s %v\n", "Total CPU time:", totalDuration)
-				fmt.Printf("%-15s $%f\n", "Total cost:", totalDuration.Hours()*costPerHour)
+				fmt.Printf("%-15s %v\n", "Total CPU time:", workflowCost.TotalDuration)
+				fmt.Printf("%-15s $%f\n", "Total cost:", workflowCost.TotalCost)
 			}
 
 		},
