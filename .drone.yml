@@ -49,6 +49,8 @@ steps:
 - name: dep ensure
   image: instrumentisto/dep
   commands:
+  - echo $GOPATH
+  - GOPATH=/drone
   - dep ensure
 
 - name: run tests
