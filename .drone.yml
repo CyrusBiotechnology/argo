@@ -49,6 +49,7 @@ steps:
 - name: dep ensure
   image: instrumentisto/dep
   commands:
+  - mkdir $GOPATH/src/dummy
   - cp Gopkg.toml $GOPATH/src/dummy/Gopkg.toml
   - cp Gopkg.lock $GOPATH/src/dummy/Gopkg.lock
   - cd ${GOPATH}/src/dummy && \
