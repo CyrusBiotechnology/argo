@@ -53,8 +53,9 @@ steps:
   - go get -u github.com/golang/dep/cmd/dep
   - cp Gopkg.toml /go/src/app
   - cp Gopkg.lock /go/src/app
-  - cd /go/src/app && \
-    dep ensure -vendor-only && \
+  - cd /go/src/app
+  - ls
+  - dep ensure -vendor-only && \
     mv vendor/* $GOPATH/src/ && \
     rmdir vendor
 
