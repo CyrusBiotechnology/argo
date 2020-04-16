@@ -1,0 +1,101 @@
+---
+kind: pipeline
+type: kubernetes
+name: default
+
+steps:
+
+- name: docker
+  image: docker:dind
+  privileged: true
+  detach: true
+  volumes:
+  - name: dockersock
+    path: /var/run
+
+- name: ssh key setup
+  image: alpine/git
+  environment:
+    SSH_KEY:
+      from_secret: github_ssh
+  commands:
+  # write the ssh key to disk
+  - mkdir /root/.ssh
+  - echo -n "$SSH_KEY" > /root/.ssh/id_rsa
+  - chmod 600 /root/.ssh/id_rsa
+
+  # add github to known hosts
+  - touch /root/.ssh/known_hosts
+  - chmod 600 /root/.ssh/known_hosts
+  - ssh-keyscan -H github.com > /etc/ssh/ssh_known_hosts 2> /dev/null
+
+- name: get version - master
+  image: ubuntu:latest
+  commands:
+  - echo $(cat VERSION) > .tags
+  when:
+    branch:
+    - master
+
+- name: get version - feature-branch
+  image: ubuntu:latest
+  commands:
+  - echo $(cat VERSION)-$(echo $DRONE_COMMIT_BRANCH | sed 's/[/_-]//g')-$DRONE_BUILD_NUMBER > .tags
+  - echo $(cat .tags)
+  when:
+    branch:
+      exclude:
+      - master
+
+- name: run tests
+  image: golang
+  commands:
+    - go test ./...
+
+- name: build + publish controller to gcr
+  image: plugins/gcr
+  settings:
+    repo: cyrus-containers/workflow-controller
+    target: workflow-controller
+    tags:
+      - $(cat .tags)
+    debug: true
+    json_key:
+      from_secret: dockerconfigjson
+
+- name: build + publish executor to gcr
+  image: plugins/gcr
+  settings:
+    repo: cyrus-containers/argoexec
+    target: argoexec
+    tags:
+      - $(cat .tags)
+    debug: true
+    json_key:
+      from_secret: dockerconfigjson
+
+- name: release
+  image: plugins/github-release
+  settings:
+    files:
+    - argo-linux
+    - argo-osx
+    checksum:
+    - sha256
+    api_key:
+      from_secret: github_token
+  when:
+    event: tag
+
+
+trigger:
+  event:
+    include:
+    - push
+
+node_selector:
+  CPUs: 8
+
+volumes:
+- name: dockersock
+  temp: {}
