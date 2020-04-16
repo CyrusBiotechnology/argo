@@ -46,6 +46,11 @@ steps:
       exclude:
       - master
 
+- name: dep ensure
+  image: golang
+  commands:
+    - dep ensure
+
 - name: run tests
   image: golang
   commands:
