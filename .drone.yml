@@ -52,9 +52,9 @@ steps:
   - mkdir $GOPATH/src/dummy
   - cp Gopkg.toml $GOPATH/src/dummy/Gopkg.toml
   - cp Gopkg.lock $GOPATH/src/dummy/Gopkg.lock
-  - cd ${GOPATH}/src/dummy && \
+  - cd $GOPATH/src/dummy && \
     dep ensure -vendor-only && \
-    mv vendor/* ${GOPATH}/src/ && \
+    mv vendor/* $GOPATH/src/ && \
     rmdir vendor
 
 - name: run tests
