@@ -49,9 +49,12 @@ steps:
 - name: dep ensure
   image: instrumentisto/dep
   commands:
-  - echo $GOPATH
-  - GOPATH=/drone
-  - dep ensure
+  - cp Gopkg.toml $GOPATH/src/dummy/Gopkg.toml
+  - cp Gopkg.lock $GOPATH/src/dummy/Gopkg.lock
+  - cd ${GOPATH}/src/dummy && \
+    dep ensure -vendor-only && \
+    mv vendor/* ${GOPATH}/src/ && \
+    rmdir vendor
 
 - name: run tests
   image: golang
