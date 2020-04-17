@@ -51,7 +51,7 @@ steps:
   commands:
   - mkdir /go/src/app
   - go get -u github.com/golang/dep/cmd/dep
-  - cp . /go/src/app
+  - cp -r . /go/src/app
   - cd /go/src/app
   - ls
   - dep ensure -vendor-only
