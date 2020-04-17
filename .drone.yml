@@ -46,23 +46,18 @@ steps:
       exclude:
       - master
 
-- name: dep ensure
+- name: run tests
   image: golang:latest
   commands:
   - mkdir /go/src/app
   - go get -u github.com/golang/dep/cmd/dep
-  - cp Gopkg.toml /go/src/app
-  - cp Gopkg.lock /go/src/app
+  - cp . /go/src/app
   - cd /go/src/app
   - ls
-  - dep ensure -vendor-only && \
-    mv vendor/* $GOPATH/src/ && \
-    rmdir vendor
-
-- name: run tests
-  image: golang
-  commands:
-    - go test ./...
+  - dep ensure -vendor-only
+  - mv vendor/* $GOPATH/src/
+  - rmdir vendor
+  - go test ./...
 
 - name: build + publish controller to gcr
   image: plugins/gcr
