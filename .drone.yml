@@ -54,8 +54,6 @@ steps:
   - cp -r . /go/src/github.com/cyrusbiotechnology/argo
   - cd /go/src/github.com/cyrusbiotechnology/argo
   - dep ensure -vendor-only -v
-  - mv vendor/* $GOPATH/src/
-  - rmdir vendor
   - go test ./...
 
 - name: build + publish controller to gcr
