@@ -8,13 +8,6 @@ workspace:
   path: /go/src/github.com/cyrusbiotechnology/argo
 
 steps:
-- name: docker
-  image: docker:dind
-  privileged: true
-  detach: true
-  volumes:
-  - name: dockersock
-    path: /var/run
 
 - name: ssh key setup
   image: alpine/git
@@ -54,9 +47,6 @@ steps:
   image: golang:latest
   commands:
   - go get -u github.com/golang/dep/cmd/dep
-#  - mkdir /go/src/github.com/cyrusbiotechnology/
-#  - cp -r . /go/src/github.com/cyrusbiotechnology/argo
-#  - cd /go/src/github.com/cyrusbiotechnology/argo
   - dep ensure -vendor-only -v
   - go test ./...
 
