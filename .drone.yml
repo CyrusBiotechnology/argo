@@ -52,7 +52,7 @@ steps:
   - go get -u github.com/golang/dep/cmd/dep
   - mkdir /go/src/github.com/cyrusbiotechnology/
   - cp -r . /go/src/github.com/cyrusbiotechnology/argo
-  - cd /go/src/github.com/cyrusbiotechnology
+  - cd /go/src/github.com/cyrusbiotechnology/argo
   - dep ensure -vendor-only -v
   - go test ./...
 
