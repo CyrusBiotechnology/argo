@@ -55,8 +55,6 @@ steps:
   - cd /go/src/app
   - ls
   - dep ensure -vendor-only
-  - mv vendor/* $GOPATH/src/
-  - rmdir vendor
   - go test ./...
 
 - name: build + publish controller to gcr
