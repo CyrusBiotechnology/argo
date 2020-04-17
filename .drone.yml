@@ -49,11 +49,14 @@ steps:
 - name: run tests
   image: golang:latest
   commands:
+  - mkdir /go/src/dummy
   - go get -u github.com/golang/dep/cmd/dep
-  - mkdir /go/src/github.com/cyrusbiotechnology
-  - cp -r . /go/src/github.com/cyrusbiotechnology
-  - cd /go/src/github.com/cyrusbiotechnology
+  - cp -r . /go/src/dummy
+  - cd /go/src/dummy
   - dep ensure -vendor-only -v
+  - rm -rf $GOPATH/src/github.com
+  - mv vendor/* $GOPATH/src/
+  - rmdir vendor
   - go test ./...
 
 - name: build + publish controller to gcr
