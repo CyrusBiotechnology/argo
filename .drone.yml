@@ -53,10 +53,7 @@ steps:
   - go get -u github.com/golang/dep/cmd/dep
   - cp -r . /go/src/app
   - cd /go/src/app
-  - ls
-  - dep ensure -vendor-only
-  - rm -rf $GOPATH/src/github.com
-  - mv vendor/* $GOPATH/src/
+  - dep ensure -vendor-only -v
   - go test ./...
 
 - name: build + publish controller to gcr
