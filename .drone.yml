@@ -49,10 +49,10 @@ steps:
 - name: run tests
   image: golang:latest
   commands:
-  - mkdir /go/src/app
+  - mkdir /go/src/github.com/cyrusbiotechnology
   - go get -u github.com/golang/dep/cmd/dep
-  - cp -r . /go/src/app
-  - cd /go/src/app
+  - cp -r . /go/src/github.com/cyrusbiotechnology
+  - cd /go/src/github.com/cyrusbiotechnology
   - dep ensure -vendor-only -v
   - go test ./...
 
