@@ -56,13 +56,17 @@ steps:
   - dep ensure -vendor-only -v
   - go test ./...
 
+- name: build argo cli
+  image: golang
+  commands:
+  - CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o argo-cli-linux main.go
+  - CGO_ENABLED=0 GOOS=darwin go build -a -ldflags '-extldflags "-static"' -o argo-cli-osx main.go
+
 - name: build + publish controller to gcr
   image: plugins/gcr
   settings:
     repo: cyrus-containers/workflow-controller
     target: workflow-controller
-    tags:
-      - $(cat .tags)
     debug: true
     json_key:
       from_secret: dockerconfigjson
@@ -72,8 +76,6 @@ steps:
   settings:
     repo: cyrus-containers/argoexec
     target: argoexec
-    tags:
-      - $(cat .tags)
     debug: true
     json_key:
       from_secret: dockerconfigjson
@@ -82,8 +84,8 @@ steps:
   image: plugins/github-release
   settings:
     files:
-    - argo-linux
-    - argo-osx
+    - argo-cli-linux
+    - argo-cli-osx
     checksum:
     - sha256
     api_key:
