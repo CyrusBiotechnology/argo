@@ -22,6 +22,11 @@ RUN wget -O docker.tgz "https://download.docker.com/linux/static/${DOCKER_CHANNE
     tar --extract --file docker.tgz --strip-components 1 --directory /usr/local/bin/ && \
     rm docker.tgz
 
+# Install dep
+ENV DEP_VERSION=0.5.0
+RUN wget https://github.com/golang/dep/releases/download/v${DEP_VERSION}/dep-linux-amd64 -O /usr/local/bin/dep && \
+    chmod +x /usr/local/bin/dep
+
 # Install golangci-lint
 ENV GOLANGCI_LINT_VERSION=1.16.0
 RUN curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/v$GOLANGCI_LINT_VERSION/install.sh| sh -s -- -b $(go env GOPATH)/bin v$GOLANGCI_LINT_VERSION
@@ -34,26 +39,6 @@ RUN curl -sLo- https://github.com/alecthomas/gometalinter/releases/download/v${G
     tar -xzC "$GOPATH/bin" --exclude COPYING --exclude README.md --strip-components 1 -f- && \
     ln -s $GOPATH/bin/gometalinter $GOPATH/bin/gometalinter.v2
 
-####################################################################################################
-# Argo Build stage which performs the actual build of Argo binaries
-####################################################################################################
-FROM builder as argo-build
-
-# A dummy directory is created under $GOPATH/src/dummy so we are able to use dep
-# to install all the packages of our dep lock file
-COPY Gopkg.toml ${GOPATH}/src/dummy/Gopkg.toml
-COPY Gopkg.lock ${GOPATH}/src/dummy/Gopkg.lock
-
-RUN cd ${GOPATH}/src/dummy && \
-    dep ensure -vendor-only && \
-    mv vendor/* ${GOPATH}/src/ && \
-    rmdir vendor
-
-# Perform the build
-WORKDIR /go/src/github.com/cyrusbiotechnology/argo
-COPY . .
-ARG MAKE_TARGET="controller executor cli-linux-amd64"
-RUN make $MAKE_TARGET
 
 ####################################################################################################
 # argoexec-base
