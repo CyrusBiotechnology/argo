@@ -1,6 +1,7 @@
 ####################################################################################################
 # Builder image
-# Initial stage which pulls prepares build dependencies we need for our final image
+# Initial stage which pulls prepares build dependencies and CLI tooling we need for our final image
+# Also used as the image in CI jobs so needs all dependencies
 ####################################################################################################
 FROM golang:1.11.5 as builder
 
@@ -54,6 +55,28 @@ RUN apt-get update && \
     chmod +x /usr/local/bin/kubectl
 COPY hack/ssh_known_hosts /etc/ssh/ssh_known_hosts
 COPY --from=builder /usr/local/bin/docker /usr/local/bin/
+
+
+####################################################################################################
+# Argo Build stage which performs the actual build of Argo binaries
+####################################################################################################
+FROM builder as argo-build
+
+# A dummy directory is created under $GOPATH/src/dummy so we are able to use dep
+# to install all the packages of our dep lock file
+COPY Gopkg.toml ${GOPATH}/src/dummy/Gopkg.toml
+COPY Gopkg.lock ${GOPATH}/src/dummy/Gopkg.lock
+
+RUN cd ${GOPATH}/src/dummy && \
+    dep ensure -vendor-only && \
+    mv vendor/* ${GOPATH}/src/ && \
+    rmdir vendor
+
+# Perform the build
+WORKDIR /go/src/github.com/cyrusbiotechnology/argo
+COPY . .
+ARG MAKE_TARGET="controller executor cli-linux-amd64"
+RUN make $MAKE_TARGET
 
 
 ####################################################################################################
