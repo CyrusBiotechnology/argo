@@ -1,0 +1,103 @@
+---
+kind: pipeline
+type: kubernetes
+name: default
+
+workspace:
+  base: /go
+  path: /go/src/github.com/cyrusbiotechnology/argo
+
+steps:
+
+- name: submodules
+  image: alpine/git
+  environment:
+    SSH_KEY:
+      from_secret: github_ssh
+  commands:
+  # write the ssh key to disk
+  - mkdir /root/.ssh
+  - echo -n "$SSH_KEY" > /root/.ssh/id_rsa
+  - chmod 600 /root/.ssh/id_rsa
+
+  # add github to known hosts
+  - touch /root/.ssh/known_hosts
+  - chmod 600 /root/.ssh/known_hosts
+  - ssh-keyscan -H github.com > /etc/ssh/ssh_known_hosts 2> /dev/null
+
+  - git submodule update --init --recursive
+
+- name: get version - master
+  image: ubuntu:latest
+  commands:
+  - echo $(cat VERSION) > .tags
+  when:
+    branch:
+    - master
+
+- name: get version - feature-branch
+  image: ubuntu:latest
+  commands:
+  - echo $(cat VERSION)-$(echo $DRONE_COMMIT_BRANCH | sed 's/[/_-]//g')-$DRONE_BUILD_NUMBER > .tags
+  - echo $(cat .tags)
+  when:
+    branch:
+      exclude:
+      - master
+
+- name: run tests
+  image: golang:latest
+  commands:
+  - go get -u github.com/golang/dep/cmd/dep
+  - dep ensure -vendor-only -v
+  - go test ./...
+
+- name: build argo cli
+  image: golang
+  commands:
+  - CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o argo-cli-linux cmd/argo/main.go
+  - CGO_ENABLED=0 GOOS=darwin go build -a -ldflags '-extldflags "-static"' -o argo-cli-osx cmd/argo/main.go
+
+- name: build + publish controller to gcr
+  image: plugins/gcr
+  settings:
+    repo: cyrus-containers/workflow-controller
+    target: workflow-controller
+    debug: true
+    json_key:
+      from_secret: dockerconfigjson
+
+- name: build + publish executor to gcr
+  image: plugins/gcr
+  settings:
+    repo: cyrus-containers/argoexec
+    target: argoexec
+    debug: true
+    json_key:
+      from_secret: dockerconfigjson
+
+- name: release
+  image: plugins/github-release
+  settings:
+    files:
+    - argo-cli-linux
+    - argo-cli-osx
+    checksum:
+    - sha256
+    api_key:
+      from_secret: github_token
+  when:
+    event: tag
+
+
+trigger:
+  event:
+    include:
+    - push
+
+node_selector:
+  CPUs: 8
+
+volumes:
+- name: dockersock
+  temp: {}

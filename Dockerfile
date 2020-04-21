@@ -92,11 +92,3 @@ COPY --from=argo-build /go/src/github.com/cyrusbiotechnology/argo/dist/argoexec 
 FROM scratch as workflow-controller
 COPY --from=argo-build /go/src/github.com/cyrusbiotechnology/argo/dist/workflow-controller /bin/
 ENTRYPOINT [ "workflow-controller" ]
-
-
-####################################################################################################
-# argocli
-####################################################################################################
-FROM scratch as argocli
-COPY --from=argo-build /go/src/github.com/cyrusbiotechnology/argo/dist/argo-linux-amd64 /bin/argo
-ENTRYPOINT [ "argo" ]
