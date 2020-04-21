@@ -34,6 +34,26 @@ RUN curl -sLo- https://github.com/alecthomas/gometalinter/releases/download/v${G
     tar -xzC "$GOPATH/bin" --exclude COPYING --exclude README.md --strip-components 1 -f- && \
     ln -s $GOPATH/bin/gometalinter $GOPATH/bin/gometalinter.v2
 
+####################################################################################################
+# Argo Build stage which performs the actual build of Argo binaries
+####################################################################################################
+FROM builder as argo-build
+
+# A dummy directory is created under $GOPATH/src/dummy so we are able to use dep
+# to install all the packages of our dep lock file
+COPY Gopkg.toml ${GOPATH}/src/dummy/Gopkg.toml
+COPY Gopkg.lock ${GOPATH}/src/dummy/Gopkg.lock
+
+RUN cd ${GOPATH}/src/dummy && \
+    dep ensure -vendor-only && \
+    mv vendor/* ${GOPATH}/src/ && \
+    rmdir vendor
+
+# Perform the build
+WORKDIR /go/src/github.com/cyrusbiotechnology/argo
+COPY . .
+ARG MAKE_TARGET="controller executor cli-linux-amd64"
+RUN make $MAKE_TARGET
 
 ####################################################################################################
 # argoexec-base
@@ -64,11 +84,3 @@ COPY --from=argo-build /go/src/github.com/cyrusbiotechnology/argo/dist/argoexec 
 FROM scratch as workflow-controller
 COPY --from=argo-build /go/src/github.com/cyrusbiotechnology/argo/dist/workflow-controller /bin/
 ENTRYPOINT [ "workflow-controller" ]
-
-
-####################################################################################################
-# argocli
-####################################################################################################
-FROM scratch as argocli
-COPY --from=argo-build /go/src/github.com/cyrusbiotechnology/argo/dist/argo-linux-amd64 /bin/argo
-ENTRYPOINT [ "argo" ]
