@@ -90,11 +90,6 @@ steps:
     event: tag
 
 
-trigger:
-  event:
-    include:
-    - push
-
 node_selector:
   CPUs: 8
 
