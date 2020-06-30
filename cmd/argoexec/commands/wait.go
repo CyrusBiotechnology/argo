@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/cyrusbiotechnology/argo/workflow/executor"
 	"time"
 
 	"github.com/argoproj/pkg/stats"
@@ -68,6 +69,18 @@ func waitContainer() error {
 		return err
 	}
 	err = wfExecutor.AnnotateOutputs(logArt)
+	if err != nil {
+		wfExecutor.AddError(err)
+		return err
+	}
+
+	err = wfExecutor.EvaluateConditions(executor.ConditionTypeError)
+	if err != nil {
+		wfExecutor.AddError(err)
+		return err
+	}
+
+	err = wfExecutor.EvaluateConditions(executor.ConditionTypeWarning)
 	if err != nil {
 		wfExecutor.AddError(err)
 		return err
