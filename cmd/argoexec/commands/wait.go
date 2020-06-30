@@ -50,6 +50,19 @@ func waitContainer() error {
 		wfExecutor.AddError(err)
 		return err
 	}
+
+	err = wfExecutor.EvaluateConditions(executor.ConditionTypeError)
+	if err != nil {
+		wfExecutor.AddError(err)
+		return err
+	}
+
+	err = wfExecutor.EvaluateConditions(executor.ConditionTypeWarning)
+	if err != nil {
+		wfExecutor.AddError(err)
+		return err
+	}
+
 	// Saving output parameters
 	err = wfExecutor.SaveParameters()
 	if err != nil {
@@ -69,18 +82,6 @@ func waitContainer() error {
 		return err
 	}
 	err = wfExecutor.AnnotateOutputs(logArt)
-	if err != nil {
-		wfExecutor.AddError(err)
-		return err
-	}
-
-	err = wfExecutor.EvaluateConditions(executor.ConditionTypeError)
-	if err != nil {
-		wfExecutor.AddError(err)
-		return err
-	}
-
-	err = wfExecutor.EvaluateConditions(executor.ConditionTypeWarning)
 	if err != nil {
 		wfExecutor.AddError(err)
 		return err
