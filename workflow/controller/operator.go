@@ -2058,3 +2058,5 @@ func (woc *wfOperationCtx) substituteParamsInVolumes(params map[string]string) e
 	woc.volumes = newVolumes
 	return nil
 }
+
+func (woc *wfOperationCtx) getTraceFromWorkflow() string

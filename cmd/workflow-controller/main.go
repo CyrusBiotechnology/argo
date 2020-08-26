@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/honeycombio/beeline-go"
 	"os"
 	"time"
 
@@ -79,6 +80,11 @@ func NewRootCommand() *cobra.Command {
 			go wfController.TelemetryServer(ctx)
 			go wfController.RunTTLController(ctx)
 
+			beeline.Init(beeline.Config{
+				WriteKey:    os.Getenv("HONEYCOMB_KEY"),
+				Dataset:     "workflow-test",
+				ServiceName: "my-app-name",
+			})
 			// Wait forever
 			select {}
 
