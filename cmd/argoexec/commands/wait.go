@@ -2,6 +2,8 @@ package commands
 
 import (
 	"github.com/cyrusbiotechnology/argo/workflow/executor"
+	"github.com/honeycombio/beeline-go"
+	"os"
 	"time"
 
 	"github.com/argoproj/pkg/stats"
@@ -24,6 +26,11 @@ func NewWaitCommand() *cobra.Command {
 }
 
 func waitContainer() error {
+	beeline.Init(beeline.Config{
+		WriteKey:    os.Getenv("HONEYCOMB_KEY"),
+		Dataset:     "workflow-test",
+		ServiceName: "my-app-name",
+	})
 	wfExecutor := initExecutor()
 	defer wfExecutor.HandleError()
 	defer stats.LogStats()

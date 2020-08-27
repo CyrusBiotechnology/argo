@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/honeycombio/beeline-go/propagation"
 	"io"
 	"path"
 	"path/filepath"
@@ -93,15 +95,16 @@ func (woc *wfOperationCtx) createWorkflowPod(nodeName string, mainCtr apiv1.Cont
 	wfSpec := woc.wf.Spec.DeepCopy()
 
 	mainCtr.Name = common.MainContainerName
+
 	pod := &apiv1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nodeID,
 			Namespace: woc.wf.ObjectMeta.Namespace,
 			Labels: map[string]string{
-				common.LabelKeyWorkflow:  woc.wf.ObjectMeta.Name, 				// Allows filtering by pods related to specific workflow
-				common.LabelKeyCompleted: "false",                				// Allows filtering by incomplete workflow pods
-				common.LabelKeyWorkflowType: strings.Replace(woc.wf.ObjectMeta.GenerateName, "-", "", -1),  	// Allows filtering by workflow type for VPA
-				common.LabelKeyTemplate: tmpl.Name,                				// Allows filtering by workflow template for VPA
+				common.LabelKeyWorkflow:     woc.wf.ObjectMeta.Name,                                       // Allows filtering by pods related to specific workflow
+				common.LabelKeyCompleted:    "false",                                                      // Allows filtering by incomplete workflow pods
+				common.LabelKeyWorkflowType: strings.Replace(woc.wf.ObjectMeta.GenerateName, "-", "", -1), // Allows filtering by workflow type for VPA
+				common.LabelKeyTemplate:     tmpl.Name,                                                    // Allows filtering by workflow template for VPA
 
 			},
 			Annotations: map[string]string{
@@ -117,6 +120,18 @@ func (woc *wfOperationCtx) createWorkflowPod(nodeName string, mainCtr apiv1.Cont
 			ActiveDeadlineSeconds: tmpl.ActiveDeadlineSeconds,
 			ImagePullSecrets:      woc.wf.Spec.ImagePullSecrets,
 		},
+	}
+
+	trace, err := woc.getTrace()
+	if err != nil {
+		// Errors in the tracing system shouldn't interfere with the operation of the controller
+		woc.log.Info("Error getting current trace.  Events will not be reported to honeycomb")
+	}
+
+	if trace != nil {
+		_, span := trace.GetRootSpan().CreateAsyncChild(context.Background())
+		serializedSpan := propagation.MarshalHoneycombTraceContext(span.PropagationContext())
+		pod.ObjectMeta.Annotations[common.AnnotationHoneycombNodeSpan] = serializedSpan
 	}
 
 	if woc.wf.Spec.HostNetwork != nil {
@@ -138,7 +153,7 @@ func (woc *wfOperationCtx) createWorkflowPod(nodeName string, mainCtr apiv1.Cont
 		pod.Spec.ShareProcessNamespace = pointer.BoolPtr(true)
 	}
 
-	err := woc.addArchiveLocation(pod, tmpl)
+	err = woc.addArchiveLocation(pod, tmpl)
 	if err != nil {
 		return nil, err
 	}

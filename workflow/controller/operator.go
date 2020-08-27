@@ -1,8 +1,11 @@
 package controller
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/honeycombio/beeline-go/propagation"
+	"github.com/honeycombio/beeline-go/trace"
 	"reflect"
 	"regexp"
 	"runtime/debug"
@@ -135,8 +138,20 @@ func newWorkflowOperationCtx(wf *wfv1.Workflow, wfc *WorkflowController) *wfOper
 // TODO: an error returned by this method should result in requeuing the workflow to be retried at a
 // later time
 func (woc *wfOperationCtx) operate() {
+	t, err := woc.getTrace()
+	if err != nil {
+		// Errors in the tracing system shouldn't interfere with the operation of the controller
+		woc.log.Info("Error getting current trace.  Events will not be reported to honeycomb")
+	} else {
+		t.GetRootSpan().AddField("workflow.name", woc.wf.Name)
+		defer t.Send()
+	}
+
 	defer func() {
 		if woc.wf.Status.Completed() {
+			if t != nil {
+				t.GetRootSpan().Send()
+			}
 			_ = woc.killDaemonedChildren("")
 		}
 		woc.persistUpdates()
@@ -197,7 +212,7 @@ func (woc *wfOperationCtx) operate() {
 		}
 	}
 
-	err := woc.substituteParamsInVolumes(woc.globalParams)
+	err = woc.substituteParamsInVolumes(woc.globalParams)
 	if err != nil {
 		woc.log.Errorf("%s volumes global param substitution error: %+v", woc.wf.ObjectMeta.Name, err)
 		woc.markWorkflowError(err, true)
@@ -2059,4 +2074,21 @@ func (woc *wfOperationCtx) substituteParamsInVolumes(params map[string]string) e
 	return nil
 }
 
-func (woc *wfOperationCtx) getTraceFromWorkflow() string
+func (woc *wfOperationCtx) getTrace() (*trace.Trace, error) {
+	const CyrusTraceInfo = "CyrusTraceInfo"
+	traceData, ok := woc.wf.Annotations[CyrusTraceInfo]
+	if !ok {
+		_, t := trace.NewTraceFromPropagationContext(context.Background(), nil)
+		_, span := t.GetRootSpan().CreateAsyncChild(context.Background())
+		woc.wf.Annotations[CyrusTraceInfo] = propagation.MarshalHoneycombTraceContext(span.PropagationContext())
+		woc.updated = true
+		return t, nil
+	} else {
+		propagationContext, err := propagation.UnmarshalHoneycombTraceContext(traceData)
+		if err != nil {
+			return nil, err
+		}
+		_, t := trace.NewTraceFromPropagationContext(context.Background(), propagationContext)
+		return t, nil
+	}
+}

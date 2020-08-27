@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cyrusbiotechnology/argo/workflow/artifacts/gcs"
+	"github.com/honeycombio/beeline-go/propagation"
+	"github.com/honeycombio/beeline-go/trace"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -30,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 
+	argofile "github.com/argoproj/pkg/file"
 	"github.com/cyrusbiotechnology/argo/errors"
 	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/cyrusbiotechnology/argo/util"
@@ -43,7 +46,6 @@ import (
 	"github.com/cyrusbiotechnology/argo/workflow/artifacts/raw"
 	"github.com/cyrusbiotechnology/argo/workflow/artifacts/s3"
 	"github.com/cyrusbiotechnology/argo/workflow/common"
-	argofile "github.com/argoproj/pkg/file"
 )
 
 const (
@@ -1083,6 +1085,12 @@ func (we *WorkflowExecutor) Wait() error {
 	if err != nil {
 		return err
 	}
+
+	t := we.getTrace()
+	if t != nil {
+		t.GetRootSpan().AddField("workflow.template.name", we.Template.Name)
+		t.GetRootSpan().Send()
+	}
 	log.Infof("Main container completed")
 	return nil
 }
@@ -1390,4 +1398,27 @@ func unmarshalAnnotationField(filePath string, key string, into interface{}) err
 
 	// If we reach here, then the key does not exist in the file
 	return errors.Errorf(errors.CodeNotFound, "Key %s not found in annotation file: %s", key, filePath)
+}
+
+func (we *WorkflowExecutor) getTrace() *trace.Trace {
+	pod, err := we.getPod()
+	if err != nil {
+		log.Warnf("Failed to get pod, tracing will not be reported for this stage: %v", err)
+		return nil
+	}
+	spanString, ok := pod.ObjectMeta.Annotations[common.AnnotationHoneycombNodeSpan]
+	if !ok {
+		log.Warnf("Pod did not have span annotation. tracing will not be reported for this stage")
+		return nil
+	}
+
+	propagationContext, err := propagation.UnmarshalHoneycombTraceContext(spanString)
+	if err != nil {
+		log.Warnf("failed to deserialized trace information. tracing will not be reported for this stage: %v", err)
+		return nil
+	}
+
+	_, t := trace.NewTraceFromPropagationContext(context.Background(), propagationContext)
+	return t
+
 }
