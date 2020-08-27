@@ -2080,6 +2080,9 @@ func (woc *wfOperationCtx) getTrace() (*trace.Trace, error) {
 	if !ok {
 		_, t := trace.NewTraceFromPropagationContext(context.Background(), nil)
 		_, span := t.GetRootSpan().CreateAsyncChild(context.Background())
+		if woc.wf.Annotations == nil {
+			woc.wf.Annotations = map[string]string{}
+		}
 		woc.wf.Annotations[CyrusTraceInfo] = propagation.MarshalHoneycombTraceContext(span.PropagationContext())
 		woc.updated = true
 		return t, nil
