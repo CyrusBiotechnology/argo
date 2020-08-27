@@ -3,6 +3,7 @@ package artifactory_test
 import (
 	"io/ioutil"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -23,7 +24,7 @@ const (
 func TestSaveAndLoad(t *testing.T) {
 
 	t.Skip("This test is skipped since it depends on external service")
-	fileContent := "time: " + string(time.Now().UnixNano())
+	fileContent := "time: " + strconv.FormatInt(time.Now().UnixNano(), 10)
 
 	// create file to test save
 	lf, err := ioutil.TempFile("", LoadFileName)
