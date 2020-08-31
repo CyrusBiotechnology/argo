@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/honeycombio/beeline-go/propagation"
 	"io"
+	"os"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -389,6 +390,13 @@ func (woc *wfOperationCtx) createEnvVars() []apiv1.EnvVar {
 			},
 		},
 	})
+
+	// TODO: argo has a better way of handling secrets but this is just a prototype
+	execEnvVars = append(execEnvVars, apiv1.EnvVar{
+		Name:  common.EnvVarHoneycombKey,
+		Value: os.Getenv(common.EnvVarHoneycombKey),
+	})
+
 	if woc.controller.Config.Executor != nil {
 		execEnvVars = append(execEnvVars, woc.controller.Config.Executor.Env...)
 	}

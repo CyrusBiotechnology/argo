@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cyrusbiotechnology/argo/workflow/artifacts/gcs"
+	"github.com/honeycombio/beeline-go"
 	"github.com/honeycombio/beeline-go/propagation"
 	"github.com/honeycombio/beeline-go/trace"
 	"io"
@@ -1058,6 +1059,11 @@ func containerID(ctrID string) string {
 // Also monitors for updates in the pod annotations which may change (e.g. terminate)
 // Upon completion, kills any sidecars after it finishes.
 func (we *WorkflowExecutor) Wait() error {
+	beeline.Init(beeline.Config{
+		WriteKey:    os.Getenv(common.EnvVarHoneycombKey),
+		Dataset:     "workflow-test",
+		ServiceName: "my-app-name",
+	})
 	err := we.RuntimeExecutor.WaitInit()
 	if err != nil {
 		return err
