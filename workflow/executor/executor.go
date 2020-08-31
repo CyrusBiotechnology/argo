@@ -1065,10 +1065,8 @@ func (we *WorkflowExecutor) Wait() error {
 		ServiceName: "my-app-name",
 	})
 	t := we.getTrace()
-	var span *trace.Span
 	if t != nil {
-		_, span = t.GetRootSpan().CreateChild(context.Background())
-		span.AddField("workflow.template.name", we.Template.Name)
+		t.AddField("workflow.template.name", we.Template.Name)
 	}
 
 	err := we.RuntimeExecutor.WaitInit()
