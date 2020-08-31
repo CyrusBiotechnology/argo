@@ -1064,6 +1064,13 @@ func (we *WorkflowExecutor) Wait() error {
 		Dataset:     "workflow-test",
 		ServiceName: "my-app-name",
 	})
+	t := we.getTrace()
+	var span *trace.Span
+	if t != nil {
+		_, span = t.GetRootSpan().CreateChild(context.Background())
+		span.AddField("workflow.template.name", we.Template.Name)
+	}
+
 	err := we.RuntimeExecutor.WaitInit()
 	if err != nil {
 		return err
@@ -1091,11 +1098,8 @@ func (we *WorkflowExecutor) Wait() error {
 	if err != nil {
 		return err
 	}
-
-	t := we.getTrace()
 	if t != nil {
-		t.GetRootSpan().AddField("workflow.template.name", we.Template.Name)
-		t.GetRootSpan().Send()
+		t.Send()
 	}
 	log.Infof("Main container completed")
 	return nil

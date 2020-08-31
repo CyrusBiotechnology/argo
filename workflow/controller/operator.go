@@ -2079,11 +2079,10 @@ func (woc *wfOperationCtx) getTrace() (*trace.Trace, error) {
 	traceData, ok := woc.wf.Annotations[CyrusTraceInfo]
 	if !ok {
 		_, t := trace.NewTraceFromPropagationContext(context.Background(), nil)
-		_, span := t.GetRootSpan().CreateAsyncChild(context.Background())
 		if woc.wf.Annotations == nil {
 			woc.wf.Annotations = map[string]string{}
 		}
-		woc.wf.Annotations[CyrusTraceInfo] = propagation.MarshalHoneycombTraceContext(span.PropagationContext())
+		woc.wf.Annotations[CyrusTraceInfo] = propagation.MarshalHoneycombTraceContext(t.GetRootSpan().PropagationContext())
 		woc.updated = true
 		return t, nil
 	} else {

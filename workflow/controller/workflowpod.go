@@ -130,8 +130,7 @@ func (woc *wfOperationCtx) createWorkflowPod(nodeName string, mainCtr apiv1.Cont
 	}
 
 	if trace != nil {
-		_, span := trace.GetRootSpan().CreateAsyncChild(context.Background())
-		serializedSpan := propagation.MarshalHoneycombTraceContext(span.PropagationContext())
+		serializedSpan := propagation.MarshalHoneycombTraceContext(trace.GetRootSpan().PropagationContext())
 		pod.ObjectMeta.Annotations[common.AnnotationHoneycombNodeSpan] = serializedSpan
 	}
 
