@@ -3,6 +3,8 @@ package controller
 import (
 	"context"
 	"fmt"
+	"github.com/honeycombio/beeline-go"
+	"os"
 	"strings"
 	"time"
 
@@ -237,6 +239,11 @@ func (wfc *WorkflowController) podGarbageCollector(stopCh <-chan struct{}) {
 }
 
 func (wfc *WorkflowController) runWorker() {
+	beeline.Init(beeline.Config{
+		WriteKey:    os.Getenv("HONEYCOMB_KEY"),
+		Dataset:     "workflow-test",
+		ServiceName: "workflow-controller",
+	})
 	for wfc.processNextItem() {
 	}
 }
@@ -320,6 +327,7 @@ func (wfc *WorkflowController) processNextItem() bool {
 		} else {
 			t.AddField("workflow.name", woc.wf.Name)
 			t.Send()
+			woc.log.Info("Closing honeycomb span")
 		}
 
 		wfc.throttler.Remove(key)

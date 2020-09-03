@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/honeycombio/beeline-go"
 	"os"
 	"time"
 
@@ -73,11 +72,6 @@ func NewRootCommand() *cobra.Command {
 				return err
 			}
 
-			beeline.Init(beeline.Config{
-				WriteKey:    os.Getenv("HONEYCOMB_KEY"),
-				Dataset:     "workflow-test",
-				ServiceName: "workflow-controller",
-			})
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			go wfController.Run(ctx, workflowWorkers, podWorkers)
