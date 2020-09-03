@@ -201,7 +201,7 @@ func (woc *wfOperationCtx) operate() {
 		}
 	}
 
-	err = woc.substituteParamsInVolumes(woc.globalParams)
+	err := woc.substituteParamsInVolumes(woc.globalParams)
 	if err != nil {
 		woc.log.Errorf("%s volumes global param substitution error: %+v", woc.wf.ObjectMeta.Name, err)
 		woc.markWorkflowError(err, true)
