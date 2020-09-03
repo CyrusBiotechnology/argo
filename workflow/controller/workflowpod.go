@@ -122,7 +122,7 @@ func (woc *wfOperationCtx) createWorkflowPod(nodeName string, mainCtr apiv1.Cont
 		},
 	}
 
-	trace, err := woc.getTrace()
+	trace, err := woc.GetTrace()
 	if err != nil {
 		// Errors in the tracing system shouldn't interfere with the operation of the controller
 		woc.log.Info("Error getting current trace.  Events will not be reported to honeycomb")

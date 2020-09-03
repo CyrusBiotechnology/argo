@@ -313,6 +313,15 @@ func (wfc *WorkflowController) processNextItem() bool {
 	}
 	woc.operate()
 	if woc.wf.Status.Completed() {
+		t, err := woc.GetTrace()
+		if err != nil {
+			// Errors in the tracing system shouldn't interfere with the operation of the controller
+			woc.log.Info("Error getting current trace.  Events will not be reported to honeycomb")
+		} else {
+			t.AddField("workflow.name", woc.wf.Name)
+			t.Send()
+		}
+
 		wfc.throttler.Remove(key)
 		// Send all completed pods to gcPods channel to delete it later depend on the PodGCStrategy.
 		var doPodGC bool
