@@ -1062,12 +1062,9 @@ func (we *WorkflowExecutor) Wait() error {
 	beeline.Init(beeline.Config{
 		WriteKey:    os.Getenv(common.EnvVarHoneycombKey),
 		Dataset:     "workflow-test",
-		ServiceName: "my-app-name",
+		ServiceName: we.Template.Name,
 	})
 	t := we.getTrace()
-	if t != nil {
-		t.AddField("workflow.template.name", we.Template.Name)
-	}
 
 	err := we.RuntimeExecutor.WaitInit()
 	if err != nil {

@@ -143,14 +143,13 @@ func (woc *wfOperationCtx) operate() {
 		// Errors in the tracing system shouldn't interfere with the operation of the controller
 		woc.log.Info("Error getting current trace.  Events will not be reported to honeycomb")
 	} else {
-		t.GetRootSpan().AddField("workflow.name", woc.wf.Name)
-		defer t.Send()
+		t.AddField("workflow.name", woc.wf.Name)
 	}
 
 	defer func() {
 		if woc.wf.Status.Completed() {
 			if t != nil {
-				t.GetRootSpan().Send()
+				t.Send()
 			}
 			_ = woc.killDaemonedChildren("")
 		}

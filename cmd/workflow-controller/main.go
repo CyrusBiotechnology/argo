@@ -73,6 +73,11 @@ func NewRootCommand() *cobra.Command {
 				return err
 			}
 
+			beeline.Init(beeline.Config{
+				WriteKey:    os.Getenv("HONEYCOMB_KEY"),
+				Dataset:     "workflow-test",
+				ServiceName: "workflow-controller",
+			})
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			go wfController.Run(ctx, workflowWorkers, podWorkers)
@@ -80,11 +85,6 @@ func NewRootCommand() *cobra.Command {
 			go wfController.TelemetryServer(ctx)
 			go wfController.RunTTLController(ctx)
 
-			beeline.Init(beeline.Config{
-				WriteKey:    os.Getenv("HONEYCOMB_KEY"),
-				Dataset:     "workflow-test",
-				ServiceName: "my-app-name",
-			})
 			// Wait forever
 			select {}
 
