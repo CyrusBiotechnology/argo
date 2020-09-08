@@ -325,7 +325,6 @@ func (wfc *WorkflowController) processNextItem() bool {
 			// Errors in the tracing system shouldn't interfere with the operation of the controller
 			woc.log.Info("Error getting current trace.  Events will not be reported to honeycomb")
 		} else {
-			t.AddField("workflow.name", woc.wf.Name)
 			t.Send()
 			woc.log.Info("Closing honeycomb span")
 		}
