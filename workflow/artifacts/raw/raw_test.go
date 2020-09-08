@@ -3,6 +3,7 @@ package raw_test
 import (
 	"io/ioutil"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -18,7 +19,7 @@ const (
 
 func TestLoad(t *testing.T) {
 
-	content := "time: " + string(time.Now().UnixNano())
+	content := "time: " + strconv.FormatInt(time.Now().UnixNano(), 10)
 	lf, err := ioutil.TempFile("", LoadFileName)
 	assert.Nil(t, err)
 	defer os.Remove(lf.Name())

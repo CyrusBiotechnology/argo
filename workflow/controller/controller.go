@@ -3,6 +3,8 @@ package controller
 import (
 	"context"
 	"fmt"
+	"github.com/honeycombio/beeline-go"
+	"os"
 	"strings"
 	"time"
 
@@ -237,6 +239,11 @@ func (wfc *WorkflowController) podGarbageCollector(stopCh <-chan struct{}) {
 }
 
 func (wfc *WorkflowController) runWorker() {
+	beeline.Init(beeline.Config{
+		WriteKey:    os.Getenv("HONEYCOMB_KEY"),
+		Dataset:     "workflow-test",
+		ServiceName: "workflow-controller",
+	})
 	for wfc.processNextItem() {
 	}
 }
@@ -313,6 +320,15 @@ func (wfc *WorkflowController) processNextItem() bool {
 	}
 	woc.operate()
 	if woc.wf.Status.Completed() {
+		t, err := woc.GetTrace()
+		if err != nil {
+			// Errors in the tracing system shouldn't interfere with the operation of the controller
+			woc.log.Info("Error getting current trace.  Events will not be reported to honeycomb")
+		} else {
+			t.Send()
+			woc.log.Info("Closing honeycomb span")
+		}
+
 		wfc.throttler.Remove(key)
 		// Send all completed pods to gcPods channel to delete it later depend on the PodGCStrategy.
 		var doPodGC bool

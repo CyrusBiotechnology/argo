@@ -24,6 +24,7 @@ func NewWaitCommand() *cobra.Command {
 }
 
 func waitContainer() error {
+
 	wfExecutor := initExecutor()
 	defer wfExecutor.HandleError()
 	defer stats.LogStats()

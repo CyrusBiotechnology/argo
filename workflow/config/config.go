@@ -62,6 +62,8 @@ type WorkflowControllerConfig struct {
 
 	// Config customized Docker Sock path
 	DockerSockPath string `json:"dockerSockPath,omitempty"`
+
+	HoneycombConfig metrics.HoneycombConfig `json:"honeycombConfig,omitempty"`
 }
 
 // KubeConfig is used for wait & init sidecar containers to communicate with a k8s apiserver by a outofcluster method,

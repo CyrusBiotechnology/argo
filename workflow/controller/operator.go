@@ -1,8 +1,11 @@
 package controller
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/honeycombio/beeline-go/propagation"
+	"github.com/honeycombio/beeline-go/trace"
 	"reflect"
 	"regexp"
 	"runtime/debug"
@@ -78,6 +81,8 @@ type wfOperationCtx struct {
 
 	// tmplCtx is the context of template search.
 	tmplCtx *templateresolution.Context
+
+	trace *trace.Trace
 }
 
 var _ wfv1.TemplateStorage = &wfOperationCtx{}
@@ -135,6 +140,7 @@ func newWorkflowOperationCtx(wf *wfv1.Workflow, wfc *WorkflowController) *wfOper
 // TODO: an error returned by this method should result in requeuing the workflow to be retried at a
 // later time
 func (woc *wfOperationCtx) operate() {
+
 	defer func() {
 		if woc.wf.Status.Completed() {
 			_ = woc.killDaemonedChildren("")
@@ -156,10 +162,15 @@ func (woc *wfOperationCtx) operate() {
 
 	// Perform one-time workflow validation
 	if woc.wf.Status.Phase == "" {
+		t, err := woc.GetTrace()
+		if err != nil {
+			woc.log.Info("Error getting trace, honeycomb metrics will not be logged")
+			t.AddField("workflow.name", woc.wf.Name)
+		}
 		woc.markWorkflowRunning()
 		validateOpts := validate.ValidateOpts{ContainerRuntimeExecutor: woc.controller.Config.ContainerRuntimeExecutor}
 		wftmplGetter := templateresolution.WrapWorkflowTemplateInterface(woc.controller.wfclientset.ArgoprojV1alpha1().WorkflowTemplates(woc.wf.Namespace))
-		err := validate.ValidateWorkflow(wftmplGetter, woc.wf, validateOpts)
+		err = validate.ValidateWorkflow(wftmplGetter, woc.wf, validateOpts)
 		if err != nil {
 			woc.markWorkflowFailed(fmt.Sprintf("invalid spec: %s", err.Error()))
 			return
@@ -2057,4 +2068,32 @@ func (woc *wfOperationCtx) substituteParamsInVolumes(params map[string]string) e
 	}
 	woc.volumes = newVolumes
 	return nil
+}
+
+func (woc *wfOperationCtx) GetTrace() (*trace.Trace, error) {
+
+	if woc.trace != nil {
+		return woc.trace, nil
+	}
+
+	const CyrusTraceInfo = "CyrusTraceInfo"
+	traceData, ok := woc.wf.Annotations[CyrusTraceInfo]
+	if !ok {
+		_, t := trace.NewTraceFromPropagationContext(context.Background(), nil)
+		if woc.wf.Annotations == nil {
+			woc.wf.Annotations = map[string]string{}
+		}
+		woc.wf.Annotations[CyrusTraceInfo] = propagation.MarshalHoneycombTraceContext(t.GetRootSpan().PropagationContext())
+		woc.updated = true
+		woc.trace = t
+		return woc.trace, nil
+	} else {
+		propagationContext, err := propagation.UnmarshalHoneycombTraceContext(traceData)
+		if err != nil {
+			return nil, err
+		}
+		_, t := trace.NewTraceFromPropagationContext(context.Background(), propagationContext)
+		woc.trace = t
+		return woc.trace, nil
+	}
 }

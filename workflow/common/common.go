@@ -34,11 +34,10 @@ const (
 
 	// GoogleSecretVolumeName is the volume name for the /var/secrets/google volume
 	GoogleSecretVolumeName = "google-cloud-key"
-	// EvnVarGoogleSecret contains the name of the google credentials file used fro GCS access
-	EnvVarGoogleSecret = "GOOGLE_CREDENTIALS_SECRET"
 
 	// AnnotationKeyNodeName is the pod metadata annotation key containing the workflow node name
-	AnnotationKeyNodeName = workflow.WorkflowFullName + "/node-name"
+	AnnotationKeyNodeName       = workflow.WorkflowFullName + "/node-name"
+	AnnotationHoneycombNodeSpan = workflow.WorkflowFullName + "/honeycomb-span"
 
 	// AnnotationKeyNodeMessage is the pod metadata annotation key the executor will use to
 	// communicate errors encountered by the executor during artifact load/save, etc...
@@ -100,6 +99,7 @@ const (
 	EnvVarKubeletPort = "ARGO_KUBELET_PORT"
 	// EnvVarKubeletInsecure is used to disable the TLS verification
 	EnvVarKubeletInsecure = "ARGO_KUBELET_INSECURE"
+	EnvVarHoneycombKey    = "HONEYCOMB_KEY"
 
 	// ContainerRuntimeExecutorDocker to use docker as container runtime executor
 	ContainerRuntimeExecutorDocker = "docker"
