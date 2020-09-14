@@ -1,7 +1,7 @@
 package v1alpha1
 
 import (
-	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow"
+	"github.com/argoproj/argo/pkg/apis/workflow"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -10,7 +10,8 @@ import (
 
 // SchemeGroupVersion is group version used to register these objects
 var (
-	SchemeGroupVersion = schema.GroupVersion{Group: workflow.Group, Version: "v1alpha1"}
+	SchemeGroupVersion             = schema.GroupVersion{Group: workflow.Group, Version: "v1alpha1"}
+	WorkflowSchemaGroupVersionKind = schema.GroupVersionKind{Group: workflow.Group, Version: "v1alpha1", Kind: workflow.WorkflowKind}
 )
 
 // Kind takes an unqualified kind and returns back a Group qualified GroupKind
@@ -35,6 +36,10 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&WorkflowList{},
 		&WorkflowTemplate{},
 		&WorkflowTemplateList{},
+		&CronWorkflow{},
+		&CronWorkflowList{},
+		&ClusterWorkflowTemplate{},
+		&ClusterWorkflowTemplateList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

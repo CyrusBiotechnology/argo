@@ -1,35 +1,42 @@
 package s3
 
 import (
+	"os"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/pkg/file"
 	argos3 "github.com/argoproj/pkg/s3"
+
+	"github.com/cyrusbiotechnology/argo/errors"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/workflow/common"
 )
 
 // S3ArtifactDriver is a driver for AWS S3
 type S3ArtifactDriver struct {
-	Endpoint  string
-	Region    string
-	Secure    bool
-	AccessKey string
-	SecretKey string
-	RoleARN   string
+	Endpoint    string
+	Region      string
+	Secure      bool
+	AccessKey   string
+	SecretKey   string
+	RoleARN     string
+	UseSDKCreds bool
 }
 
 // newMinioClient instantiates a new minio client object.
 func (s3Driver *S3ArtifactDriver) newS3Client() (argos3.S3Client, error) {
 	opts := argos3.S3ClientOpts{
-		Endpoint:  s3Driver.Endpoint,
-		Region:    s3Driver.Region,
-		Secure:    s3Driver.Secure,
-		AccessKey: s3Driver.AccessKey,
-		SecretKey: s3Driver.SecretKey,
-		RoleARN:   s3Driver.RoleARN,
+		Endpoint:    s3Driver.Endpoint,
+		Region:      s3Driver.Region,
+		Secure:      s3Driver.Secure,
+		AccessKey:   s3Driver.AccessKey,
+		SecretKey:   s3Driver.SecretKey,
+		RoleARN:     s3Driver.RoleARN,
+		Trace:       os.Getenv(common.EnvVarArgoTrace) == "1",
+		UseSDKCreds: s3Driver.UseSDKCreds,
 	}
 	return argos3.NewS3Client(opts)
 }
@@ -60,7 +67,7 @@ func (s3Driver *S3ArtifactDriver) Load(inputArtifact *wfv1.Artifact, path string
 			}
 			if !isDir {
 				// It's neither a file, nor a directory. Return the original NoSuchKey error
-				return false, origErr
+				return false, errors.New(errors.CodeNotFound, origErr.Error())
 			}
 
 			if err = s3cli.GetDirectory(inputArtifact.S3.Bucket, inputArtifact.S3.Key, path); err != nil {

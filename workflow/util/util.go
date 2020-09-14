@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,6 +18,7 @@ import (
 	apierr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -39,10 +40,11 @@ import (
 	wfclientset "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned"
 	"github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	cmdutil "github.com/cyrusbiotechnology/argo/util/cmd"
-	"github.com/cyrusbiotechnology/argo/util/file"
 	"github.com/cyrusbiotechnology/argo/util/retry"
 	unstructutil "github.com/cyrusbiotechnology/argo/util/unstructured"
 	"github.com/cyrusbiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/workflow/hydrator"
+	"github.com/cyrusbiotechnology/argo/workflow/packer"
 	"github.com/cyrusbiotechnology/argo/workflow/templateresolution"
 	"github.com/cyrusbiotechnology/argo/workflow/validate"
 )
@@ -57,10 +59,11 @@ func NewWorkflowInformer(cfg *rest.Config, ns string, resyncPeriod time.Duration
 	if err != nil {
 		panic(err)
 	}
+
 	resource := schema.GroupVersionResource{
 		Group:    workflow.Group,
 		Version:  "v1alpha1",
-		Resource: "workflows",
+		Resource: workflow.WorkflowPlural,
 	}
 	informer := unstructutil.NewFilteredUnstructuredInformer(
 		resource,
@@ -122,6 +125,14 @@ func NewWorkflowLister(informer cache.SharedIndexInformer) WorkflowLister {
 func FromUnstructured(un *unstructured.Unstructured) (*wfv1.Workflow, error) {
 	var wf wfv1.Workflow
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(un.Object, &wf)
+	if wf.Spec.TTLSecondsAfterFinished != nil {
+		if wf.Spec.TTLStrategy == nil {
+			ttlstrategy := wfv1.TTLStrategy{SecondsAfterCompletion: wf.Spec.TTLSecondsAfterFinished}
+			wf.Spec.TTLStrategy = &ttlstrategy
+		} else if wf.Spec.TTLStrategy.SecondsAfterCompletion == nil {
+			wf.Spec.TTLStrategy.SecondsAfterCompletion = wf.Spec.TTLSecondsAfterFinished
+		}
+	}
 	return &wf, err
 }
 
@@ -139,25 +150,52 @@ func IsWorkflowCompleted(wf *wfv1.Workflow) bool {
 	return false
 }
 
-// SubmitOpts are workflow submission options
-type SubmitOpts struct {
-	Name           string                 // --name
-	GenerateName   string                 // --generate-name
-	InstanceID     string                 // --instanceid
-	Entrypoint     string                 // --entrypoint
-	Parameters     []string               // --parameter
-	ParameterFile  string                 // --parameter-file
-	ServiceAccount string                 // --serviceaccount
-	DryRun         bool                   // --dry-run
-	ServerDryRun   bool                   // --server-dry-run
-	Labels         string                 // --labels
-	OwnerReference *metav1.OwnerReference // useful if your custom controller creates argo workflow resources
+// SubmitWorkflow validates and submit a single workflow and override some of the fields of the workflow
+func SubmitWorkflow(wfIf v1alpha1.WorkflowInterface, wfClientset wfclientset.Interface, namespace string, wf *wfv1.Workflow, opts *wfv1.SubmitOpts) (*wfv1.Workflow, error) {
+
+	err := ApplySubmitOpts(wf, opts)
+	if err != nil {
+		return nil, err
+	}
+	wftmplGetter := templateresolution.WrapWorkflowTemplateInterface(wfClientset.ArgoprojV1alpha1().WorkflowTemplates(namespace))
+	cwftmplGetter := templateresolution.WrapClusterWorkflowTemplateInterface(wfClientset.ArgoprojV1alpha1().ClusterWorkflowTemplates())
+
+	_, err = validate.ValidateWorkflow(wftmplGetter, cwftmplGetter, wf, validate.ValidateOpts{})
+	if err != nil {
+		return nil, err
+	}
+	if opts.DryRun {
+		return wf, nil
+	} else if opts.ServerDryRun {
+		wf, err := CreateServerDryRun(wf, wfClientset)
+		if err != nil {
+			return nil, err
+		}
+		return wf, err
+	} else {
+		return wfIf.Create(wf)
+	}
 }
 
-// SubmitWorkflow validates and submit a single workflow and override some of the fields of the workflow
-func SubmitWorkflow(wfIf v1alpha1.WorkflowInterface, wfClientset wfclientset.Interface, namespace string, wf *wfv1.Workflow, opts *SubmitOpts) (*wfv1.Workflow, error) {
+// CreateServerDryRun fills the workflow struct with the server's representation without creating it and returns an error, if there is any
+func CreateServerDryRun(wf *wfv1.Workflow, wfClientset wfclientset.Interface) (*wfv1.Workflow, error) {
+	// Keep the workflow metadata because it will be overwritten by the Post request
+	workflowTypeMeta := wf.TypeMeta
+	err := wfClientset.ArgoprojV1alpha1().RESTClient().Post().
+		Namespace(wf.Namespace).
+		Resource("workflows").
+		Body(wf).
+		Param("dryRun", "All").
+		Do().
+		Into(wf)
+	wf.TypeMeta = workflowTypeMeta
+	return wf, err
+}
+
+// Apply the Submit options into workflow object
+func ApplySubmitOpts(wf *wfv1.Workflow, opts *wfv1.SubmitOpts) error {
 	if opts == nil {
-		opts = &SubmitOpts{}
+		opts = &wfv1.SubmitOpts{}
 	}
 	if opts.Entrypoint != "" {
 		wf.Spec.Entrypoint = opts.Entrypoint
@@ -172,14 +210,11 @@ func SubmitWorkflow(wfIf v1alpha1.WorkflowInterface, wfClientset wfclientset.Int
 	if opts.Labels != "" {
 		passedLabels, err := cmdutil.ParseLabels(opts.Labels)
 		if err != nil {
-			return nil, fmt.Errorf("Expected labels of the form: NAME1=VALUE2,NAME2=VALUE2. Received: %s", opts.Labels)
+			return fmt.Errorf("Expected labels of the form: NAME1=VALUE2,NAME2=VALUE2. Received: %s", opts.Labels)
 		}
 		for k, v := range passedLabels {
 			labels[k] = v
 		}
-	}
-	if opts.InstanceID != "" {
-		labels[common.LabelKeyControllerInstanceID] = opts.InstanceID
 	}
 	wf.SetLabels(labels)
 	if len(opts.Parameters) > 0 || opts.ParameterFile != "" {
@@ -188,7 +223,7 @@ func SubmitWorkflow(wfIf v1alpha1.WorkflowInterface, wfClientset wfclientset.Int
 		for _, paramStr := range opts.Parameters {
 			parts := strings.SplitN(paramStr, "=", 2)
 			if len(parts) == 1 {
-				return nil, fmt.Errorf("Expected parameter of the form: NAME=VALUE. Received: %s", paramStr)
+				return fmt.Errorf("Expected parameter of the form: NAME=VALUE. Received: %s", paramStr)
 			}
 			param := wfv1.Parameter{
 				Name:  parts[0],
@@ -205,23 +240,28 @@ func SubmitWorkflow(wfIf v1alpha1.WorkflowInterface, wfClientset wfclientset.Int
 			if cmdutil.IsURL(opts.ParameterFile) {
 				body, err = ReadFromUrl(opts.ParameterFile)
 				if err != nil {
-					return nil, errors.InternalWrapError(err)
+					return errors.InternalWrapError(err)
 				}
 			} else {
 				body, err = ioutil.ReadFile(opts.ParameterFile)
 				if err != nil {
-					return nil, errors.InternalWrapError(err)
+					return errors.InternalWrapError(err)
 				}
 			}
 
 			yamlParams := map[string]json.RawMessage{}
 			err = yaml.Unmarshal(body, &yamlParams)
 			if err != nil {
-				return nil, errors.InternalWrapError(err)
+				return errors.InternalWrapError(err)
 			}
 
 			for k, v := range yamlParams {
-				value := fmt.Sprintf("%s", v)
+				// We get quoted strings from the yaml file.
+				value, err := strconv.Unquote(string(v))
+				if err != nil {
+					// the string is already clean.
+					value = string(v)
+				}
 				param := wfv1.Parameter{
 					Name:  k,
 					Value: &value,
@@ -253,24 +293,7 @@ func SubmitWorkflow(wfIf v1alpha1.WorkflowInterface, wfClientset wfclientset.Int
 	if opts.OwnerReference != nil {
 		wf.SetOwnerReferences(append(wf.GetOwnerReferences(), *opts.OwnerReference))
 	}
-
-	wftmplGetter := templateresolution.WrapWorkflowTemplateInterface(wfClientset.ArgoprojV1alpha1().WorkflowTemplates(namespace))
-	err := validate.ValidateWorkflow(wftmplGetter, wf, validate.ValidateOpts{})
-	if err != nil {
-		return nil, err
-	}
-
-	if opts.DryRun {
-		return wf, nil
-	} else if opts.ServerDryRun {
-		wf, err := CreateServerDryRun(wf, wfClientset)
-		if err != nil {
-			return nil, err
-		}
-		return wf, err
-	} else {
-		return wfIf.Create(wf)
-	}
+	return nil
 }
 
 // CreateServerDryRun fills the workflow struct with the server's representation without creating it and returns an error, if there is any
@@ -315,27 +338,112 @@ func SuspendWorkflow(wfIf v1alpha1.WorkflowInterface, workflowName string) error
 
 // ResumeWorkflow resumes a workflow by setting spec.suspend to nil and any suspended nodes to Successful.
 // Retries conflict errors
-func ResumeWorkflow(wfIf v1alpha1.WorkflowInterface, workflowName string) error {
-	err := wait.ExponentialBackoff(retry.DefaultRetry, func() (bool, error) {
+func ResumeWorkflow(wfIf v1alpha1.WorkflowInterface, hydrator hydrator.Interface, workflowName string, nodeFieldSelector string) error {
+	if len(nodeFieldSelector) > 0 {
+		return updateWorkflowNodeByKey(wfIf, hydrator, workflowName, nodeFieldSelector, wfv1.NodeSucceeded, "")
+	} else {
+		err := wait.ExponentialBackoff(retry.DefaultRetry, func() (bool, error) {
+			wf, err := wfIf.Get(workflowName, metav1.GetOptions{})
+			if err != nil {
+				return false, err
+			}
+
+			err = hydrator.Hydrate(wf)
+			if err != nil {
+				return false, err
+			}
+
+			workflowUpdated := false
+			if wf.Spec.Suspend != nil && *wf.Spec.Suspend {
+				wf.Spec.Suspend = nil
+				workflowUpdated = true
+			}
+
+			// To resume a workflow with a suspended node we simply mark the node as Successful
+			for nodeID, node := range wf.Status.Nodes {
+				if node.IsActiveSuspendNode() {
+					node.Phase = wfv1.NodeSucceeded
+					node.FinishedAt = metav1.Time{Time: time.Now().UTC()}
+					wf.Status.Nodes[nodeID] = node
+					workflowUpdated = true
+				}
+			}
+
+			if workflowUpdated {
+				err := hydrator.Dehydrate(wf)
+				if err != nil {
+					return false, fmt.Errorf("unable to compress or offload workflow nodes: %s", err)
+				}
+
+				_, err = wfIf.Update(wf)
+				if err != nil {
+					if apierr.IsConflict(err) {
+						return false, nil
+					}
+					return false, err
+				}
+			}
+			return true, nil
+		})
+		return err
+	}
+}
+
+func SelectorMatchesNode(selector fields.Selector, node wfv1.NodeStatus) bool {
+	nodeFields := fields.Set{
+		"displayName":  node.DisplayName,
+		"templateName": node.TemplateName,
+		"phase":        string(node.Phase),
+	}
+	if node.TemplateRef != nil {
+		nodeFields["templateRef.name"] = node.TemplateRef.Name
+		nodeFields["templateRef.template"] = node.TemplateRef.Template
+	}
+	if node.Inputs != nil {
+		for _, inParam := range node.Inputs.Parameters {
+			nodeFields[fmt.Sprintf("inputs.parameters.%s.value", inParam.Name)] = *inParam.Value
+		}
+	}
+
+	return selector.Matches(nodeFields)
+}
+
+func updateWorkflowNodeByKey(wfIf v1alpha1.WorkflowInterface, hydrator hydrator.Interface, workflowName string, nodeFieldSelector string, phase wfv1.NodePhase, message string) error {
+	selector, err := fields.ParseSelector(nodeFieldSelector)
+	if err != nil {
+		return err
+	}
+	err = wait.ExponentialBackoff(retry.DefaultRetry, func() (bool, error) {
 		wf, err := wfIf.Get(workflowName, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
-		updated := false
-		if wf.Spec.Suspend != nil && *wf.Spec.Suspend {
-			wf.Spec.Suspend = nil
-			updated = true
+
+		err = hydrator.Hydrate(wf)
+		if err != nil {
+			return false, err
 		}
-		// To resume a workflow with a suspended node we simply mark the node as Successful
+
+		nodeUpdated := false
 		for nodeID, node := range wf.Status.Nodes {
-			if node.Type == wfv1.NodeTypeSuspend && node.Phase == wfv1.NodeRunning {
-				node.Phase = wfv1.NodeSucceeded
-				node.FinishedAt = metav1.Time{Time: time.Now().UTC()}
-				wf.Status.Nodes[nodeID] = node
-				updated = true
+			if node.IsActiveSuspendNode() {
+				if SelectorMatchesNode(selector, node) {
+					node.Phase = phase
+					node.FinishedAt = metav1.Time{Time: time.Now().UTC()}
+					if len(message) > 0 {
+						node.Message = message
+					}
+					wf.Status.Nodes[nodeID] = node
+					nodeUpdated = true
+				}
 			}
 		}
-		if updated {
+		if nodeUpdated {
+			err := hydrator.Dehydrate(wf)
+			if err != nil {
+				return false, fmt.Errorf("unable to compress or offload workflow nodes: %s", err)
+			}
+
 			_, err = wfIf.Update(wf)
 			if err != nil {
 				if apierr.IsConflict(err) {
@@ -343,6 +451,8 @@ func ResumeWorkflow(wfIf v1alpha1.WorkflowInterface, workflowName string) error 
 				}
 				return false, err
 			}
+		} else {
+			return true, fmt.Errorf("No nodes matching nodeFieldSelector: %s", nodeFieldSelector)
 		}
 		return true, nil
 	})
@@ -394,21 +504,26 @@ func FormulateResubmitWorkflow(wf *wfv1.Workflow, memoized bool) (*wfv1.Workflow
 		newWF.Spec.ActiveDeadlineSeconds = nil
 	}
 
+	newWF.Spec.Shutdown = ""
+
 	// carry over user labels and annotations from previous workflow.
 	// skip any argoproj.io labels except for the controller instanceID label.
+	if newWF.ObjectMeta.Labels == nil {
+		newWF.ObjectMeta.Labels = make(map[string]string)
+	}
 	for key, val := range wf.ObjectMeta.Labels {
 		if strings.HasPrefix(key, workflow.WorkflowFullName+"/") && key != common.LabelKeyControllerInstanceID {
 			continue
 		}
-		if newWF.ObjectMeta.Labels == nil {
-			newWF.ObjectMeta.Labels = make(map[string]string)
-		}
 		newWF.ObjectMeta.Labels[key] = val
 	}
+	// Append an additional label so it's easy for user to see the
+	// name of the original workflow that has been resubmitted.
+	newWF.ObjectMeta.Labels[common.LabelKeyPreviousWorkflowName] = wf.ObjectMeta.Name
+	if newWF.ObjectMeta.Annotations == nil {
+		newWF.ObjectMeta.Annotations = make(map[string]string)
+	}
 	for key, val := range wf.ObjectMeta.Annotations {
-		if newWF.ObjectMeta.Annotations == nil {
-			newWF.ObjectMeta.Annotations = make(map[string]string)
-		}
 		newWF.ObjectMeta.Annotations[key] = val
 	}
 
@@ -420,6 +535,10 @@ func FormulateResubmitWorkflow(wf *wfv1.Workflow, memoized bool) (*wfv1.Workflow
 	replaceRegexp := regexp.MustCompile("^" + wf.ObjectMeta.Name)
 	newWF.Status.Nodes = make(map[string]wfv1.NodeStatus)
 	onExitNodeName := wf.ObjectMeta.Name + ".onExit"
+	err := packer.DecompressWorkflow(wf)
+	if err != nil {
+		log.Fatal(err)
+	}
 	for _, node := range wf.Status.Nodes {
 		newNode := node.DeepCopy()
 		if strings.HasPrefix(node.Name, onExitNodeName) {
@@ -431,7 +550,7 @@ func FormulateResubmitWorkflow(wf *wfv1.Workflow, memoized bool) (*wfv1.Workflow
 		if node.BoundaryID != "" {
 			newNode.BoundaryID = convertNodeID(&newWF, replaceRegexp, node.BoundaryID, wf.Status.Nodes)
 		}
-		if !newNode.Successful() && newNode.Type == wfv1.NodeTypePod {
+		if newNode.FailedOrError() && newNode.Type == wfv1.NodeTypePod {
 			newNode.StartedAt = metav1.Time{}
 			newNode.FinishedAt = metav1.Time{}
 		} else {
@@ -448,7 +567,7 @@ func FormulateResubmitWorkflow(wf *wfv1.Workflow, memoized bool) (*wfv1.Workflow
 			newOutboundNodes[i] = convertNodeID(&newWF, replaceRegexp, outboundID, wf.Status.Nodes)
 		}
 		newNode.OutboundNodes = newOutboundNodes
-		if newNode.Successful() && newNode.Type == wfv1.NodeTypePod {
+		if !newNode.FailedOrError() && newNode.Type == wfv1.NodeTypePod {
 			newNode.Phase = wfv1.NodeSkipped
 			newNode.Type = wfv1.NodeTypeSkipped
 			newNode.Message = fmt.Sprintf("original pod: %s", originalID)
@@ -464,6 +583,7 @@ func FormulateResubmitWorkflow(wf *wfv1.Workflow, memoized bool) (*wfv1.Workflow
 		newWF.Status.StoredTemplates[id] = tmpl
 	}
 
+	newWF.Status.Conditions = wfv1.Conditions{{Status: metav1.ConditionFalse, Type: wfv1.ConditionTypeCompleted}}
 	newWF.Status.Phase = wfv1.NodePending
 
 	return &newWF, nil
@@ -477,38 +597,57 @@ func convertNodeID(newWf *wfv1.Workflow, regex *regexp.Regexp, oldNodeID string,
 }
 
 // RetryWorkflow updates a workflow, deleting all failed steps as well as the onExit node (and children)
-func RetryWorkflow(kubeClient kubernetes.Interface, wfClient v1alpha1.WorkflowInterface, wf *wfv1.Workflow) (*wfv1.Workflow, error) {
+func RetryWorkflow(kubeClient kubernetes.Interface, hydrator hydrator.Interface, wfClient v1alpha1.WorkflowInterface, wf *wfv1.Workflow, restartSuccessful bool, nodeFieldSelector string) (*wfv1.Workflow, error) {
 	switch wf.Status.Phase {
 	case wfv1.NodeFailed, wfv1.NodeError:
 	default:
 		return nil, errors.Errorf(errors.CodeBadRequest, "workflow must be Failed/Error to retry")
 	}
+
+	err := hydrator.Hydrate(wf)
+	if err != nil {
+		return nil, err
+	}
+
 	newWF := wf.DeepCopy()
 	podIf := kubeClient.CoreV1().Pods(wf.ObjectMeta.Namespace)
 
 	// Delete/reset fields which indicate workflow completed
 	delete(newWF.Labels, common.LabelKeyCompleted)
+	newWF.Status.Conditions.UpsertCondition(wfv1.Condition{Status: metav1.ConditionFalse, Type: wfv1.ConditionTypeCompleted})
 	newWF.ObjectMeta.Labels[common.LabelKeyPhase] = string(wfv1.NodeRunning)
 	newWF.Status.Phase = wfv1.NodeRunning
+	newWF.Status.Nodes = make(wfv1.Nodes)
 	newWF.Status.Message = ""
 	newWF.Status.FinishedAt = metav1.Time{}
+	newWF.Spec.Shutdown = ""
 	if newWF.Spec.ActiveDeadlineSeconds != nil && *newWF.Spec.ActiveDeadlineSeconds == 0 {
 		// if it was terminated, unset the deadline
 		newWF.Spec.ActiveDeadlineSeconds = nil
 	}
 
-	// Iterate the previous nodes. If it was successful Pod carry it forward
-	newWF.Status.Nodes = make(map[string]wfv1.NodeStatus)
 	onExitNodeName := wf.ObjectMeta.Name + ".onExit"
+	// Get all children of nodes that match filter
+	nodeIDsToReset, err := getNodeIDsToReset(restartSuccessful, nodeFieldSelector, wf.Status.Nodes)
+	if err != nil {
+		return nil, err
+	}
+
+	// Iterate the previous nodes. If it was successful Pod carry it forward
 	for _, node := range wf.Status.Nodes {
+		doForceResetNode := false
+		if _, present := nodeIDsToReset[node.ID]; present {
+			// if we are resetting this node then don't carry it across regardless of its phase
+			doForceResetNode = true
+		}
 		switch node.Phase {
 		case wfv1.NodeSucceeded, wfv1.NodeSkipped:
-			if !strings.HasPrefix(node.Name, onExitNodeName) {
+			if !strings.HasPrefix(node.Name, onExitNodeName) && !doForceResetNode {
 				newWF.Status.Nodes[node.ID] = node
 				continue
 			}
-		case wfv1.NodeError, wfv1.NodeFailed:
-			if !strings.HasPrefix(node.Name, onExitNodeName) && node.Type == wfv1.NodeTypeDAG {
+		case wfv1.NodeError, wfv1.NodeFailed, wfv1.NodeOmitted:
+			if !strings.HasPrefix(node.Name, onExitNodeName) && (node.Type == wfv1.NodeTypeDAG || node.Type == wfv1.NodeTypeStepGroup) {
 				newNode := node.DeepCopy()
 				newNode.Phase = wfv1.NodeRunning
 				newNode.Message = ""
@@ -519,7 +658,7 @@ func RetryWorkflow(kubeClient kubernetes.Interface, wfClient v1alpha1.WorkflowIn
 			// do not add this status to the node. pretend as if this node never existed.
 		default:
 			// Do not allow retry of workflows with pods in Running/Pending phase
-			return nil, errors.InternalErrorf("Workflow cannot be retried with node %s in %s phase", node, node.Phase)
+			return nil, errors.InternalErrorf("Workflow cannot be retried with node %s in %s phase", node.Name, node.Phase)
 		}
 		if node.Type == wfv1.NodeTypePod {
 			log.Infof("Deleting pod: %s", node.ID)
@@ -537,12 +676,48 @@ func RetryWorkflow(kubeClient kubernetes.Interface, wfClient v1alpha1.WorkflowIn
 		}
 	}
 
+	err = hydrator.Dehydrate(newWF)
+	if err != nil {
+		return nil, fmt.Errorf("unable to compress or offload workflow nodes: %s", err)
+	}
+
 	newWF.Status.StoredTemplates = make(map[string]wfv1.Template)
 	for id, tmpl := range wf.Status.StoredTemplates {
 		newWF.Status.StoredTemplates[id] = tmpl
 	}
 
 	return wfClient.Update(newWF)
+}
+
+func getNodeIDsToReset(restartSuccessful bool, nodeFieldSelector string, nodes wfv1.Nodes) (map[string]bool, error) {
+	nodeIDsToReset := make(map[string]bool)
+	if !restartSuccessful || len(nodeFieldSelector) == 0 {
+		return nodeIDsToReset, nil
+	}
+
+	selector, err := fields.ParseSelector(nodeFieldSelector)
+	if err != nil {
+		return nil, err
+	} else {
+		for _, node := range nodes {
+			if SelectorMatchesNode(selector, node) {
+				//traverse all children of the node
+				var queue []string
+				queue = append(queue, node.ID)
+
+				for len(queue) > 0 {
+					childNode := queue[0]
+					//if the child isn't already in nodeIDsToReset then we add it and traverse its children
+					if _, present := nodeIDsToReset[childNode]; !present {
+						nodeIDsToReset[childNode] = true
+						queue = append(queue, nodes[childNode].Children...)
+					}
+					queue = queue[1:]
+				}
+			}
+		}
+	}
+	return nodeIDsToReset, nil
 }
 
 var errSuspendedCompletedWorkflow = errors.Errorf(errors.CodeBadRequest, "cannot suspend completed workflows")
@@ -553,26 +728,18 @@ func IsWorkflowSuspended(wf *wfv1.Workflow) bool {
 		return true
 	}
 	for _, node := range wf.Status.Nodes {
-		if node.Type == wfv1.NodeTypeSuspend && node.Phase == wfv1.NodeRunning {
+		if node.IsActiveSuspendNode() {
 			return true
 		}
 	}
 	return false
 }
 
-// IsWorkflowTerminated returns whether or not a workflow is considered terminated
-func IsWorkflowTerminated(wf *wfv1.Workflow) bool {
-	if wf.Spec.ActiveDeadlineSeconds != nil && *wf.Spec.ActiveDeadlineSeconds == 0 {
-		return true
-	}
-	return false
-}
-
-// TerminateWorkflow terminates a workflow by setting its activeDeadlineSeconds to 0
+// TerminateWorkflow terminates a workflow by setting its spec.shutdown to ShutdownStrategyTerminate
 func TerminateWorkflow(wfClient v1alpha1.WorkflowInterface, name string) error {
 	patchObj := map[string]interface{}{
 		"spec": map[string]interface{}{
-			"activeDeadlineSeconds": 0,
+			"shutdown": wfv1.ShutdownStrategyTerminate,
 		},
 	}
 	var err error
@@ -580,18 +747,166 @@ func TerminateWorkflow(wfClient v1alpha1.WorkflowInterface, name string) error {
 	if err != nil {
 		return errors.InternalWrapError(err)
 	}
-	for attempt := 0; attempt < 10; attempt++ {
+	_ = wait.ExponentialBackoff(retry.DefaultRetry, func() (bool, error) {
 		_, err = wfClient.Patch(name, types.MergePatchType, patch)
 		if err != nil {
 			if !apierr.IsConflict(err) {
-				return err
+				return false, err
+			}
+			return false, nil
+		}
+		return true, nil
+	})
+	return err
+}
+
+// StopWorkflow terminates a workflow by setting its spec.shutdown to ShutdownStrategyStop
+// Or terminates a single resume step referenced by nodeFieldSelector
+func StopWorkflow(wfClient v1alpha1.WorkflowInterface, hydrator hydrator.Interface, name string, nodeFieldSelector string, message string) error {
+	if len(nodeFieldSelector) > 0 {
+		return updateWorkflowNodeByKey(wfClient, hydrator, name, nodeFieldSelector, wfv1.NodeFailed, message)
+	} else {
+		patchObj := map[string]interface{}{
+			"spec": map[string]interface{}{
+				"shutdown": wfv1.ShutdownStrategyStop,
+			},
+		}
+		var err error
+		patch, err := json.Marshal(patchObj)
+		if err != nil {
+			return errors.InternalWrapError(err)
+		}
+		for attempt := 0; attempt < 10; attempt++ {
+			_, err = wfClient.Patch(name, types.MergePatchType, patch)
+			if err != nil {
+				if !apierr.IsConflict(err) {
+					return err
+				}
+			} else {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		return err
+	}
+}
+
+// Reads from stdin
+func ReadFromStdin() ([]byte, error) {
+	reader := bufio.NewReader(os.Stdin)
+	body, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return []byte{}, err
+	}
+	return body, err
+}
+
+// Reads the content of a url
+func ReadFromUrl(url string) ([]byte, error) {
+	response, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	body, err := ioutil.ReadAll(response.Body)
+	_ = response.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+	return body, err
+}
+
+// ReadFromFilePathsOrUrls reads the content of a single or a list of file paths and/or urls
+func ReadFromFilePathsOrUrls(filePathsOrUrls ...string) ([][]byte, error) {
+	var fileContents [][]byte
+	var body []byte
+	var err error
+	for _, filePathOrUrl := range filePathsOrUrls {
+		if cmdutil.IsURL(filePathOrUrl) {
+			body, err = ReadFromUrl(filePathOrUrl)
+			if err != nil {
+				return [][]byte{}, err
 			}
 		} else {
-			break
+			body, err = ioutil.ReadFile(filePathOrUrl)
+			if err != nil {
+				return [][]byte{}, err
+			}
 		}
-		time.Sleep(100 * time.Millisecond)
+		fileContents = append(fileContents, body)
 	}
-	return err
+	return fileContents, err
+}
+
+// ReadManifest reads from stdin, a single file/url, or a list of files and/or urls
+func ReadManifest(manifestPaths ...string) ([][]byte, error) {
+	var manifestContents [][]byte
+	var err error
+	if len(manifestPaths) == 1 && manifestPaths[0] == "-" {
+		body, err := ReadFromStdin()
+		if err != nil {
+			return [][]byte{}, err
+		}
+		manifestContents = append(manifestContents, body)
+	} else {
+		manifestContents, err = ReadFromFilePathsOrUrls(manifestPaths...)
+		if err != nil {
+			return [][]byte{}, err
+		}
+	}
+	return manifestContents, err
+}
+
+func IsJSONStr(str string) bool {
+	str = strings.TrimSpace(str)
+	return len(str) > 0 && str[0] == '{'
+}
+
+func ConvertYAMLToJSON(str string) (string, error) {
+	if !IsJSONStr(str) {
+		jsonStr, err := yaml.YAMLToJSON([]byte(str))
+		if err != nil {
+			return str, err
+		}
+		return string(jsonStr), nil
+	}
+	return str, nil
+}
+
+// PodSpecPatchMerge will do strategic merge the workflow level PodSpecPatch and template level PodSpecPatch
+func PodSpecPatchMerge(wf *wfv1.Workflow, tmpl *wfv1.Template) (string, error) {
+	var wfPatch, tmplPatch, mergedPatch string
+	var err error
+
+	if wf.Spec.HasPodSpecPatch() {
+		wfPatch, err = ConvertYAMLToJSON(wf.Spec.PodSpecPatch)
+		if err != nil {
+			return "", err
+		}
+	}
+	if tmpl.HasPodSpecPatch() {
+		tmplPatch, err = ConvertYAMLToJSON(tmpl.PodSpecPatch)
+		if err != nil {
+			return "", err
+		}
+
+		if wfPatch != "" {
+			mergedByte, err := strategicpatch.StrategicMergePatch([]byte(wfPatch), []byte(tmplPatch), apiv1.PodSpec{})
+			if err != nil {
+				return "", err
+			}
+			mergedPatch = string(mergedByte)
+		} else {
+			mergedPatch = tmplPatch
+		}
+	} else {
+		mergedPatch = wfPatch
+	}
+	return mergedPatch, nil
+}
+
+func ValidateJsonStr(jsonStr string, schema interface{}) bool {
+	err := json.Unmarshal([]byte(jsonStr), &schema)
+	return err == nil
 }
 
 // DecompressWorkflow decompresses the compressed status of a workflow (if compressed)

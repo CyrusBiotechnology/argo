@@ -7,9 +7,10 @@ import (
 	"os"
 	"path/filepath"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/cyrusbiotechnology/argo/errors"
 	"github.com/cyrusbiotechnology/argo/util"
-	log "github.com/sirupsen/logrus"
 )
 
 type flusher interface {
@@ -17,7 +18,7 @@ type flusher interface {
 }
 
 // TarGzToWriter tar.gz's the source path to the supplied writer
-func TarGzToWriter(sourcePath string, w io.Writer) error {
+func TarGzToWriter(sourcePath string, level int, w io.Writer) error {
 	sourcePath, err := filepath.Abs(sourcePath)
 	if err != nil {
 		return errors.InternalErrorf("getting absolute path: %v", err)
@@ -36,7 +37,10 @@ func TarGzToWriter(sourcePath string, w io.Writer) error {
 	if flush, ok := w.(flusher); ok {
 		defer func() { _ = flush.Flush() }()
 	}
-	gzw := gzip.NewWriter(w)
+	gzw, err := gzip.NewWriterLevel(w, level)
+	if err != nil {
+		return errors.InternalWrapError(err)
+	}
 	defer util.Close(gzw)
 	tw := tar.NewWriter(gzw)
 	defer util.Close(tw)

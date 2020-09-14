@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -45,7 +46,7 @@ func TestSaveParameters(t *testing.T) {
 	}
 	mockRuntimeExecutor.On("GetFileContents", fakeContainerID, "/path").Return("has a newline\n", nil)
 	err := we.SaveParameters()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, *we.Template.Outputs.Parameters[0].Value, "has a newline")
 }
 
@@ -103,4 +104,94 @@ func TestIsBaseImagePath(t *testing.T) {
 	assert.False(t, we.isBaseImagePath("/user-mount/some-path"))
 	assert.False(t, we.isBaseImagePath("/user-mount/some-path/foo"))
 	assert.True(t, we.isBaseImagePath("/user-mount-coincidence"))
+}
+
+func TestDefaultParameters(t *testing.T) {
+	defaultValue := "Default Value"
+	fakeClientset := fake.NewSimpleClientset()
+	mockRuntimeExecutor := mocks.ContainerRuntimeExecutor{}
+	templateWithOutParam := wfv1.Template{
+		Outputs: wfv1.Outputs{
+			Parameters: []wfv1.Parameter{
+				{
+					Name: "my-out",
+					ValueFrom: &wfv1.ValueFrom{
+						Default: &defaultValue,
+						Path:    "/path",
+					},
+				},
+			},
+		},
+	}
+	we := WorkflowExecutor{
+		PodName:            fakePodName,
+		Template:           templateWithOutParam,
+		ClientSet:          fakeClientset,
+		Namespace:          fakeNamespace,
+		PodAnnotationsPath: fakeAnnotations,
+		ExecutionControl:   nil,
+		RuntimeExecutor:    &mockRuntimeExecutor,
+		mainContainerID:    fakeContainerID,
+	}
+	mockRuntimeExecutor.On("GetFileContents", fakeContainerID, "/path").Return("", fmt.Errorf("file not found"))
+	err := we.SaveParameters()
+	assert.NoError(t, err)
+	assert.Equal(t, "Default Value", *we.Template.Outputs.Parameters[0].Value)
+}
+
+func TestDefaultParametersEmptyString(t *testing.T) {
+	defaultValue := ""
+	fakeClientset := fake.NewSimpleClientset()
+	mockRuntimeExecutor := mocks.ContainerRuntimeExecutor{}
+	templateWithOutParam := wfv1.Template{
+		Outputs: wfv1.Outputs{
+			Parameters: []wfv1.Parameter{
+				{
+					Name: "my-out",
+					ValueFrom: &wfv1.ValueFrom{
+						Default: &defaultValue,
+						Path:    "/path",
+					},
+				},
+			},
+		},
+	}
+	we := WorkflowExecutor{
+		PodName:            fakePodName,
+		Template:           templateWithOutParam,
+		ClientSet:          fakeClientset,
+		Namespace:          fakeNamespace,
+		PodAnnotationsPath: fakeAnnotations,
+		ExecutionControl:   nil,
+		RuntimeExecutor:    &mockRuntimeExecutor,
+		mainContainerID:    fakeContainerID,
+	}
+	mockRuntimeExecutor.On("GetFileContents", fakeContainerID, "/path").Return("", fmt.Errorf("file not found"))
+	err := we.SaveParameters()
+	assert.NoError(t, err)
+	assert.Equal(t, "", *we.Template.Outputs.Parameters[0].Value)
+}
+
+func TestIsTarball(t *testing.T) {
+	tests := []struct {
+		path      string
+		isTarball bool
+		expectErr bool
+	}{
+		{"testdata/file", false, false},
+		{"testdata/file.tar", false, false},
+		{"testdata/file.gz", false, false},
+		{"testdata/file.tar.gz", true, false},
+		{"testdata/not-found", false, true},
+	}
+
+	for _, test := range tests {
+		ok, err := isTarball(test.path)
+		if test.expectErr {
+			assert.Error(t, err, test.path)
+		} else {
+			assert.NoError(t, err, test.path)
+		}
+		assert.Equal(t, test.isTarball, ok, test.path)
+	}
 }

@@ -14,13 +14,15 @@ import (
 	executil "github.com/argoproj/pkg/exec"
 	gops "github.com/mitchellh/go-ps"
 	log "github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/cyrusbiotechnology/argo/errors"
 	"github.com/cyrusbiotechnology/argo/util/archive"
 	"github.com/cyrusbiotechnology/argo/workflow/common"
 	execcommon "github.com/cyrusbiotechnology/argo/workflow/executor/common"
+	os_specific "github.com/cyrusbiotechnology/argo/workflow/executor/os-specific"
 )
 
 type PNSExecutor struct {
@@ -96,7 +98,7 @@ func (p *PNSExecutor) enterChroot() error {
 	if err := p.mainFS.Chdir(); err != nil {
 		return errors.InternalWrapErrorf(err, "failed to chdir to main filesystem: %v", err)
 	}
-	err := syscall.Chroot(".")
+	err := os_specific.CallChroot()
 	if err != nil {
 		return errors.InternalWrapErrorf(err, "failed to chroot to main filesystem: %v", err)
 	}
@@ -108,7 +110,7 @@ func (p *PNSExecutor) exitChroot() error {
 	if err := p.rootFS.Chdir(); err != nil {
 		return errors.InternalWrapError(err)
 	}
-	err := syscall.Chroot(".")
+	err := os_specific.CallChroot()
 	if err != nil {
 		return errors.InternalWrapError(err)
 	}
@@ -116,7 +118,7 @@ func (p *PNSExecutor) exitChroot() error {
 }
 
 // CopyFile copies a source file in a container to a local path
-func (p *PNSExecutor) CopyFile(containerID string, sourcePath string, destPath string) (err error) {
+func (p *PNSExecutor) CopyFile(containerID string, sourcePath string, destPath string, compressionLevel int) (err error) {
 	destFile, err := os.Create(destPath)
 	if err != nil {
 		return err
@@ -138,7 +140,7 @@ func (p *PNSExecutor) CopyFile(containerID string, sourcePath string, destPath s
 		return err
 	}
 
-	err = archive.TarGzToWriter(sourcePath, w)
+	err = archive.TarGzToWriter(sourcePath, compressionLevel, w)
 	return err
 }
 
@@ -218,11 +220,23 @@ func (p *PNSExecutor) GetOutputStream(containerID string, combinedOutput bool) (
 	if !combinedOutput {
 		log.Warn("non combined output unsupported")
 	}
-	opts := v1.PodLogOptions{
+	opts := corev1.PodLogOptions{
 		Container: common.MainContainerName,
 		Follow:    true,
 	}
 	return p.clientset.CoreV1().Pods(p.namespace).GetLogs(p.podName, &opts).Stream()
+}
+
+func (p *PNSExecutor) GetExitCode(containerID string) (string, error) {
+	log.Infof("Getting exit code of %s", containerID)
+	_, containerStatus, err := p.GetContainerStatus(containerID)
+	if err != nil {
+		return "", fmt.Errorf("could not get container status: %s", err)
+	}
+	if containerStatus.State.Terminated != nil {
+		return fmt.Sprint(containerStatus.State.Terminated.ExitCode), nil
+	}
+	return "", nil
 }
 
 // Kill a list of containerIDs first with a SIGTERM then with a SIGKILL after a grace period
@@ -267,8 +281,7 @@ func (p *PNSExecutor) killContainer(containerID string) error {
 	if err != executil.ErrWaitPIDTimeout {
 		return err
 	}
-	log.Warnf("Timed out (%v) waiting for pid %d to complete after SIGTERM. Issing SIGKILL", waitPIDOpts.Timeout, pid)
-	time.Sleep(30 * time.Minute)
+	log.Warnf("Timed out (%v) waiting for pid %d to complete after SIGTERM. Issuing SIGKILL", waitPIDOpts.Timeout, pid)
 	err = proc.Signal(syscall.SIGKILL)
 	if err != nil {
 		log.Warnf("Failed to SIGKILL pid %d: %v", pid, err)
@@ -356,6 +369,20 @@ func (p *PNSExecutor) updateCtrIDMap() {
 	}
 }
 
+func (p *PNSExecutor) GetContainerStatus(containerID string) (*corev1.Pod, *corev1.ContainerStatus, error) {
+	pod, err := p.clientset.CoreV1().Pods(p.namespace).Get(p.podName, metav1.GetOptions{})
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not get pod: %s", err)
+	}
+	for _, containerStatus := range pod.Status.ContainerStatuses {
+		if execcommon.GetContainerID(&containerStatus) != containerID {
+			continue
+		}
+		return pod, &containerStatus, nil
+	}
+	return nil, nil, errors.New(errors.CodeNotFound, fmt.Sprintf("containerID %q is not found in the pod %s", containerID, p.podName))
+}
+
 // parseContainerID parses the containerID of a pid
 func parseContainerID(pid int) (string, error) {
 	cgroupPath := fmt.Sprintf("/proc/%d/cgroup", pid)
@@ -374,6 +401,10 @@ func parseContainerID(pid int) (string, error) {
 		if len(parts) > 1 {
 			if containerID := parts[len(parts)-1]; containerID != "" {
 				// need to check for empty string because the line may look like: 5:rdma:/
+
+				// for crio we need to get rid of "crio-" prefix and ".scope" suffix
+				// e.g. crio-7a92a067289f6197148912be1c15f20f0330c7f3c541473d3b9c4043ca137b42.scope
+				containerID := strings.TrimSuffix(strings.TrimPrefix(containerID, "crio-"), ".scope")
 				return containerID, nil
 			}
 		}

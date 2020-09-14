@@ -33,38 +33,9 @@ spec:
 `
 
 func TestDAGCycle(t *testing.T) {
-	err := validate(dagCycle)
+	_, err := validate(dagCycle)
 	if assert.NotNil(t, err) {
 		assert.Contains(t, err.Error(), "cycle")
-	}
-}
-
-var duplicateDependencies = `
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: dag-dup-depends-
-spec:
-  entrypoint: cycle
-  templates:
-  - name: echo
-    container:
-      image: alpine:3.7
-      command: [echo, hello]
-  - name: cycle
-    dag:
-      tasks:
-      - name: A
-        template: echo
-      - name: B
-        dependencies: [A, A]
-        template: echo
-`
-
-func TestDuplicateDependencies(t *testing.T) {
-	err := validate(duplicateDependencies)
-	if assert.NotNil(t, err) {
-		assert.Contains(t, err.Error(), "duplicate")
 	}
 }
 
@@ -84,7 +55,7 @@ spec:
 `
 
 func TestDAGUndefinedTemplate(t *testing.T) {
-	err := validate(dagUndefinedTemplate)
+	_, err := validate(dagUndefinedTemplate)
 	if assert.NotNil(t, err) {
 		assert.Contains(t, err.Error(), "undefined")
 	}
@@ -219,14 +190,14 @@ spec:
 `
 
 func TestDAGVariableResolution(t *testing.T) {
-	err := validate(dagUnresolvedVar)
+	_, err := validate(dagUnresolvedVar)
 	if assert.NotNil(t, err) {
 		assert.Contains(t, err.Error(), "failed to resolve {{tasks.A.outputs.parameters.unresolvable}}")
 	}
-	err = validate(dagResolvedVar)
-	assert.Nil(t, err)
+	_, err = validate(dagResolvedVar)
+	assert.NoError(t, err)
 
-	err = validate(dagResolvedVarNotAncestor)
+	_, err = validate(dagResolvedVarNotAncestor)
 	if assert.NotNil(t, err) {
 		assert.Contains(t, err.Error(), "failed to resolve {{tasks.B.outputs.parameters.unresolvable}}")
 	}
@@ -286,8 +257,264 @@ spec:
 `
 
 func TestDAGArtifactResolution(t *testing.T) {
-	err := validate(dagResolvedArt)
-	assert.Nil(t, err)
+	_, err := validate(dagResolvedArt)
+	assert.NoError(t, err)
+}
+
+var dagStatusReference = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: dag-arg-passing-
+spec:
+  entrypoint: dag-arg-passing
+  templates:
+  - name: echo
+    inputs:
+      parameters:
+      - name: message
+    container:
+      image: alpine:3.7
+      command: [echo, "{{inputs.parameters.message}}"]
+
+  - name: dag-arg-passing
+    dag:
+      tasks:
+      - name: A
+        template: echo
+        continueOn:
+          failed: true
+        arguments:
+          parameters:
+          - name: message
+            value: "Hello!"
+      - name: B
+        dependencies: [A]
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: "{{tasks.A.status}}"
+`
+
+var dagStatusNoFutureReferenceSimple = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: dag-arg-passing-
+spec:
+  entrypoint: dag-arg-passing
+  templates:
+  - name: echo
+    inputs:
+      parameters:
+      - name: message
+    container:
+      image: alpine:3.7
+      command: [echo, "{{inputs.parameters.message}}"]
+
+  - name: dag-arg-passing
+    dag:
+      tasks:
+      - name: A
+        template: echo
+        continueOn:
+          failed: true
+        arguments:
+          parameters:
+          - name: message
+            value: "{{tasks.B.status}}"
+      - name: B
+        dependencies: [A]
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: "{{tasks.A.status}}"
+`
+
+var dagStatusNoFutureReferenceWhenFutureReferenceHasChild = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: dag-arg-passing-
+spec:
+  entrypoint: dag-arg-passing
+  templates:
+  - name: echo
+    inputs:
+      parameters:
+      - name: message
+    container:
+      image: alpine:3.7
+      command: [echo, "{{inputs.parameters.message}}"]
+
+  - name: dag-arg-passing
+    dag:
+      tasks:
+      - name: A
+        template: echo
+        continueOn:
+          failed: true
+        arguments:
+          parameters:
+          - name: message
+            value: "{{tasks.B.status}}"
+      - name: B
+        dependencies: [A]
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: "{{tasks.A.status}}"
+      - name: C
+        dependencies: [B]
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: "{{tasks.B.status}}"
+`
+
+var dagStatusPastReferenceChain = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: dag-arg-passing-
+spec:
+  entrypoint: dag-arg-passing
+  templates:
+  - name: echo
+    inputs:
+      parameters:
+      - name: message
+    container:
+      image: alpine:3.7
+      command: [echo, "{{inputs.parameters.message}}"]
+
+  - name: dag-arg-passing
+    dag:
+      tasks:
+      - name: A
+        template: echo
+        continueOn:
+          failed: true
+        arguments:
+          parameters:
+          - name: message
+            value: "Hello"
+      - name: B
+        dependencies: [A]
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: "{{tasks.A.status}}"
+      - name: C
+        dependencies: [B]
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: "{{tasks.B.status}}"
+      - name: D
+        dependencies: [A]
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: "{{tasks.A.status}}"
+      - name: E
+        dependencies: [D]
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: "{{tasks.D.status}}"
+`
+
+var dagStatusOnlyDirectAncestors = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: dag-arg-passing-
+spec:
+  entrypoint: dag-arg-passing
+  templates:
+  - name: echo
+    inputs:
+      parameters:
+      - name: message
+    container:
+      image: alpine:3.7
+      command: [echo, "{{inputs.parameters.message}}"]
+
+  - name: dag-arg-passing
+    dag:
+      tasks:
+      - name: A
+        template: echo
+        continueOn:
+          failed: true
+        arguments:
+          parameters:
+          - name: message
+            value: "Hello"
+      - name: B
+        dependencies: [A]
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: "{{tasks.A.status}}"
+      - name: C
+        dependencies: [B]
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: "{{tasks.B.status}}"
+      - name: D
+        dependencies: [A]
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: "{{tasks.A.status}}"
+      - name: E
+        dependencies: [D]
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: "{{tasks.B.status}}"
+`
+
+func TestDAGStatusReference(t *testing.T) {
+	_, err := validate(dagStatusReference)
+	assert.NoError(t, err)
+
+	_, err = validate(dagStatusNoFutureReferenceSimple)
+	// Can't reference the status of steps that have not run yet
+	if assert.NotNil(t, err) {
+		assert.Contains(t, err.Error(), "failed to resolve {{tasks.B.status}}")
+	}
+
+	_, err = validate(dagStatusNoFutureReferenceWhenFutureReferenceHasChild)
+	// Can't reference the status of steps that have not run yet, even if the referenced steps have children
+	if assert.NotNil(t, err) {
+		assert.Contains(t, err.Error(), "failed to resolve {{tasks.B.status}}")
+	}
+
+	_, err = validate(dagStatusPastReferenceChain)
+	assert.NoError(t, err)
+
+	_, err = validate(dagStatusOnlyDirectAncestors)
+	// Can't reference steps that are not direct ancestors of node
+	// Here Node E references the status of Node B, even though it is not its descendent
+	if assert.NotNil(t, err) {
+		assert.Contains(t, err.Error(), "failed to resolve {{tasks.B.status}}")
+	}
 }
 
 var dagStatusReference = `
@@ -577,7 +804,7 @@ spec:
 `
 
 func TestDAGNonExistantTarget(t *testing.T) {
-	err := validate(dagNonexistantTarget)
+	_, err := validate(dagNonexistantTarget)
 	if assert.NotNil(t, err) {
 		assert.Contains(t, err.Error(), "target 'DOESNTEXIST' is not defined")
 	}
@@ -618,8 +845,8 @@ spec:
 `
 
 func TestDAGTargetSubstitution(t *testing.T) {
-	err := validate(dagTargetSubstitution)
-	assert.Nil(t, err)
+	_, err := validate(dagTargetSubstitution)
+	assert.NoError(t, err)
 }
 
 var dagTargetMissingInputParam = `
@@ -652,6 +879,69 @@ spec:
 `
 
 func TestDAGTargetMissingInputParam(t *testing.T) {
-	err := validate(dagTargetMissingInputParam)
+	_, err := validate(dagTargetMissingInputParam)
 	assert.NotNil(t, err)
+}
+
+var dagDependsAndDependencies = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: dag-target-
+spec:
+  entrypoint: dag-target
+  templates:
+  - name: dag-target
+    dag:
+      tasks:
+      - name: A
+        template: echo
+      - name: B
+        dependencies: [A]
+        template: echo
+      - name: C
+        depends: "B"
+        template: echo
+
+  - name: echo
+    container:
+      image: alpine:3.7
+      command: [echo, "hello"]
+`
+
+func TestDependsAndDependencies(t *testing.T) {
+	_, err := validate(dagDependsAndDependencies)
+	assert.Error(t, err, "templates.dag-target cannot use both 'depends' and 'dependencies' in the same DAG template")
+}
+
+var dagDependsAndContinueOn = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: dag-target-
+spec:
+  entrypoint: dag-target
+  templates:
+  - name: dag-target
+    dag:
+      tasks:
+      - name: A
+        template: echo
+      - name: B
+        continueOn:
+          failed: true
+        template: echo
+      - name: C
+        depends: "B"
+        template: echo
+
+  - name: echo
+    container:
+      image: alpine:3.7
+      command: [echo, "hello"]
+`
+
+func TestDependsAndContinueOn(t *testing.T) {
+	_, err := validate(dagDependsAndContinueOn)
+	assert.Error(t, err, "templates.dag-target cannot use 'continueOn' when using 'depends'. Instead use 'dep-task.Failed'/'dep-task.Errored'")
 }

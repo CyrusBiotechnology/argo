@@ -5,9 +5,10 @@ import (
 	"path/filepath"
 	"runtime"
 
-	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
+
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 )
 
 var (
@@ -43,6 +44,25 @@ func LoadTestWorkflow(path string) *wfv1.Workflow {
 // LoadWorkflowFromBytes returns a workflow unmarshalled from an yaml byte array
 func LoadWorkflowFromBytes(yamlBytes []byte) *wfv1.Workflow {
 	var wf wfv1.Workflow
+	err := yaml.Unmarshal(yamlBytes, &wf)
+	if err != nil {
+		panic(err)
+	}
+	return &wf
+}
+
+// LoadTestWorkflow returns a workflow relative to the test file
+func LoadTestWorkflowTemplate(path string) *wfv1.WorkflowTemplate {
+	yamlBytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+	return LoadWorkflowTemplateFromBytes(yamlBytes)
+}
+
+// LoadWorkflowFromBytes returns a workflow unmarshalled from an yaml byte array
+func LoadWorkflowTemplateFromBytes(yamlBytes []byte) *wfv1.WorkflowTemplate {
+	var wf wfv1.WorkflowTemplate
 	err := yaml.Unmarshal(yamlBytes, &wf)
 	if err != nil {
 		panic(err)

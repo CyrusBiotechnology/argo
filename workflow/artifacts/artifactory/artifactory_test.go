@@ -1,58 +1,39 @@
-package artifactory_test
+package artifactory
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
-	"time"
 
-	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
-	art "github.com/cyrusbiotechnology/argo/workflow/artifacts/artifactory"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/argoproj/argo/errors"
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 )
 
-const (
-	LoadFileName string = "argo_artifactory_test_load.txt"
-	SaveFileName string = "argo_artifactory_test_save.txt"
-	RepoName     string = "generic-local"
-	URL          string = "http://localhost:8081/artifactory/" + RepoName + "/" + LoadFileName
-	Username     string = "admin"
-	Password     string = "password"
-)
-
-func TestSaveAndLoad(t *testing.T) {
-
-	t.Skip("This test is skipped since it depends on external service")
-	fileContent := "time: " + string(time.Now().UnixNano())
-
-	// create file to test save
-	lf, err := ioutil.TempFile("", LoadFileName)
-	assert.Nil(t, err)
-	defer os.Remove(lf.Name())
-	// load file with test content
-	content := []byte(fileContent)
-	_, err = lf.Write(content)
-	assert.Nil(t, err)
-	err = lf.Close()
-	assert.Nil(t, err)
-
-	// create file to test load
-	sf, err := ioutil.TempFile("", SaveFileName)
-	assert.Nil(t, err)
-	defer os.Remove(sf.Name())
-
-	artL := &wfv1.Artifact{}
-	artL.Artifactory = &wfv1.ArtifactoryArtifact{
-		URL: URL,
-	}
-	driver := &art.ArtifactoryArtifactDriver{
-		Username: Username,
-		Password: Password,
-	}
-	driver.Save(lf.Name(), artL)
-	driver.Load(artL, sf.Name())
-
-	dat, err := ioutil.ReadFile(sf.Name())
-	assert.Nil(t, err)
-	assert.Equal(t, fileContent, string(dat))
+func TestArtifactoryArtifactDriver_Load(t *testing.T) {
+	driver := &ArtifactoryArtifactDriver{}
+	t.Run("NotFound", func(t *testing.T) {
+		err := driver.Load(&wfv1.Artifact{
+			ArtifactLocation: wfv1.ArtifactLocation{
+				Artifactory: &wfv1.ArtifactoryArtifact{URL: "https://github.com/argoproj/argo/not-found"},
+			},
+		}, "/tmp/not-found")
+		if assert.Error(t, err) {
+			argoError, ok := err.(errors.ArgoError)
+			if assert.True(t, ok) {
+				assert.Equal(t, errors.CodeNotFound, argoError.Code())
+			}
+		}
+	})
+	t.Run("Found", func(t *testing.T) {
+		err := driver.Load(&wfv1.Artifact{
+			ArtifactLocation: wfv1.ArtifactLocation{
+				Artifactory: &wfv1.ArtifactoryArtifact{URL: "https://github.com/argoproj/argo"},
+			},
+		}, "/tmp/found")
+		if assert.NoError(t, err) {
+			_, err := os.Stat("/tmp/found")
+			assert.NoError(t, err)
+		}
+	})
 }

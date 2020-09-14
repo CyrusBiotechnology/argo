@@ -2,32 +2,21 @@ package commands
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
 
-	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
-	versioned "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned"
-	"github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
-	"github.com/cyrusbiotechnology/argo/workflow/templateresolution"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
+
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 )
 
 // Global variables
 var (
-	restConfig       *rest.Config
-	clientConfig     clientcmd.ClientConfig
-	clientset        *kubernetes.Clientset
-	wfClientset      *versioned.Clientset
-	wfClient         v1alpha1.WorkflowInterface
-	wftmplClient     v1alpha1.WorkflowTemplateInterface
-	jobStatusIconMap map[wfv1.NodePhase]string
-	noColor          bool
-	namespace        string
+	jobStatusIconMap         map[wfv1.NodePhase]string
+	nodeTypeIconMap          map[wfv1.NodeType]string
+	workflowConditionIconMap map[wfv1.ConditionType]string
+	noColor                  bool
 )
 
 func init() {
@@ -68,45 +57,22 @@ func initializeSession() {
 		wfv1.NodeFailed:    ansiFormat("✖", FgRed),
 		wfv1.NodeError:     ansiFormat("⚠", FgRed),
 	}
+	nodeTypeIconMap = map[wfv1.NodeType]string{
+		wfv1.NodeTypeSuspend: ansiFormat("ǁ", FgCyan),
+	}
+	workflowConditionIconMap = map[wfv1.ConditionType]string{
+		wfv1.ConditionTypeMetricsError: ansiFormat("✖", FgRed),
+		wfv1.ConditionTypeSpecWarning:  ansiFormat("⚠", FgYellow),
+	}
 }
 
-func initKubeClient() *kubernetes.Clientset {
-	if clientset != nil {
-		return clientset
+func ansiColorCode(s string) int {
+	i := 0
+	for _, c := range s {
+		i += int(c)
 	}
-	var err error
-	restConfig, err = clientConfig.ClientConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// create the clientset
-	clientset, err = kubernetes.NewForConfig(restConfig)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return clientset
-}
-
-// InitWorkflowClient creates a new client for the Kubernetes Workflow CRD.
-func InitWorkflowClient(ns ...string) v1alpha1.WorkflowInterface {
-	if wfClient != nil && (len(ns) == 0 || ns[0] == namespace) {
-		return wfClient
-	}
-	initKubeClient()
-	var err error
-	if len(ns) > 0 {
-		namespace = ns[0]
-	} else {
-		namespace, _, err = clientConfig.Namespace()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	wfClientset = versioned.NewForConfigOrDie(restConfig)
-	wfClient = wfClientset.ArgoprojV1alpha1().Workflows(namespace)
-	wftmplClient = wfClientset.ArgoprojV1alpha1().WorkflowTemplates(namespace)
-	return wfClient
+	colors := []int{FgRed, FgGreen, FgYellow, FgBlue, FgMagenta, FgCyan, FgWhite}
+	return colors[i%len(colors)]
 }
 
 // ansiFormat wraps ANSI escape codes to a string to format the string to a desired color.

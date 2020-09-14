@@ -8,13 +8,42 @@ import (
 	"testing"
 	"time"
 
-	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
-	fakeClientset "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/fake"
 	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	fakeClientset "github.com/cyrusbiotechnology/argo/pkg/client/clientset/versioned/fake"
+	hydratorfake "github.com/cyrusbiotechnology/argo/workflow/hydrator/fake"
 )
+
+// TestSubmitDryRun
+func TestSubmitDryRun(t *testing.T) {
+
+	workflowName := "test-dry-run"
+	workflowYaml := `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+    name: ` + workflowName + `
+spec:
+    entrypoint: whalesay
+    templates:
+    - name: whalesay
+      container: 
+        image: docker/whalesay:latest
+        command: [cowsay]
+        args: ["hello world"]
+`
+	wf := unmarshalWF(workflowYaml)
+	newWf := wf.DeepCopy()
+	wfClientSet := fakeClientset.NewSimpleClientset()
+	newWf, err := SubmitWorkflow(nil, wfClientSet, "test-namespace", newWf, &wfv1.SubmitOpts{DryRun: true})
+	assert.NoError(t, err)
+	assert.Equal(t, wf.Spec, newWf.Spec)
+	assert.Equal(t, wf.Status, newWf.Status)
+}
 
 // TestSubmitDryRun
 func TestSubmitDryRun(t *testing.T) {
@@ -62,7 +91,7 @@ func TestResubmitWorkflowWithOnExit(t *testing.T) {
 		Phase: wfv1.NodeSucceeded,
 	}
 	newWF, err := FormulateResubmitWorkflow(&wf, true)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	newWFOnExitName := newWF.ObjectMeta.Name + ".onExit"
 	newWFOneExitID := newWF.NodeID(newWFOnExitName)
 	_, ok := newWF.Status.Nodes[newWFOneExitID]
@@ -104,7 +133,7 @@ func TestReadFromSingleorMultiplePath(t *testing.T) {
 			}
 			body, err := ReadFromFilePathsOrUrls(filePaths...)
 			assert.Equal(t, len(body), len(filePaths))
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			for i := range body {
 				assert.Equal(t, body[i], []byte(tc.contents[i]))
 			}
@@ -174,118 +203,153 @@ func unmarshalWF(yamlStr string) *wfv1.Workflow {
 var yamlStr = `
 containers:
   - name: main
-	resources:
-	  limits:
-		cpu: 1000m
+    resources:
+      limits:
+        cpu: 1000m
 `
 
 func TestPodSpecPatchMerge(t *testing.T) {
 	tmpl := wfv1.Template{PodSpecPatch: "{\"containers\":[{\"name\":\"main\", \"resources\":{\"limits\":{\"cpu\": \"1000m\"}}}]}"}
 	wf := wfv1.Workflow{Spec: wfv1.WorkflowSpec{PodSpecPatch: "{\"containers\":[{\"name\":\"main\", \"resources\":{\"limits\":{\"memory\": \"100Mi\"}}}]}"}}
-	merged, _ := PodSpecPatchMerge(&wf, &tmpl)
+	merged, err := PodSpecPatchMerge(&wf, &tmpl)
+	assert.NoError(t, err)
 	var spec v1.PodSpec
-	json.Unmarshal([]byte(merged), &spec)
+	err = json.Unmarshal([]byte(merged), &spec)
+	assert.NoError(t, err)
 	assert.Equal(t, "1.000", spec.Containers[0].Resources.Limits.Cpu().AsDec().String())
 	assert.Equal(t, "104857600", spec.Containers[0].Resources.Limits.Memory().AsDec().String())
 
 	tmpl = wfv1.Template{PodSpecPatch: yamlStr}
 	wf = wfv1.Workflow{Spec: wfv1.WorkflowSpec{PodSpecPatch: "{\"containers\":[{\"name\":\"main\", \"resources\":{\"limits\":{\"memory\": \"100Mi\"}}}]}"}}
-	merged, _ = PodSpecPatchMerge(&wf, &tmpl)
-	json.Unmarshal([]byte(merged), &spec)
+	merged, err = PodSpecPatchMerge(&wf, &tmpl)
+	assert.NoError(t, err)
+	err = json.Unmarshal([]byte(merged), &spec)
+	assert.NoError(t, err)
 	assert.Equal(t, "1.000", spec.Containers[0].Resources.Limits.Cpu().AsDec().String())
 	assert.Equal(t, "104857600", spec.Containers[0].Resources.Limits.Memory().AsDec().String())
-
 }
 
-func TestComputeWorkflowCost(t *testing.T) {
+var suspendedWf = `
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  creationTimestamp: "2020-04-10T15:21:23Z"
+  name: suspend
+  generation: 2
+  labels:
+    workflows.argoproj.io/phase: Running
+  resourceVersion: "238969"
+  selfLink: /apis/argoproj.io/v1alpha1/namespaces/argo/workflows/suspend
+  uid: 4f08d325-dc5a-43a3-9986-259e259e6ea3
+spec:
+  arguments: {}
+  entrypoint: suspend
+  templates:
+  - arguments: {}
+    inputs: {}
+    metadata: {}
+    name: suspend
+    outputs: {}
+    steps:
+    - - arguments: {}
+        name: approve
+        template: approve
+  - arguments: {}
+    inputs: {}
+    metadata: {}
+    name: approve
+    outputs: {}
+    suspend: {}
+status:
+  finishedAt: null
+  nodes:
+    suspend-template-xjsg2:
+      children:
+      - suspend-template-xjsg2-4125372399
+      displayName: suspend-template-xjsg2
+      finishedAt: null
+      id: suspend-template-xjsg2
+      name: suspend-template-xjsg2
+      phase: Running
+      startedAt: "2020-04-10T15:21:23Z"
+      templateName: suspend
+      templateScope: local/suspend-template-xjsg2
+      type: Steps
+    suspend-template-xjsg2-1771269240:
+      boundaryID: suspend-template-xjsg2
+      displayName: approve
+      finishedAt: null
+      id: suspend-template-xjsg2-1771269240
+      name: suspend-template-xjsg2[0].approve
+      phase: Running
+      startedAt: "2020-04-10T15:21:23Z"
+      templateName: approve
+      templateScope: local/suspend-template-xjsg2
+      type: Suspend
+    suspend-template-xjsg2-4125372399:
+      boundaryID: suspend-template-xjsg2
+      children:
+      - suspend-template-xjsg2-1771269240
+      displayName: '[0]'
+      finishedAt: null
+      id: suspend-template-xjsg2-4125372399
+      name: suspend-template-xjsg2[0]
+      phase: Running
+      startedAt: "2020-04-10T15:21:23Z"
+      templateName: suspend
+      templateScope: local/suspend-template-xjsg2
+      type: StepGroup
+  phase: Running
+  startedAt: "2020-04-10T15:21:23Z"
+`
 
-	startTime := time.Now()
-	endTime := startTime.Add(1 * time.Hour)
-	wf := wfv1.Workflow{
-		Status: wfv1.WorkflowStatus{
-			Nodes: map[string]wfv1.NodeStatus{
-				"step-1": {
-					Type:         wfv1.NodeTypePod,
-					TemplateName: "step-1-template",
-					Phase:        wfv1.NodeSucceeded,
-					StartedAt: metav1.Time{
-						Time: startTime,
-					},
-					FinishedAt: metav1.Time{
-						Time: endTime,
-					},
-				},
-				"step-1a": {
-					Type:         wfv1.NodeTypePod,
-					TemplateName: "step-1-template",
-					Phase:        wfv1.NodeSucceeded,
-					StartedAt: metav1.Time{
-						Time: startTime,
-					},
-					FinishedAt: metav1.Time{
-						Time: endTime,
-					},
-				},
-				"step-2": {
-					Type:         wfv1.NodeTypePod,
-					TemplateName: "step-2-template",
-					Phase:        wfv1.NodeSucceeded,
-					StartedAt: metav1.Time{
-						Time: startTime,
-					},
-					FinishedAt: metav1.Time{
-						Time: endTime,
-					},
-				},
-				// This step shouldn't be included in runtime summaries
-				"step-dag": {
-					Type:         wfv1.NodeTypeDAG,
-					TemplateName: "step-dag",
-					Phase:        wfv1.NodeSucceeded,
-					StartedAt: metav1.Time{
-						Time: startTime,
-					},
-					FinishedAt: metav1.Time{
-						Time: endTime,
-					},
-				},
-				// This step shouldn't be included in runtime summaries
-				"step-running": {
-					Type:         wfv1.NodeTypeDAG,
-					TemplateName: "step-running",
-					Phase:        wfv1.NodeRunning,
-					StartedAt: metav1.Time{
-						Time: startTime,
-					},
-					FinishedAt: metav1.Time{
-						Time: endTime,
-					},
-				},
-			},
-		},
+func TestResumeWorkflowByNodeName(t *testing.T) {
+	wfIf := fakeClientset.NewSimpleClientset().ArgoprojV1alpha1().Workflows("")
+	origWf := unmarshalWF(suspendedWf)
+
+	_, err := wfIf.Create(origWf)
+	assert.NoError(t, err)
+
+	//will return error as displayName does not match any nodes
+	err = ResumeWorkflow(wfIf, hydratorfake.Noop, "suspend", "displayName=nonexistant")
+	assert.Error(t, err)
+
+	//displayName didn't match suspend node so should still be running
+	wf, err := wfIf.Get("suspend", metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.Equal(t, wfv1.NodeRunning, wf.Status.Nodes.FindByDisplayName("approve").Phase)
+
+	err = ResumeWorkflow(wfIf, hydratorfake.Noop, "suspend", "displayName=approve")
+	assert.NoError(t, err)
+
+	//displayName matched node so has succeeded
+	wf, err = wfIf.Get("suspend", metav1.GetOptions{})
+	if assert.NoError(t, err) {
+		assert.Equal(t, wfv1.NodeSucceeded, wf.Status.Nodes.FindByDisplayName("approve").Phase)
 	}
+}
 
-	result := ComputeWorkflowCost(&wf, 0.10)
-	expected := WorkflowCost{
-		TotalCost:     0.30,
-		TotalDuration: 3 * time.Hour,
-		TemplateCosts: []TemplateDuration{
-			{
-				Name:     "step-1-template",
-				Duration: 2 * time.Hour,
-				Cost:     0.20,
-			},
-			{
-				Name:     "step-2-template",
-				Duration: 1 * time.Hour,
-				Cost:     0.10,
-			},
-		},
-	}
+func TestStopWorkflowByNodeName(t *testing.T) {
+	wfIf := fakeClientset.NewSimpleClientset().ArgoprojV1alpha1().Workflows("")
+	origWf := unmarshalWF(suspendedWf)
 
-	assert.InDelta(t, expected.TotalCost, result.TotalCost, 0.001)
-	assert.Equal(t, expected.TotalDuration, result.TotalDuration)
-	assert.Len(t, result.TemplateCosts, 2)
-	assert.Equal(t, expected.TemplateCosts[0], result.TemplateCosts[0])
-	assert.Equal(t, expected.TemplateCosts[1], result.TemplateCosts[1])
+	_, err := wfIf.Create(origWf)
+	assert.NoError(t, err)
+
+	//will return error as displayName does not match any nodes
+	err = StopWorkflow(wfIf, hydratorfake.Noop, "suspend", "displayName=nonexistant", "error occurred")
+	assert.Error(t, err)
+
+	//displayName didn't match suspend node so should still be running
+	wf, err := wfIf.Get("suspend", metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.Equal(t, wfv1.NodeRunning, wf.Status.Nodes.FindByDisplayName("approve").Phase)
+
+	err = StopWorkflow(wfIf, hydratorfake.Noop, "suspend", "displayName=approve", "error occurred")
+	assert.NoError(t, err)
+
+	//displayName matched node so has succeeded
+	wf, err = wfIf.Get("suspend", metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.Equal(t, wfv1.NodeFailed, wf.Status.Nodes.FindByDisplayName("approve").Phase)
 }

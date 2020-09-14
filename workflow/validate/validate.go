@@ -8,16 +8,23 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/robfig/cron"
+	"github.com/sirupsen/logrus"
 	"github.com/valyala/fasttemplate"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	apivalidation "k8s.io/apimachinery/pkg/util/validation"
 	"sigs.k8s.io/yaml"
 
 	"github.com/cyrusbiotechnology/argo/errors"
 	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/cyrusbiotechnology/argo/util"
+	"github.com/cyrusbiotechnology/argo/util/help"
 	"github.com/cyrusbiotechnology/argo/workflow/artifacts/hdfs"
 	"github.com/cyrusbiotechnology/argo/workflow/common"
+	"github.com/cyrusbiotechnology/argo/workflow/metrics"
 	"github.com/cyrusbiotechnology/argo/workflow/templateresolution"
 )
 
@@ -31,6 +38,13 @@ type ValidateOpts struct {
 	// types of executors. For example, the inability of kubelet/k8s executors to copy artifacts
 	// out of the base image layer. If unspecified, will use docker executor validation
 	ContainerRuntimeExecutor string
+
+	// IgnoreEntrypoint indicates to skip/ignore the EntryPoint validation on workflow spec.
+	// Entrypoint is optional for WorkflowTemplate and ClusterWorkflowTemplate
+	IgnoreEntrypoint bool
+
+	// WorkflowTemplateValidation indicates that the current context is validating a WorkflowTemplate or ClusterWorkflowTemplate
+	WorkflowTemplateValidation bool
 }
 
 // templateValidationCtx is the context for validating a workflow spec
@@ -49,9 +63,10 @@ type templateValidationCtx struct {
 
 func newTemplateValidationCtx(wf *wfv1.Workflow, opts ValidateOpts) *templateValidationCtx {
 	globalParams := make(map[string]string)
-	globalParams[common.GlobalVarWorkflowName] = placeholderValue
-	globalParams[common.GlobalVarWorkflowNamespace] = placeholderValue
-	globalParams[common.GlobalVarWorkflowUID] = placeholderValue
+	globalParams[common.GlobalVarWorkflowName] = placeholderGenerator.NextPlaceholder()
+	globalParams[common.GlobalVarWorkflowNamespace] = placeholderGenerator.NextPlaceholder()
+	globalParams[common.GlobalVarWorkflowServiceAccountName] = placeholderGenerator.NextPlaceholder()
+	globalParams[common.GlobalVarWorkflowUID] = placeholderGenerator.NextPlaceholder()
 	return &templateValidationCtx{
 		ValidateOpts: opts,
 		globalParams: globalParams,
@@ -61,19 +76,39 @@ func newTemplateValidationCtx(wf *wfv1.Workflow, opts ValidateOpts) *templateVal
 }
 
 const (
-	// placeholderValue is an arbitrary string to perform mock substitution of variables
-	placeholderValue = "placeholder"
-
 	// anyItemMagicValue is a magic value set in addItemsToScope() and checked in
 	// resolveAllVariables() to determine if any {{item.name}} can be accepted during
 	// variable resolution (to support withParam)
-	anyItemMagicValue = "item.*"
+	anyItemMagicValue                    = "item.*"
+	anyWorkflowOutputParameterMagicValue = "workflow.outputs.parameters.*"
+	anyWorkflowOutputArtifactMagicValue  = "workflow.outputs.artifacts.*"
 )
+
+var (
+	placeholderGenerator = common.NewPlaceholderGenerator()
+)
+
+// Allowed WfSpec fields if workflow referred WorkflowTemplate reference.
+var wfTmplRefAllowedWfSpecValidFields = map[string]bool{
+	"Entrypoint":            true,
+	"Suspend":               true,
+	"ActiveDeadlineSeconds": true,
+	"Priority":              true,
+	"Arguments":             true,
+	"WorkflowTemplateRef":   true,
+	"TTLStrategy":           true,
+	"Parallelism":           true,
+	"Volumes":               true,
+	"VolumeClaimTemplates":  true,
+	"NodeSelector":          true,
+	"PodGC":                 true,
+	"ServiceAccountName":    true,
+}
 
 type FakeArguments struct{}
 
 func (args *FakeArguments) GetParameterByName(name string) *wfv1.Parameter {
-	s := placeholderValue
+	s := placeholderGenerator.NextPlaceholder()
 	return &wfv1.Parameter{Name: name, Value: &s}
 }
 
@@ -84,58 +119,167 @@ func (args *FakeArguments) GetArtifactByName(name string) *wfv1.Artifact {
 var _ wfv1.ArgumentsProvider = &FakeArguments{}
 
 // ValidateWorkflow accepts a workflow and performs validation against it.
-func ValidateWorkflow(wftmplGetter templateresolution.WorkflowTemplateNamespacedGetter, wf *wfv1.Workflow, opts ValidateOpts) error {
+func ValidateWorkflow(wftmplGetter templateresolution.WorkflowTemplateNamespacedGetter, cwftmplGetter templateresolution.ClusterWorkflowTemplateGetter, wf *wfv1.Workflow, opts ValidateOpts) (*wfv1.Conditions, error) {
+	wfConditions := &wfv1.Conditions{}
 	ctx := newTemplateValidationCtx(wf, opts)
-	tmplCtx := templateresolution.NewContext(wftmplGetter, wf, wf)
+	tmplCtx := templateresolution.NewContext(wftmplGetter, cwftmplGetter, wf, wf)
 
-	err := validateWorkflowFieldNames(wf.Spec.Templates)
+	var wfSpecHolder wfv1.WorkflowSpecHolder
+	var wfTmplRef *wfv1.TemplateRef
+	var err error
+
+	entrypoint := wf.Spec.Entrypoint
+
+	hasWorkflowTemplateRef := wf.Spec.WorkflowTemplateRef != nil
+
+	if hasWorkflowTemplateRef {
+		err := ValidateWorkflowSpecFields(wf.Spec, wfTmplRefAllowedWfSpecValidFields)
+		if err != nil {
+			return nil, err
+		}
+		if wf.Spec.WorkflowTemplateRef.ClusterScope {
+			wfSpecHolder, err = cwftmplGetter.Get(wf.Spec.WorkflowTemplateRef.Name)
+		} else {
+			wfSpecHolder, err = wftmplGetter.Get(wf.Spec.WorkflowTemplateRef.Name)
+		}
+		if err != nil {
+			return nil, err
+		}
+		if entrypoint == "" {
+			entrypoint = wfSpecHolder.GetWorkflowSpec().Entrypoint
+		}
+		wfTmplRef = wf.Spec.WorkflowTemplateRef.ToTemplateRef(entrypoint)
+	}
+	err = validateWorkflowFieldNames(wf.Spec.Templates)
+
+	wfArgs := wf.Spec.Arguments
+
+	if wf.Spec.WorkflowTemplateRef != nil {
+		wfArgs.Parameters = util.MergeParameters(wfArgs.Parameters, wfSpecHolder.GetWorkflowSpec().Arguments.Parameters)
+	}
 	if err != nil {
-		return errors.Errorf(errors.CodeBadRequest, "spec.templates%s", err.Error())
+		return nil, errors.Errorf(errors.CodeBadRequest, "spec.templates%s", err.Error())
 	}
 	if ctx.Lint {
 		// if we are just linting we don't care if spec.arguments.parameters.XXX doesn't have an
 		// explicit value. workflows without a default value is a desired use case
-		err = validateArgumentsFieldNames("spec.arguments.", wf.Spec.Arguments)
+		err = validateArgumentsFieldNames("spec.arguments.", wfArgs)
 	} else {
-		err = validateArguments("spec.arguments.", wf.Spec.Arguments)
+		err = validateArguments("spec.arguments.", wfArgs)
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
-	for _, param := range wf.Spec.Arguments.Parameters {
+	if len(wfArgs.Parameters) > 0 {
+		ctx.globalParams[common.GlobalVarWorkflowParameters] = placeholderGenerator.NextPlaceholder()
+	}
+
+	for _, param := range wfArgs.Parameters {
 		if param.Name != "" {
 			if param.Value != nil {
 				ctx.globalParams["workflow.parameters."+param.Name] = *param.Value
 			} else {
-				ctx.globalParams["workflow.parameters."+param.Name] = placeholderValue
+				ctx.globalParams["workflow.parameters."+param.Name] = placeholderGenerator.NextPlaceholder()
 			}
 		}
 	}
 
 	for k := range wf.ObjectMeta.Annotations {
-		ctx.globalParams["workflow.annotations."+k] = placeholderValue
+		ctx.globalParams["workflow.annotations."+k] = placeholderGenerator.NextPlaceholder()
 	}
 	for k := range wf.ObjectMeta.Labels {
-		ctx.globalParams["workflow.labels."+k] = placeholderValue
+		ctx.globalParams["workflow.labels."+k] = placeholderGenerator.NextPlaceholder()
 	}
 
 	if wf.Spec.Priority != nil {
 		ctx.globalParams[common.GlobalVarWorkflowPriority] = strconv.Itoa(int(*wf.Spec.Priority))
 	}
 
-	if wf.Spec.Entrypoint == "" {
-		return errors.New(errors.CodeBadRequest, "spec.entrypoint is required")
+	if !opts.IgnoreEntrypoint && entrypoint == "" {
+		return nil, errors.New(errors.CodeBadRequest, "spec.entrypoint is required")
 	}
-	_, err = ctx.validateTemplateHolder(&wfv1.Template{Template: wf.Spec.Entrypoint}, tmplCtx, &wf.Spec.Arguments, map[string]interface{}{})
-	if err != nil {
-		return err
+
+	// Make sure that templates are not defined with deprecated fields
+	for _, template := range wf.Spec.Templates {
+		if !template.Arguments.IsEmpty() {
+			logrus.Warn("template.arguments is deprecated and its contents are ignored")
+			wfConditions.UpsertConditionMessage(wfv1.Condition{
+				Type:    wfv1.ConditionTypeSpecWarning,
+				Status:  v1.ConditionTrue,
+				Message: fmt.Sprintf(`template.arguments is deprecated and its contents are ignored. See more: %s`, help.WorkflowTemplatesReferencingOtherTemplates),
+			})
+		}
+		if template.TemplateRef != nil {
+			logrus.Warn(getTemplateRefHelpString(&template))
+			wfConditions.UpsertConditionMessage(wfv1.Condition{
+				Type:    wfv1.ConditionTypeSpecWarning,
+				Status:  v1.ConditionTrue,
+				Message: fmt.Sprintf(`Referencing/calling other templates directly on a "template" is deprecated; they should be referenced in a "steps" or a "dag" template. See more: %s`, help.WorkflowTemplatesReferencingOtherTemplates),
+			})
+		}
+		if template.Template != "" {
+			logrus.Warn(getTemplateRefHelpString(&template))
+			wfConditions.UpsertConditionMessage(wfv1.Condition{
+				Type:    wfv1.ConditionTypeSpecWarning,
+				Status:  v1.ConditionTrue,
+				Message: fmt.Sprintf(`Referencing/calling other templates directly on a "template" is deprecated; they should be referenced in a "steps" or a "dag" template. See more: %s`, help.WorkflowTemplatesReferencingOtherTemplates),
+			})
+		}
+	}
+
+	if !opts.IgnoreEntrypoint {
+		var args wfv1.ArgumentsProvider
+		args = &wfArgs
+		if opts.WorkflowTemplateValidation {
+			args = &FakeArguments{}
+		}
+		tmpl := &wfv1.WorkflowStep{Template: entrypoint}
+		if hasWorkflowTemplateRef {
+			tmpl = &wfv1.WorkflowStep{TemplateRef: wfTmplRef}
+		}
+		_, err = ctx.validateTemplateHolder(tmpl, tmplCtx, args, map[string]interface{}{})
+		if err != nil {
+			return nil, err
+		}
 	}
 	if wf.Spec.OnExit != "" {
 		// now when validating onExit, {{workflow.status}} is now available as a global
-		ctx.globalParams[common.GlobalVarWorkflowStatus] = placeholderValue
-		_, err = ctx.validateTemplateHolder(&wfv1.Template{Template: wf.Spec.OnExit}, tmplCtx, &wf.Spec.Arguments, map[string]interface{}{})
+		ctx.globalParams[common.GlobalVarWorkflowStatus] = placeholderGenerator.NextPlaceholder()
+		ctx.globalParams[common.GlobalVarWorkflowFailures] = placeholderGenerator.NextPlaceholder()
+		_, err = ctx.validateTemplateHolder(&wfv1.WorkflowStep{Template: wf.Spec.OnExit}, tmplCtx, &wf.Spec.Arguments, map[string]interface{}{})
 		if err != nil {
-			return err
+			return nil, err
+		}
+	}
+
+	if wf.Spec.PodGC != nil {
+		switch wf.Spec.PodGC.Strategy {
+		case wfv1.PodGCOnPodCompletion, wfv1.PodGCOnPodSuccess, wfv1.PodGCOnWorkflowCompletion, wfv1.PodGCOnWorkflowSuccess:
+		default:
+			return nil, errors.Errorf(errors.CodeBadRequest, "podGC.strategy unknown strategy '%s'", wf.Spec.PodGC.Strategy)
+		}
+	}
+
+	// Check if all templates can be resolved.
+	for _, template := range wf.Spec.Templates {
+		_, err := ctx.validateTemplateHolder(&wfv1.WorkflowStep{Template: template.Name}, tmplCtx, &FakeArguments{}, map[string]interface{}{})
+		if err != nil {
+			return nil, errors.Errorf(errors.CodeBadRequest, "templates.%s %s", template.Name, err.Error())
+		}
+	}
+	return wfConditions, nil
+}
+
+func ValidateWorkflowSpecFields(v interface{}, validFieldMap map[string]bool) error {
+	val := reflect.ValueOf(v)
+
+	for i := 0; i < val.NumField(); i++ {
+		// Lookup the validate tag
+		field := val.Type().Field(i)
+		fieldVal := val.Field(i).IsZero()
+		_, ok := validFieldMap[field.Name]
+		if !ok && !fieldVal {
+			return errors.Errorf(errors.CodeBadRequest, "%s is invalid field in spec if workflow referred WorkflowTemplate reference", field.Name)
 		}
 	}
 
@@ -172,19 +316,100 @@ func ValidateWorkflowTemplate(wftmplGetter templateresolution.WorkflowTemplateNa
 	return nil
 }
 
+// ValidateWorkflowTemplate accepts a workflow template and performs validation against it.
+func ValidateWorkflowTemplate(wftmplGetter templateresolution.WorkflowTemplateNamespacedGetter, cwftmplGetter templateresolution.ClusterWorkflowTemplateGetter, wftmpl *wfv1.WorkflowTemplate) (*wfv1.Conditions, error) {
+	wf := &wfv1.Workflow{
+		Spec: wftmpl.Spec.WorkflowSpec,
+	}
+	return ValidateWorkflow(wftmplGetter, cwftmplGetter, wf, ValidateOpts{IgnoreEntrypoint: wf.Spec.Entrypoint == "", WorkflowTemplateValidation: true})
+}
+
+// ValidateClusterWorkflowTemplate accepts a cluster workflow template and performs validation against it.
+func ValidateClusterWorkflowTemplate(wftmplGetter templateresolution.WorkflowTemplateNamespacedGetter, cwftmplGetter templateresolution.ClusterWorkflowTemplateGetter, cwftmpl *wfv1.ClusterWorkflowTemplate) (*wfv1.Conditions, error) {
+	wf := &wfv1.Workflow{
+		Spec: cwftmpl.Spec.WorkflowSpec,
+	}
+	return ValidateWorkflow(wftmplGetter, cwftmplGetter, wf, ValidateOpts{IgnoreEntrypoint: wf.Spec.Entrypoint == "", WorkflowTemplateValidation: true})
+}
+
+// ValidateCronWorkflow validates a CronWorkflow
+func ValidateCronWorkflow(wftmplGetter templateresolution.WorkflowTemplateNamespacedGetter, cwftmplGetter templateresolution.ClusterWorkflowTemplateGetter, cronWf *wfv1.CronWorkflow) error {
+	if _, err := cron.ParseStandard(cronWf.Spec.Schedule); err != nil {
+		return errors.Errorf(errors.CodeBadRequest, "cron schedule is malformed: %s", err)
+	}
+
+	switch cronWf.Spec.ConcurrencyPolicy {
+	case wfv1.AllowConcurrent, wfv1.ForbidConcurrent, wfv1.ReplaceConcurrent, "":
+		// Do nothing
+	default:
+		return errors.Errorf(errors.CodeBadRequest, "'%s' is not a valid concurrencyPolicy", cronWf.Spec.ConcurrencyPolicy)
+	}
+
+	if cronWf.Spec.StartingDeadlineSeconds != nil && *cronWf.Spec.StartingDeadlineSeconds < 0 {
+		return errors.Errorf(errors.CodeBadRequest, "startingDeadlineSeconds must be positive")
+	}
+
+	wf := common.ConvertCronWorkflowToWorkflow(cronWf)
+
+	_, err := ValidateWorkflow(wftmplGetter, cwftmplGetter, wf, ValidateOpts{})
+	if err != nil {
+		return errors.Errorf(errors.CodeBadRequest, "cannot validate Workflow: %s", err)
+	}
+	return nil
+}
+
+func getTemplateRefHelpString(tmpl *wfv1.Template) string {
+	out := `Referencing/calling other templates directly on a "template" is deprecated, no longer supported, and will be removed in a future version.
+
+Templates should be referenced from within a "steps" or a "dag" template. Here is how you would reference this on a "steps" template:
+
+- name: %s
+  steps:
+    - - name: call-%s`
+
+	if tmpl.TemplateRef != nil {
+		out += `
+        templateRef:
+          name: %s
+          template: %s`
+
+		out = fmt.Sprintf(out, tmpl.Name, tmpl.TemplateRef.Template, tmpl.TemplateRef.Name, tmpl.TemplateRef.Template)
+		if tmpl.TemplateRef.RuntimeResolution {
+			out += `
+          runtimeResolution: %t`
+			out = fmt.Sprintf(out, tmpl.TemplateRef.RuntimeResolution)
+		}
+	} else if tmpl.Template != "" {
+		out += `
+        template: %s`
+
+		out = fmt.Sprintf(out, tmpl.Name, tmpl.Template, tmpl.Template)
+	}
+
+	if !tmpl.Inputs.IsEmpty() {
+		out += `
+        arguments:    # Inputs should be converted to arguments`
+		inputBytes, err := yaml.Marshal(tmpl.Inputs)
+		if err != nil {
+			panic(err)
+		}
+		for _, line := range strings.Split(string(inputBytes), "\n") {
+			out += `
+          ` + line
+		}
+	}
+
+	out += `
+
+For more information, see: %s
+
+`
+
+	out = fmt.Sprintf(out, help.WorkflowTemplatesReferencingOtherTemplates)
+	return out
+}
+
 func (ctx *templateValidationCtx) validateTemplate(tmpl *wfv1.Template, tmplCtx *templateresolution.Context, args wfv1.ArgumentsProvider, extraScope map[string]interface{}) error {
-	tmplID := getTemplateID(tmpl)
-	_, ok := ctx.results[tmplID]
-	if ok {
-		// we already processed this template
-		return nil
-	}
-	ctx.results[tmplID] = true
-
-	if hasArguments(tmpl) {
-		return errors.Errorf(errors.CodeBadRequest, "templates.%s.arguments must be used with template or templateRef", tmpl.Name)
-	}
-
 	if err := validateTemplateType(tmpl); err != nil {
 		return err
 	}
@@ -193,10 +418,15 @@ func (ctx *templateValidationCtx) validateTemplate(tmpl *wfv1.Template, tmplCtx 
 	if err != nil {
 		return err
 	}
+
 	localParams := make(map[string]string)
 	if tmpl.IsPodType() {
-		localParams[common.LocalVarPodName] = placeholderValue
-		scope[common.LocalVarPodName] = placeholderValue
+		localParams[common.LocalVarPodName] = placeholderGenerator.NextPlaceholder()
+		scope[common.LocalVarPodName] = placeholderGenerator.NextPlaceholder()
+	}
+	if tmpl.RetryStrategy != nil {
+		localParams[common.LocalVarRetries] = placeholderGenerator.NextPlaceholder()
+		scope[common.LocalVarRetries] = placeholderGenerator.NextPlaceholder()
 	}
 	if tmpl.IsLeaf() {
 		for _, art := range tmpl.Outputs.Artifacts {
@@ -215,6 +445,15 @@ func (ctx *templateValidationCtx) validateTemplate(tmpl *wfv1.Template, tmplCtx 
 	if err != nil {
 		return errors.Errorf(errors.CodeBadRequest, "templates.%s %s", tmpl.Name, err)
 	}
+
+	tmplID := getTemplateID(tmpl)
+	_, ok := ctx.results[tmplID]
+	if ok {
+		// we can skip the rest since it has been validated.
+		return nil
+	}
+	ctx.results[tmplID] = true
+
 	for globalVar, val := range ctx.globalParams {
 		scope[globalVar] = val
 	}
@@ -244,11 +483,21 @@ func (ctx *templateValidationCtx) validateTemplate(tmpl *wfv1.Template, tmplCtx 
 			return err
 		}
 	}
+	if newTmpl.Metrics != nil {
+		for _, metric := range newTmpl.Metrics.Prometheus {
+			if !metrics.IsValidMetricName(metric.Name) {
+				return errors.Errorf(errors.CodeBadRequest, "templates.%s metric name '%s' is invalid. Metric names must contain alphanumeric characters, '_', or ':'", tmpl.Name, metric.Name)
+			}
+			if metric.Help == "" {
+				return errors.Errorf(errors.CodeBadRequest, "templates.%s metric '%s' must contain a help string under 'help: ' field", tmpl.Name, metric.Name)
+			}
+		}
+	}
 	return nil
 }
 
 // validateTemplateHolder validates a template holder and returns the validated template.
-func (ctx *templateValidationCtx) validateTemplateHolder(tmplHolder wfv1.TemplateHolder, tmplCtx *templateresolution.Context, args wfv1.ArgumentsProvider, extraScope map[string]interface{}) (*wfv1.Template, error) {
+func (ctx *templateValidationCtx) validateTemplateHolder(tmplHolder wfv1.TemplateReferenceHolder, tmplCtx *templateresolution.Context, args wfv1.ArgumentsProvider, extraScope map[string]interface{}) (*wfv1.Template, error) {
 	tmplRef := tmplHolder.GetTemplateRef()
 	tmplName := tmplHolder.GetTemplateName()
 	if tmplRef != nil {
@@ -281,7 +530,7 @@ func (ctx *templateValidationCtx) validateTemplateHolder(tmplHolder wfv1.Templat
 		}
 	}
 
-	tmplCtx, resolvedTmpl, err := tmplCtx.ResolveTemplate(tmplHolder)
+	tmplCtx, resolvedTmpl, _, err := tmplCtx.ResolveTemplate(tmplHolder)
 	if err != nil {
 		if argoerr, ok := err.(errors.ArgoError); ok && argoerr.Code() == errors.CodeNotFound {
 			if tmplRef != nil {
@@ -291,6 +540,16 @@ func (ctx *templateValidationCtx) validateTemplateHolder(tmplHolder wfv1.Templat
 			return nil, errors.InternalWrapError(err)
 		}
 		return nil, err
+	}
+
+	// Validate retryStrategy
+	if resolvedTmpl.RetryStrategy != nil {
+		switch resolvedTmpl.RetryStrategy.RetryPolicy {
+		case wfv1.RetryPolicyAlways, wfv1.RetryPolicyOnError, wfv1.RetryPolicyOnFailure, "":
+			// Passes validation
+		default:
+			return nil, fmt.Errorf("%s is not a valid RetryPolicy", resolvedTmpl.RetryStrategy.RetryPolicy)
+		}
 	}
 
 	return resolvedTmpl, ctx.validateTemplate(resolvedTmpl, tmplCtx, args, extraScope)
@@ -311,6 +570,7 @@ func validateTemplateType(tmpl *wfv1.Template) error {
 	case 0:
 		return errors.Errorf(errors.CodeBadRequest, "templates.%s template type unspecified. choose one of: container, steps, script, resource, dag, suspend, template, template ref", tmpl.Name)
 	case 1:
+		// Do nothing
 	default:
 		return errors.Errorf(errors.CodeBadRequest, "templates.%s multiple template types specified. choose one of: container, steps, script, resource, dag, suspend, template, template ref", tmpl.Name)
 	}
@@ -382,6 +642,8 @@ func validateArtifactLocation(errPrefix string, art wfv1.ArtifactLocation) error
 func resolveAllVariables(scope map[string]interface{}, tmplStr string) error {
 	var unresolvedErr error
 	_, allowAllItemRefs := scope[anyItemMagicValue] // 'item.*' is a magic placeholder value set by addItemsToScope
+	_, allowAllWorkflowOutputParameterRefs := scope[anyWorkflowOutputParameterMagicValue]
+	_, allowAllWorkflowOutputArtifactRefs := scope[anyWorkflowOutputArtifactMagicValue]
 	fstTmpl := fasttemplate.New(tmplStr, "{{", "}}")
 
 	fstTmpl.ExecuteFuncString(func(w io.Writer, tag string) (int, error) {
@@ -395,6 +657,12 @@ func resolveAllVariables(scope map[string]interface{}, tmplStr string) error {
 			if (tag == "item" || strings.HasPrefix(tag, "item.")) && allowAllItemRefs {
 				// we are *probably* referencing a undetermined item using withParam
 				// NOTE: this is far from foolproof.
+			} else if strings.HasPrefix(tag, "workflow.outputs.parameters.") && allowAllWorkflowOutputParameterRefs {
+				// Allow runtime resolution of workflow output parameter names
+			} else if strings.HasPrefix(tag, "workflow.outputs.artifacts.") && allowAllWorkflowOutputArtifactRefs {
+				// Allow runtime resolution of workflow output artifact names
+			} else if strings.HasPrefix(tag, "outputs.") {
+				// We are self referencing for metric emission, allow it.
 			} else if strings.HasPrefix(tag, common.GlobalVarWorkflowCreationTimestamp) {
 			} else {
 				unresolvedErr = fmt.Errorf("failed to resolve {{%s}}", tag)
@@ -418,9 +686,6 @@ func checkValidWorkflowVariablePrefix(tag string) bool {
 func validateNonLeaf(tmpl *wfv1.Template) error {
 	if tmpl.ActiveDeadlineSeconds != nil {
 		return errors.Errorf(errors.CodeBadRequest, "templates.%s.activeDeadlineSeconds is only valid for leaf templates", tmpl.Name)
-	}
-	if tmpl.RetryStrategy != nil {
-		return errors.Errorf(errors.CodeBadRequest, "templates.%s.retryStrategy is only valid for container templates", tmpl.Name)
 	}
 	return nil
 }
@@ -448,6 +713,32 @@ func (ctx *templateValidationCtx) validateLeaf(scope map[string]interface{}, tmp
 				return errors.Errorf(errors.CodeBadRequest, "templates.%s.inputs.artifacts[%d].path '%s' already mounted in %s", tmpl.Name, i, art.Path, prev)
 			}
 			mountPaths[art.Path] = fmt.Sprintf("inputs.artifacts.%s", art.Name)
+		}
+		if tmpl.Container.Image == "" {
+			return errors.Errorf(errors.CodeBadRequest, "templates.%s.container.image may not be empty", tmpl.Name)
+		}
+	}
+	if tmpl.Resource != nil {
+		if !placeholderGenerator.IsPlaceholder(tmpl.Resource.Action) {
+			switch tmpl.Resource.Action {
+			case "get", "create", "apply", "delete", "replace", "patch":
+				// OK
+			default:
+				return errors.Errorf(errors.CodeBadRequest, "templates.%s.resource.action must be one of: get, create, apply, delete, replace, patch", tmpl.Name)
+			}
+		}
+		if !placeholderGenerator.IsPlaceholder(tmpl.Resource.Manifest) {
+			// Try to unmarshal the given manifest.
+			obj := unstructured.Unstructured{}
+			err := yaml.Unmarshal([]byte(tmpl.Resource.Manifest), &obj)
+			if err != nil {
+				return errors.Errorf(errors.CodeBadRequest, "templates.%s.resource.manifest must be a valid yaml", tmpl.Name)
+			}
+		}
+	}
+	if tmpl.Script != nil {
+		if tmpl.Script.Image == "" {
+			return errors.Errorf(errors.CodeBadRequest, "templates.%s.script.image may not be empty", tmpl.Name)
 		}
 	}
 	if tmpl.Resource != nil {
@@ -535,7 +826,7 @@ func (ctx *templateValidationCtx) validateSteps(scope map[string]interface{}, tm
 	stepNames := make(map[string]bool)
 	resolvedTemplates := make(map[string]*wfv1.Template)
 	for i, stepGroup := range tmpl.Steps {
-		for _, step := range stepGroup {
+		for _, step := range stepGroup.Steps {
 			if step.Name == "" {
 				return errors.Errorf(errors.CodeBadRequest, "templates.%s.steps[%d].name is required", tmpl.Name, i)
 			}
@@ -553,14 +844,6 @@ func (ctx *templateValidationCtx) validateSteps(scope map[string]interface{}, tm
 			if err != nil {
 				return errors.Errorf(errors.CodeBadRequest, "templates.%s.steps[%d].%s %s", tmpl.Name, i, step.Name, err.Error())
 			}
-			stepBytes, err := json.Marshal(stepGroup)
-			if err != nil {
-				return errors.InternalWrapError(err)
-			}
-			err = resolveAllVariables(scope, string(stepBytes))
-			if err != nil {
-				return errors.Errorf(errors.CodeBadRequest, "templates.%s.steps[%d].%s %s", tmpl.Name, i, step.Name, err.Error())
-			}
 			err = validateArguments(fmt.Sprintf("templates.%s.steps[%d].%s.arguments.", tmpl.Name, i, step.Name), step.Arguments)
 			if err != nil {
 				return err
@@ -571,7 +854,17 @@ func (ctx *templateValidationCtx) validateSteps(scope map[string]interface{}, tm
 			}
 			resolvedTemplates[step.Name] = resolvedTmpl
 		}
-		for i, step := range stepGroup {
+
+		stepBytes, err := json.Marshal(stepGroup)
+		if err != nil {
+			return errors.InternalWrapError(err)
+		}
+		err = resolveAllVariables(scope, string(stepBytes))
+		if err != nil {
+			return errors.Errorf(errors.CodeBadRequest, "templates.%s.steps %s", tmpl.Name, err.Error())
+		}
+
+		for _, step := range stepGroup.Steps {
 			aggregate := len(step.WithItems) > 0 || step.WithParam != ""
 			resolvedTmpl := resolvedTemplates[step.Name]
 			ctx.addOutputsToScope(resolvedTmpl, fmt.Sprintf("steps.%s", step.Name), scope, aggregate, false)
@@ -602,11 +895,12 @@ func addItemsToScope(prefix string, withItems []wfv1.Item, withParam string, wit
 	}
 	if len(withItems) > 0 {
 		for i := range withItems {
-			switch val := withItems[i].Value.(type) {
-			case string, int, int32, int64, float32, float64, bool:
+			val := withItems[i]
+			switch val.Type {
+			case wfv1.String, wfv1.Number, wfv1.Bool:
 				scope["item"] = true
-			case map[string]interface{}:
-				for itemKey := range val {
+			case wfv1.Map:
+				for itemKey := range val.MapVal {
 					scope[fmt.Sprintf("item.%s", itemKey)] = true
 				}
 			default:
@@ -631,29 +925,43 @@ func (ctx *templateValidationCtx) addOutputsToScope(tmpl *wfv1.Template, prefix 
 	if tmpl.Daemon != nil && *tmpl.Daemon {
 		scope[fmt.Sprintf("%s.ip", prefix)] = true
 	}
-	if tmpl.Script != nil {
+	if tmpl.Script != nil || tmpl.Container != nil {
 		scope[fmt.Sprintf("%s.outputs.result", prefix)] = true
+		scope[fmt.Sprintf("%s.exitCode", prefix)] = true
 	}
 	for _, param := range tmpl.Outputs.Parameters {
 		scope[fmt.Sprintf("%s.outputs.parameters.%s", prefix, param.Name)] = true
-		if param.GlobalName != "" && !isParameter(param.GlobalName) {
-			globalParamName := fmt.Sprintf("workflow.outputs.parameters.%s", param.GlobalName)
-			scope[globalParamName] = true
-			ctx.globalParams[globalParamName] = placeholderValue
+		if param.GlobalName != "" {
+			if !isParameter(param.GlobalName) {
+				globalParamName := fmt.Sprintf("workflow.outputs.parameters.%s", param.GlobalName)
+				scope[globalParamName] = true
+				ctx.globalParams[globalParamName] = placeholderGenerator.NextPlaceholder()
+			} else {
+				logrus.Warnf("GlobalName '%s' is a parameter and won't be validated until runtime", param.GlobalName)
+				scope[anyWorkflowOutputParameterMagicValue] = true
+			}
 		}
 	}
 	for _, art := range tmpl.Outputs.Artifacts {
 		scope[fmt.Sprintf("%s.outputs.artifacts.%s", prefix, art.Name)] = true
-		if art.GlobalName != "" && !isParameter(art.GlobalName) {
-			globalArtName := fmt.Sprintf("workflow.outputs.artifacts.%s", art.GlobalName)
-			scope[globalArtName] = true
-			ctx.globalParams[globalArtName] = placeholderValue
+		if art.GlobalName != "" {
+			if !isParameter(art.GlobalName) {
+				globalArtName := fmt.Sprintf("workflow.outputs.artifacts.%s", art.GlobalName)
+				scope[globalArtName] = true
+				ctx.globalParams[globalArtName] = placeholderGenerator.NextPlaceholder()
+			} else {
+				logrus.Warnf("GlobalName '%s' is a parameter and won't be validated until runtime", art.GlobalName)
+				scope[anyWorkflowOutputArtifactMagicValue] = true
+			}
 		}
 	}
 	if aggregate {
 		switch tmpl.GetType() {
+		// Not that we don't also include TemplateTypeContainer here, even though it uses `outputs.result` it uses
+		// `outputs.parameters` as its aggregator.
 		case wfv1.TemplateTypeScript:
 			scope[fmt.Sprintf("%s.outputs.result", prefix)] = true
+			scope[fmt.Sprintf("%s.exitCode", prefix)] = true
 		default:
 			scope[fmt.Sprintf("%s.outputs.parameters", prefix)] = true
 		}
@@ -777,6 +1085,56 @@ func (ctx *templateValidationCtx) validateBaseImageOutputs(tmpl *wfv1.Template) 
 	return nil
 }
 
+// validateBaseImageOutputs detects if the template contains an valid output from base image layer
+func (ctx *templateValidationCtx) validateBaseImageOutputs(tmpl *wfv1.Template) error {
+	switch ctx.ContainerRuntimeExecutor {
+	case "", common.ContainerRuntimeExecutorDocker:
+		// docker executor supports all modes of artifact outputs
+	case common.ContainerRuntimeExecutorPNS:
+		// pns supports copying from the base image, but only if there is no volume mount underneath it
+		errMsg := "pns executor does not support outputs from base image layer with volume mounts. must use emptyDir"
+		for _, out := range tmpl.Outputs.Artifacts {
+			if common.FindOverlappingVolume(tmpl, out.Path) == nil {
+				// output is in the base image layer. need to verify there are no volume mounts under it
+				if tmpl.Container != nil {
+					for _, volMnt := range tmpl.Container.VolumeMounts {
+						if strings.HasPrefix(volMnt.MountPath, out.Path+"/") {
+							return errors.Errorf(errors.CodeBadRequest, "templates.%s.outputs.artifacts.%s: %s", tmpl.Name, out.Name, errMsg)
+						}
+					}
+
+				}
+				if tmpl.Script != nil {
+					for _, volMnt := range tmpl.Script.VolumeMounts {
+						if strings.HasPrefix(volMnt.MountPath, out.Path+"/") {
+							return errors.Errorf(errors.CodeBadRequest, "templates.%s.outputs.artifacts.%s: %s", tmpl.Name, out.Name, errMsg)
+						}
+					}
+				}
+			}
+		}
+	case common.ContainerRuntimeExecutorK8sAPI, common.ContainerRuntimeExecutorKubelet:
+		// for kubelet/k8s fail validation if we detect artifact is copied from base image layer
+		errMsg := fmt.Sprintf("%s executor does not support outputs from base image layer. must use emptyDir", ctx.ContainerRuntimeExecutor)
+		for _, out := range tmpl.Outputs.Artifacts {
+			if common.FindOverlappingVolume(tmpl, out.Path) == nil {
+				return errors.Errorf(errors.CodeBadRequest, "templates.%s.outputs.artifacts.%s: %s", tmpl.Name, out.Name, errMsg)
+			}
+		}
+		for _, out := range tmpl.Outputs.Parameters {
+			if out.ValueFrom == nil {
+				continue
+			}
+			if out.ValueFrom.Path != "" {
+				if common.FindOverlappingVolume(tmpl, out.ValueFrom.Path) == nil {
+					return errors.Errorf(errors.CodeBadRequest, "templates.%s.outputs.parameters.%s: %s", tmpl.Name, out.Name, errMsg)
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // validateOutputParameter verifies that only one of valueFrom is defined in an output
 func validateOutputParameter(paramRef string, param *wfv1.Parameter) error {
 	if param.ValueFrom != nil && param.Value != nil {
@@ -857,39 +1215,87 @@ func validateWorkflowFieldNames(slice interface{}) error {
 	return nil
 }
 
+type dagValidationContext struct {
+	tasks        map[string]wfv1.DAGTask
+	dependencies map[string][]string
+}
+
+func (d *dagValidationContext) GetTask(taskName string) *wfv1.DAGTask {
+	task := d.tasks[taskName]
+	return &task
+}
+
+func (d *dagValidationContext) GetTaskDependencies(taskName string) []string {
+	if dependencies, ok := d.dependencies[taskName]; ok {
+		return dependencies
+	}
+	task := d.GetTask(taskName)
+	dependencies, _ := common.GetTaskDependencies(task, d)
+	d.dependencies[taskName] = dependencies
+	return d.dependencies[taskName]
+}
+
+func (d *dagValidationContext) GetTaskFinishedAtTime(taskName string) time.Time {
+	return time.Now()
+}
+
 func (ctx *templateValidationCtx) validateDAG(scope map[string]interface{}, tmplCtx *templateresolution.Context, tmpl *wfv1.Template) error {
 	err := validateNonLeaf(tmpl)
 	if err != nil {
 		return err
 	}
+	if len(tmpl.DAG.Tasks) == 0 {
+		return errors.Errorf(errors.CodeBadRequest, "templates.%s must have at least one task", tmpl.Name)
+	}
 	err = validateWorkflowFieldNames(tmpl.DAG.Tasks)
 	if err != nil {
 		return errors.Errorf(errors.CodeBadRequest, "templates.%s.tasks%s", tmpl.Name, err.Error())
 	}
+	usingDepends := false
 	nameToTask := make(map[string]wfv1.DAGTask)
 	for _, task := range tmpl.DAG.Tasks {
+		if task.Depends != "" {
+			usingDepends = true
+		}
 		nameToTask[task.Name] = task
 	}
 	resolvedTemplates := make(map[string]*wfv1.Template)
 
+	dagValidationCtx := &dagValidationContext{
+		tasks:        nameToTask,
+		dependencies: make(map[string][]string),
+	}
+
+	resolvedTemplates := make(map[string]*wfv1.Template)
+
 	// Verify dependencies for all tasks can be resolved as well as template names
 	for _, task := range tmpl.DAG.Tasks {
+
+		if usingDepends && len(task.Dependencies) > 0 {
+			return errors.Errorf(errors.CodeBadRequest, "templates.%s cannot use both 'depends' and 'dependencies' in the same DAG template", tmpl.Name)
+		}
+
+		if usingDepends && task.ContinueOn != nil {
+			return errors.Errorf(errors.CodeBadRequest, "templates.%s cannot use 'continueOn' when using 'depends'. Instead use 'dep-task.Failed'/'dep-task.Errored'", tmpl.Name)
+		}
+
 		resolvedTmpl, err := ctx.validateTemplateHolder(&task, tmplCtx, &FakeArguments{}, map[string]interface{}{})
 		if err != nil {
 			return errors.Errorf(errors.CodeBadRequest, "templates.%s.tasks.%s %s", tmpl.Name, task.Name, err.Error())
 		}
+
+		resolvedTemplates[task.Name] = resolvedTmpl
+
 		prefix := fmt.Sprintf("tasks.%s", task.Name)
 		ctx.addOutputsToScope(resolvedTmpl, prefix, scope, false, false)
-		resolvedTemplates[task.Name] = resolvedTmpl
-		dupDependencies := make(map[string]bool)
-		for j, depName := range task.Dependencies {
-			if _, ok := dupDependencies[depName]; ok {
-				return errors.Errorf(errors.CodeBadRequest,
-					"templates.%s.tasks.%s.dependencies[%d] dependency '%s' duplicated",
-					tmpl.Name, task.Name, j, depName)
-			}
-			dupDependencies[depName] = true
-			if _, ok := nameToTask[depName]; !ok {
+
+		err = common.ValidateTaskResults(&task)
+		if err != nil {
+			return errors.Errorf(errors.CodeBadRequest, "templates.%s.tasks.%s %s", tmpl.Name, task.Name, err.Error())
+		}
+
+		for j, depName := range dagValidationCtx.GetTaskDependencies(task.Name) {
+			if _, ok := dagValidationCtx.tasks[depName]; !ok {
 				return errors.Errorf(errors.CodeBadRequest,
 					"templates.%s.tasks.%s.dependencies[%d] dependency '%s' not defined",
 					tmpl.Name, task.Name, j, depName)
@@ -897,7 +1303,7 @@ func (ctx *templateValidationCtx) validateDAG(scope map[string]interface{}, tmpl
 		}
 	}
 
-	if err = verifyNoCycles(tmpl, nameToTask); err != nil {
+	if err = verifyNoCycles(tmpl, dagValidationCtx); err != nil {
 		return err
 	}
 
@@ -905,7 +1311,7 @@ func (ctx *templateValidationCtx) validateDAG(scope map[string]interface{}, tmpl
 	if err != nil {
 		return errors.Errorf(errors.CodeBadRequest, "templates.%s.targets %s", tmpl.Name, err.Error())
 	}
-	if err = validateDAGTargets(tmpl, nameToTask); err != nil {
+	if err = validateDAGTargets(tmpl, dagValidationCtx.tasks); err != nil {
 		return err
 	}
 
@@ -922,9 +1328,9 @@ func (ctx *templateValidationCtx) validateDAG(scope map[string]interface{}, tmpl
 		for k, v := range scope {
 			taskScope[k] = v
 		}
-		ancestry := common.GetTaskAncestry(nil, task.Name, tmpl.DAG.Tasks)
+		ancestry := common.GetTaskAncestry(dagValidationCtx, task.Name)
 		for _, ancestor := range ancestry {
-			ancestorTask := nameToTask[ancestor]
+			ancestorTask := dagValidationCtx.GetTask(ancestor)
 			resolvedTmpl := resolvedTemplates[ancestor]
 			ancestorPrefix := fmt.Sprintf("tasks.%s", ancestor)
 			aggregate := len(ancestorTask.WithItems) > 0 || ancestorTask.WithParam != ""
@@ -968,15 +1374,15 @@ func validateDAGTargets(tmpl *wfv1.Template, nameToTask map[string]wfv1.DAGTask)
 }
 
 // verifyNoCycles verifies there are no cycles in the DAG graph
-func verifyNoCycles(tmpl *wfv1.Template, nameToTask map[string]wfv1.DAGTask) error {
+func verifyNoCycles(tmpl *wfv1.Template, ctx *dagValidationContext) error {
 	visited := make(map[string]bool)
 	var noCyclesHelper func(taskName string, cycle []string) error
 	noCyclesHelper = func(taskName string, cycle []string) error {
 		if _, ok := visited[taskName]; ok {
 			return nil
 		}
-		task := nameToTask[taskName]
-		for _, depName := range task.Dependencies {
+		task := ctx.GetTask(taskName)
+		for _, depName := range ctx.GetTaskDependencies(task.Name) {
 			for _, name := range cycle {
 				if name == depName {
 					return errors.Errorf(errors.CodeBadRequest,
@@ -1008,6 +1414,7 @@ var (
 	// paramRegex matches a parameter. e.g. {{inputs.parameters.blah}}
 	paramRegex               = regexp.MustCompile(`{{[-a-zA-Z0-9]+(\.[-a-zA-Z0-9_]+)*}}`)
 	paramOrArtifactNameRegex = regexp.MustCompile(`^[-a-zA-Z0-9_]+[-a-zA-Z0-9_]*$`)
+	workflowFieldNameRegex   = regexp.MustCompile("^" + workflowFieldNameFmt + "$")
 )
 
 func isParameter(p string) bool {
@@ -1032,15 +1439,13 @@ const (
 	workflowFieldMaxLength  int    = 128
 )
 
-var workflowFieldNameRegexp = regexp.MustCompile("^" + workflowFieldNameFmt + "$")
-
 // isValidWorkflowFieldName : workflow field name must consist of alpha-numeric characters or '-', and must start with an alpha-numeric character
 func isValidWorkflowFieldName(name string) []string {
 	var errs []string
 	if len(name) > workflowFieldMaxLength {
 		errs = append(errs, apivalidation.MaxLenError(workflowFieldMaxLength))
 	}
-	if !workflowFieldNameRegexp.MatchString(name) {
+	if !workflowFieldNameRegex.MatchString(name) {
 		msg := workflowFieldNameErrMsg + " (e.g. My-name1-2, 123-NAME)"
 		errs = append(errs, msg)
 	}

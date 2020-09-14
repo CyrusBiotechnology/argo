@@ -2,6 +2,10 @@
 
 package v1alpha1
 
+type ClusterWorkflowTemplateExpansion interface{}
+
+type CronWorkflowExpansion interface{}
+
 type WorkflowExpansion interface{}
 
 type WorkflowTemplateExpansion interface{}

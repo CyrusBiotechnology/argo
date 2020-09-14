@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
-	argoerrs "github.com/cyrusbiotechnology/argo/errors"
 	apierr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	argoerrs "github.com/cyrusbiotechnology/argo/errors"
 )
 
 // DefaultRetry is a default retry backoff settings when retrying API calls

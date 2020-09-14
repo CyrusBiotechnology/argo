@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cyrusbiotechnology/argo/workflow/common"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/argoproj/argo/workflow/common"
 )
 
 func NewResourceCommand() *cobra.Command {
@@ -41,7 +42,9 @@ func execResource(action string) error {
 		wfExecutor.AddError(err)
 		return err
 	}
-	resourceNamespace, resourceName, err := wfExecutor.ExecResource(action, common.ExecutorResourceManifestPath)
+	resourceNamespace, resourceName, err := wfExecutor.ExecResource(
+		action, common.ExecutorResourceManifestPath, wfExecutor.Template.Resource.Flags,
+	)
 	if err != nil {
 		wfExecutor.AddError(err)
 		return err

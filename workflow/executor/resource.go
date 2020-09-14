@@ -10,25 +10,61 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
-	"github.com/cyrusbiotechnology/argo/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	"github.com/cyrusbiotechnology/argo/errors"
 )
 
 // ExecResource will run kubectl action against a manifest
-func (we *WorkflowExecutor) ExecResource(action string, manifestPath string) (string, string, error) {
-	isDelete := action == "delete"
+func (we *WorkflowExecutor) ExecResource(action string, manifestPath string, flags []string) (string, string, error) {
+	args, err := we.getKubectlArguments(action, manifestPath, flags)
+	if err != nil {
+		return "", "", err
+	}
+
+	cmd := exec.Command("kubectl", args...)
+	log.Info(strings.Join(cmd.Args, " "))
+
+	out, err := cmd.Output()
+	if err != nil {
+		exErr := err.(*exec.ExitError)
+		errMsg := strings.TrimSpace(string(exErr.Stderr))
+		return "", "", errors.New(errors.CodeBadRequest, errMsg)
+	}
+	if action == "delete" {
+		return "", "", nil
+	}
+	if action == "get" && len(out) == 0 {
+		return "", "", nil
+	}
+	obj := unstructured.Unstructured{}
+	err = json.Unmarshal(out, &obj)
+	if err != nil {
+		return "", "", err
+	}
+	resourceName := fmt.Sprintf("%s.%s/%s", obj.GroupVersionKind().Kind, obj.GroupVersionKind().Group, obj.GetName())
+	log.Infof("%s/%s", obj.GetNamespace(), resourceName)
+	return obj.GetNamespace(), resourceName, nil
+}
+
+func (we *WorkflowExecutor) getKubectlArguments(action string, manifestPath string, flags []string) ([]string, error) {
 	args := []string{
 		action,
 	}
 	output := "json"
-	if isDelete {
+
+	if action == "delete" {
 		args = append(args, "--ignore-not-found")
 		output = "name"
+	}
+
+	buff, err := ioutil.ReadFile(manifestPath)
+	if err != nil {
+		return []string{}, errors.New(errors.CodeBadRequest, err.Error())
 	}
 
 	if action == "patch" {
@@ -41,38 +77,23 @@ func (we *WorkflowExecutor) ExecResource(action string, manifestPath string) (st
 		args = append(args, mergeStrategy)
 
 		args = append(args, "-p")
-		buff, err := ioutil.ReadFile(manifestPath)
-
-		if err != nil {
-			return "", "", errors.New(errors.CodeBadRequest, err.Error())
-		}
-
 		args = append(args, string(buff))
 	}
 
-	args = append(args, "-f")
-	args = append(args, manifestPath)
+	if len(flags) != 0 {
+		args = append(args, flags...)
+	}
+
+	if len(buff) != 0 {
+		args = append(args, "-f")
+		args = append(args, manifestPath)
+	} else if len(flags) <= 0 {
+		return []string{}, errors.New(errors.CodeBadRequest, "Must provide at least one of flags or manifest.")
+	}
 	args = append(args, "-o")
 	args = append(args, output)
-	cmd := exec.Command("kubectl", args...)
-	log.Info(strings.Join(cmd.Args, " "))
-	out, err := cmd.Output()
-	if err != nil {
-		exErr := err.(*exec.ExitError)
-		errMsg := strings.TrimSpace(string(exErr.Stderr))
-		return "", "", errors.New(errors.CodeBadRequest, errMsg)
-	}
-	if action == "delete" {
-		return "", "", nil
-	}
-	obj := unstructured.Unstructured{}
-	err = json.Unmarshal(out, &obj)
-	if err != nil {
-		return "", "", err
-	}
-	resourceName := fmt.Sprintf("%s.%s/%s", obj.GroupVersionKind().Kind, obj.GroupVersionKind().Group, obj.GetName())
-	log.Infof("%s/%s", obj.GetNamespace(), resourceName)
-	return obj.GetNamespace(), resourceName, nil
+
+	return args, nil
 }
 
 // gjsonLabels is an implementation of labels.Labels interface
@@ -143,9 +164,29 @@ func (we *WorkflowExecutor) WaitResource(resourceNamespace string, resourceName 
 		} else {
 			log.Warnf("Waiting for resource %s resulted in error %v", resourceName, err)
 		}
+		return err
 	}
 
-	return err
+	return nil
+}
+
+func checkIfResourceDeleted(resourceName string, resourceNamespace string) bool {
+	args := []string{"get", resourceName}
+	if resourceNamespace != "" {
+		args = append(args, "-n", resourceNamespace)
+	}
+	cmd := exec.Command("kubectl", args...)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err != nil {
+		if strings.Contains(stderr.String(), "NotFound") {
+			return true
+		}
+		log.Warnf("Got error %v when checking if the resource %s in namespace %s is deleted", err, resourceName, resourceNamespace)
+		return false
+	}
+	return false
 }
 
 // Function to do the kubectl get -w command and then waiting on json reading.
@@ -185,6 +226,10 @@ func checkResourceState(resourceNamespace string, resourceName string, successRe
 				log.Infof("readJSon failed for resource %s but cmd.Wait for kubectl get -w command did not error", resourceName)
 			}
 			return true, resultErr
+		}
+
+		if checkIfResourceDeleted(resourceName, resourceNamespace) {
+			return false, errors.Errorf(errors.CodeNotFound, "Resource %s in namespace %s has been deleted somehow.", resourceName, resourceNamespace)
 		}
 
 		log.Info(string(jsonBytes))
@@ -265,6 +310,14 @@ func (we *WorkflowExecutor) SaveResourceParameters(resourceNamespace string, res
 		if param.ValueFrom == nil {
 			continue
 		}
+		if resourceNamespace == "" && resourceName == "" {
+			output := ""
+			if param.ValueFrom.Default != nil {
+				output = string([]byte(*param.ValueFrom.Default))
+			}
+			we.Template.Outputs.Parameters[i].Value = &output
+			continue
+		}
 		var cmd *exec.Cmd
 		if param.ValueFrom.JSONPath != "" {
 			args := []string{"get", resourceName, "-o", fmt.Sprintf("jsonpath=%s", param.ValueFrom.JSONPath)}
@@ -277,7 +330,7 @@ func (we *WorkflowExecutor) SaveResourceParameters(resourceNamespace string, res
 			if resourceNamespace != "" {
 				resArgs = append(resArgs, "-n", resourceNamespace)
 			}
-			cmdStr := fmt.Sprintf("kubectl get %s -o json | jq -c '%s'", strings.Join(resArgs, " "), param.ValueFrom.JQFilter)
+			cmdStr := fmt.Sprintf("kubectl get %s -o json | jq -rc '%s'", strings.Join(resArgs, " "), param.ValueFrom.JQFilter)
 			cmd = exec.Command("sh", "-c", cmdStr)
 		} else {
 			continue
@@ -285,10 +338,15 @@ func (we *WorkflowExecutor) SaveResourceParameters(resourceNamespace string, res
 		log.Info(cmd.Args)
 		out, err := cmd.Output()
 		if err != nil {
-			if exErr, ok := err.(*exec.ExitError); ok {
-				log.Errorf("`%s` stderr:\n%s", cmd.Args, string(exErr.Stderr))
+			// We have a default value to use instead of returning an error
+			if param.ValueFrom.Default != nil {
+				out = []byte(*param.ValueFrom.Default)
+			} else {
+				if exErr, ok := err.(*exec.ExitError); ok {
+					log.Errorf("`%s` stderr:\n%s", cmd.Args, string(exErr.Stderr))
+				}
+				return errors.InternalWrapError(err)
 			}
-			return errors.InternalWrapError(err)
 		}
 		output := string(out)
 		we.Template.Outputs.Parameters[i].Value = &output

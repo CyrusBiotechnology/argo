@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 	"github.com/valyala/fasttemplate"
@@ -26,6 +25,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/cyrusbiotechnology/argo/errors"
+	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow"
 	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/cyrusbiotechnology/argo/util"
 )
@@ -100,7 +100,7 @@ func ContainerLogStream(config *rest.Config, namespace string, pod string, conta
 	case "http":
 		u.Scheme = "ws"
 	default:
-		return nil, errors.Errorf("Malformed URL %s", u.String())
+		return nil, errors.Errorf("", "Malformed URL %s", u.String())
 	}
 
 	log.Info(u.String())
@@ -245,7 +245,7 @@ func GetExecutorOutput(exec remotecommand.Executor) (*bytes.Buffer, *bytes.Buffe
 // * parameters in the template from the arguments
 // * global parameters (e.g. {{workflow.parameters.XX}}, {{workflow.name}}, {{workflow.status}})
 // * local parameters (e.g. {{pod.name}})
-func ProcessArgs(tmpl *wfv1.Template, args wfv1.ArgumentsProvider, globalParams, localParams map[string]string, validateOnly bool) (*wfv1.Template, error) {
+func ProcessArgs(tmpl *wfv1.Template, args wfv1.ArgumentsProvider, globalParams, localParams Parameters, validateOnly bool) (*wfv1.Template, error) {
 	// For each input parameter:
 	// 1) check if was supplied as argument. if so use the supplied value from arg
 	// 2) if not, use default value.
@@ -300,19 +300,13 @@ func ProcessArgs(tmpl *wfv1.Template, args wfv1.ArgumentsProvider, globalParams,
 }
 
 // SubstituteParams returns a new copy of the template with global, pod, and input parameters substituted
-func SubstituteParams(tmpl *wfv1.Template, globalParams, localParams map[string]string) (*wfv1.Template, error) {
+func SubstituteParams(tmpl *wfv1.Template, globalParams, localParams Parameters) (*wfv1.Template, error) {
 	tmplBytes, err := json.Marshal(tmpl)
 	if err != nil {
 		return nil, errors.InternalWrapError(err)
 	}
 	// First replace globals & locals, then replace inputs because globals could be referenced in the inputs
-	replaceMap := make(map[string]string)
-	for k, v := range globalParams {
-		replaceMap[k] = v
-	}
-	for k, v := range localParams {
-		replaceMap[k] = v
-	}
+	replaceMap := globalParams.Merge(localParams)
 	fstTmpl := fasttemplate.New(string(tmplBytes), "{{", "}}")
 	globalReplacedTmplStr, err := Replace(fstTmpl, replaceMap, true)
 	if err != nil {
@@ -465,12 +459,19 @@ func DeletePod(c kubernetes.Interface, podName, namespace string) error {
 	return err
 }
 
-// IsPodTemplate returns whether the template corresponds to a pod
-func IsPodTemplate(tmpl *wfv1.Template) bool {
-	if tmpl.Container != nil || tmpl.Script != nil || tmpl.Resource != nil {
-		return true
+const deleteRetries = 3
+
+// DeletePod deletes a pod. Ignores NotFound error
+func DeletePod(c kubernetes.Interface, podName, namespace string) error {
+	var err error
+	for attempt := 0; attempt < deleteRetries; attempt++ {
+		err = c.CoreV1().Pods(namespace).Delete(podName, &metav1.DeleteOptions{})
+		if err == nil || apierr.IsNotFound(err) {
+			return nil
+		}
+		time.Sleep(100 * time.Millisecond)
 	}
-	return false
+	return err
 }
 
 var yamlSeparator = regexp.MustCompile(`\n---`)
@@ -490,7 +491,11 @@ func SplitWorkflowYAMLFile(body []byte, strict bool) ([]wfv1.Workflow, error) {
 		}
 		err := yaml.Unmarshal([]byte(manifestStr), &wf, opts...)
 		if wf.Kind != "" && wf.Kind != workflow.WorkflowKind {
-			log.Warnf("%s is not a workflow", wf.Kind)
+			name := wf.Kind
+			if wf.Name != "" {
+				name = fmt.Sprintf("%s '%s'", name, wf.Name)
+			}
+			log.Warnf("%s is not of kind Workflow. Ignoring...", name)
 			// If we get here, it was a k8s manifest which was not of type 'Workflow'
 			// We ignore these since we only care about Workflow manifests.
 			continue
@@ -518,7 +523,11 @@ func SplitWorkflowTemplateYAMLFile(body []byte, strict bool) ([]wfv1.WorkflowTem
 		}
 		err := yaml.Unmarshal([]byte(manifestStr), &wftmpl, opts...)
 		if wftmpl.Kind != "" && wftmpl.Kind != workflow.WorkflowTemplateKind {
-			log.Warnf("%s is not a workflow template", wftmpl.Kind)
+			name := wftmpl.Kind
+			if wftmpl.Name != "" {
+				name = fmt.Sprintf("%s '%s'", name, wftmpl.Name)
+			}
+			log.Warnf("%s is not of kind WorkflowTemplate. Ignoring...", name)
 			// If we get here, it was a k8s manifest which was not of type 'WorkflowTemplate'
 			// We ignore these since we only care about WorkflowTemplate manifests.
 			continue
@@ -527,6 +536,38 @@ func SplitWorkflowTemplateYAMLFile(body []byte, strict bool) ([]wfv1.WorkflowTem
 			return nil, errors.New(errors.CodeBadRequest, err.Error())
 		}
 		manifests = append(manifests, wftmpl)
+	}
+	return manifests, nil
+}
+
+// SplitCronWorkflowYAMLFile is a helper to split a body into multiple workflow template objects
+func SplitCronWorkflowYAMLFile(body []byte, strict bool) ([]wfv1.CronWorkflow, error) {
+	manifestsStrings := yamlSeparator.Split(string(body), -1)
+	manifests := make([]wfv1.CronWorkflow, 0)
+	for _, manifestStr := range manifestsStrings {
+		if strings.TrimSpace(manifestStr) == "" {
+			continue
+		}
+		var cronWf wfv1.CronWorkflow
+		var opts []yaml.JSONOpt
+		if strict {
+			opts = append(opts, yaml.DisallowUnknownFields) // nolint
+		}
+		err := yaml.Unmarshal([]byte(manifestStr), &cronWf, opts...)
+		if cronWf.Kind != "" && cronWf.Kind != workflow.CronWorkflowKind {
+			name := cronWf.Kind
+			if cronWf.Name != "" {
+				name = fmt.Sprintf("%s '%s'", name, cronWf.Name)
+			}
+			log.Warnf("%s is not of kind CronWorkflow. Ignoring...", name)
+			// If we get here, it was a k8s manifest which was not of type 'CronWorkflow'
+			// We ignore these since we only care about CronWorkflow manifests.
+			continue
+		}
+		if err != nil {
+			return nil, errors.New(errors.CodeBadRequest, err.Error())
+		}
+		manifests = append(manifests, cronWf)
 	}
 	return manifests, nil
 }
@@ -558,17 +599,6 @@ func MergeReferredTemplate(tmpl *wfv1.Template, referred *wfv1.Template) (*wfv1.
 		artifacts := make([]wfv1.Artifact, len(tmpl.Outputs.Artifacts))
 		copy(artifacts, tmpl.Outputs.Artifacts)
 		newTmpl.Outputs.Artifacts = artifacts
-	}
-
-	if len(tmpl.Arguments.Parameters) > 0 {
-		parameters := make([]wfv1.Parameter, len(tmpl.Arguments.Parameters))
-		copy(parameters, tmpl.Arguments.Parameters)
-		newTmpl.Arguments.Parameters = parameters
-	}
-	if len(tmpl.Arguments.Artifacts) > 0 {
-		artifacts := make([]wfv1.Artifact, len(tmpl.Arguments.Artifacts))
-		copy(artifacts, tmpl.Arguments.Artifacts)
-		newTmpl.Arguments.Artifacts = artifacts
 	}
 
 	if len(tmpl.NodeSelector) > 0 {
@@ -636,13 +666,13 @@ func MergeReferredTemplate(tmpl *wfv1.Template, referred *wfv1.Template) (*wfv1.
 	return newTmpl, nil
 }
 
-// GetTemplateGetterString returns string of TemplateGetter.
-func GetTemplateGetterString(getter wfv1.TemplateGetter) string {
+// GetTemplateGetterString returns string of TemplateHolder.
+func GetTemplateGetterString(getter wfv1.TemplateHolder) string {
 	return fmt.Sprintf("%T (namespace=%s,name=%s)", getter, getter.GetNamespace(), getter.GetName())
 }
 
-// GetTemplateHolderString returns string of TemplateHolder.
-func GetTemplateHolderString(tmplHolder wfv1.TemplateHolder) string {
+// GetTemplateHolderString returns string of TemplateReferenceHolder.
+func GetTemplateHolderString(tmplHolder wfv1.TemplateReferenceHolder) string {
 	tmplName := tmplHolder.GetTemplateName()
 	tmplRef := tmplHolder.GetTemplateRef()
 	if tmplRef != nil {
@@ -650,4 +680,32 @@ func GetTemplateHolderString(tmplHolder wfv1.TemplateHolder) string {
 	} else {
 		return fmt.Sprintf("%T (%s)", tmplHolder, tmplName)
 	}
+}
+
+// SplitClusterWorkflowTemplateYAMLFile is a helper to split a body into multiple cluster workflow template objects
+func SplitClusterWorkflowTemplateYAMLFile(body []byte, strict bool) ([]wfv1.ClusterWorkflowTemplate, error) {
+	manifestsStrings := yamlSeparator.Split(string(body), -1)
+	manifests := make([]wfv1.ClusterWorkflowTemplate, 0)
+	for _, manifestStr := range manifestsStrings {
+		if strings.TrimSpace(manifestStr) == "" {
+			continue
+		}
+		var cwftmpl wfv1.ClusterWorkflowTemplate
+		var opts []yaml.JSONOpt
+		if strict {
+			opts = append(opts, yaml.DisallowUnknownFields) // nolint
+		}
+		err := yaml.Unmarshal([]byte(manifestStr), &cwftmpl, opts...)
+		if cwftmpl.Kind != "" && cwftmpl.Kind != workflow.ClusterWorkflowTemplateKind {
+			log.Warnf("%s is not a cluster workflow template", cwftmpl.Kind)
+			// If we get here, it was a k8s manifest which was not of type 'WorkflowTemplate'
+			// We ignore these since we only care about WorkflowTemplate manifests.
+			continue
+		}
+		if err != nil {
+			return nil, errors.New(errors.CodeBadRequest, err.Error())
+		}
+		manifests = append(manifests, cwftmpl)
+	}
+	return manifests, nil
 }

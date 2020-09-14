@@ -1,64 +1,76 @@
 # Release Instructions
 
-1. Update CHANGELOG.md with changes in the release
+Allow 1h to do a release.
 
-2. Update VERSION with new tag
+## Preparation
 
-3. Update codegen, manifests with new tag
+Cherry-pick your changes from master onto the release branch.
 
-```bash
-make codegen manifests IMAGE_NAMESPACE=argoproj IMAGE_TAG=vX.Y.Z
+The release branch should be green in CI before you start.
+
+## Release
+
+To generate new manifests and perform basic checks:
+
+    make prepare-release VERSION=v2.7.2
+
+Publish the images and local Git changes (disabling K3D as this is faster and more reliable for releases):
+
+    make publish-release K3D=false VERSION=v2.7.2
+    
+* [ ] Check the images were pushed successfully.
+
+```
+docker pull argoproj/workflow-controller:v2.7.2
+docker pull argoproj/argoexec:v2.7.2
+docker pull argoproj/argocli:v2.7.2
 ```
 
-4. Commit VERSION and manifest changes
+* [ ] Check the correct versions are printed:
 
-```bash
-git add .
-git commit -m "Update version to vX.Y.Z"
+```
+docker run argoproj/workflow-controller:v2.7.2 version
+docker run argoproj/argoexec:v2.7.2 version
+docker run argoproj/argocli:v2.7.2 version
 ```
 
-5. git tag the release
+* [ ] Check the manifests contain the correct tags: https://raw.githubusercontent.com/argoproj/argo/v2.7.2/manifests/install.yaml
 
-```bash
-git tag vX.Y.Z
+* [ ] Check the manifests apply: `kubectl -n argo apply -f https://raw.githubusercontent.com/argoproj/argo/v2.7.2/manifests/install.yaml`
+
+### Release Notes
+
+Create [the release](https://github.com/argoproj/argo/releases) in Github. You can get some text for this using [Github Toolkit](https://github.com/alexec/github-toolkit):
+
+    ght relnote v2.7.1..v2.7.2
+
+Release notes checklist:
+
+* [ ] All breaking changes are listed with migration steps
+* [ ] The release notes identify every publicly known vulnerability with a CVE assignment 
+
+### Update Stable Tag
+
+If this is GA:
+
+* [ ] Update the `stable` tag
+
+```
+git tag -f stable
+git push -f origin stable
 ```
 
-6. Build both the controller and UI release
+* [ ] Check the manifests contain the correct tags: https://raw.githubusercontent.com/argoproj/argo/stable/manifests/install.yaml
 
-In argo repo:
-```bash
-make release IMAGE_NAMESPACE=argoproj IMAGE_TAG=vX.Y.Z
-```
+### Update Homebrew
 
-In argo-ui repo:
-```bash
-IMAGE_NAMESPACE=argoproj IMAGE_TAG=vX.Y.Z yarn docker
-```
+If this is GA:
 
-8. If successful, publish the release:
-```bash
-export ARGO_RELEASE=vX.Y.Z
-docker push argoproj/workflow-controller:${ARGO_RELEASE}
-docker push argoproj/argoexec:${ARGO_RELEASE}
-docker push argoproj/argocli:${ARGO_RELEASE}
-docker push argoproj/argoui:${ARGO_RELEASE}
-```
+* [ ] Update the [Homebrew tap](https://github.com/argoproj/homebrew-tap).
+* [ ] Check Homebrew was successfully updated:
+ 
+ ```
+ brew upgrade argoproj/tap/argo
+ argo version
+ ```
 
-9. Push commits and tags to git. Run the following in both the argo and argo-ui repos:
-
-In argo repo:
-```bash
-git push upstream
-git push upstream ${ARGO_RELEASE}
-git tag stable
-git push upstream stable
-```
-
-In argo-ui repo:
-```bash
-git push upstream ${ARGO_RELEASE}
-```
-
-10. Draft GitHub release with the content from CHANGELOG.md, and CLI binaries produced in the `dist` directory
-
-* https://github.com/argoproj/argo/releases/new

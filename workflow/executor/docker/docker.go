@@ -5,8 +5,12 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -44,9 +48,21 @@ func (d *DockerExecutor) GetFileContents(containerID string, sourcePath string) 
 	return string(out), nil
 }
 
-func (d *DockerExecutor) CopyFile(containerID string, sourcePath string, destPath string) error {
+func (d *DockerExecutor) CopyFile(containerID string, sourcePath string, destPath string, compressionLevel int) error {
 	log.Infof("Archiving %s:%s to %s", containerID, sourcePath, destPath)
-	dockerCpCmd := fmt.Sprintf("docker cp -a %s:%s - | gzip > %s", containerID, sourcePath, destPath)
+	var levelFlag string
+	switch compressionLevel {
+	case gzip.NoCompression:
+		// best we can do - if we skip gzip it's a different file
+		levelFlag = "-1"
+	case gzip.DefaultCompression:
+		// use cmd default
+		levelFlag = ""
+	default:
+		// -1 through -9 (or error)
+		levelFlag = "-" + strconv.Itoa(compressionLevel)
+	}
+	dockerCpCmd := fmt.Sprintf("docker cp -a %s:%s - | gzip %s > %s", containerID, sourcePath, levelFlag, destPath)
 	err := common.RunCommand("sh", "-c", dockerCpCmd)
 	if err != nil {
 		return err
@@ -69,21 +85,104 @@ func (d *DockerExecutor) CopyFile(containerID string, sourcePath string, destPat
 	return nil
 }
 
+type cmdCloser struct {
+	io.Reader
+	cmd *exec.Cmd
+}
+
+func (c *cmdCloser) Close() error {
+	err := c.cmd.Wait()
+	if err != nil {
+		return errors.InternalWrapError(err)
+	}
+	return nil
+}
+
 func (d *DockerExecutor) GetOutputStream(containerID string, combinedOutput bool) (io.ReadCloser, error) {
 	cmd := exec.Command("docker", "logs", containerID)
 	log.Info(cmd.Args)
-	if combinedOutput {
-		cmd.Stderr = cmd.Stdout
-	}
-	reader, err := cmd.StdoutPipe()
+
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, errors.InternalWrapError(err)
 	}
+
+	if !combinedOutput {
+		err = cmd.Start()
+		if err != nil {
+			return nil, errors.InternalWrapError(err)
+		}
+		return stdout, nil
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return nil, errors.InternalWrapError(err)
+	}
+
 	err = cmd.Start()
 	if err != nil {
 		return nil, errors.InternalWrapError(err)
 	}
-	return reader, nil
+
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+	reader, writer := io.Pipe()
+	go func() {
+		defer wg.Done()
+		_, _ = io.Copy(writer, stdout)
+	}()
+	go func() {
+		defer wg.Done()
+		_, _ = io.Copy(writer, stderr)
+	}()
+
+	go func() {
+		defer writer.Close()
+		wg.Wait()
+	}()
+
+	return &cmdCloser{Reader: reader, cmd: cmd}, nil
+}
+
+func (d *DockerExecutor) GetExitCode(containerID string) (string, error) {
+	cmd := exec.Command("docker", "inspect", containerID, "--format='{{.State.ExitCode}}'")
+	reader, err := cmd.StdoutPipe()
+	if err != nil {
+		return "", errors.InternalWrapError(err, "Could not pipe STDOUT")
+	}
+	err = cmd.Start()
+	if err != nil {
+		return "", errors.InternalWrapError(err, "Could not start command")
+	}
+	defer func() { _ = reader.Close() }()
+	bytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return "", errors.InternalWrapError(err, "Could not read from STDOUT")
+	}
+	out := string(bytes)
+
+	// Trims off a single newline for user convenience
+	outputLen := len(out)
+	if outputLen > 0 && out[outputLen-1] == '\n' {
+		out = out[:outputLen-1]
+	}
+	exitCode := strings.Trim(out, `'`)
+	// Ensure exit code is an int
+	if _, err := strconv.Atoi(exitCode); err != nil {
+		log.Warningf("Was not able to parse exit code output '%s' as int: %s", exitCode, err)
+		return "", nil
+	}
+	return exitCode, nil
+}
+
+func (d *DockerExecutor) WaitInit() error {
+	return nil
+}
+
+// Wait for the container to complete
+func (d *DockerExecutor) Wait(containerID string) error {
+	return common.RunCommand("docker", "wait", containerID)
 }
 
 func (d *DockerExecutor) WaitInit() error {
@@ -98,9 +197,11 @@ func (d *DockerExecutor) Wait(containerID string) error {
 // killContainers kills a list of containerIDs first with a SIGTERM then with a SIGKILL after a grace period
 func (d *DockerExecutor) Kill(containerIDs []string) error {
 	killArgs := append([]string{"kill", "--signal", "TERM"}, containerIDs...)
+	// docker kill will return with an error if a container has terminated already, which is not an error in this case.
+	// We therefore ignore any error. docker wait that follows will re-raise any other error with the container.
 	err := common.RunCommand("docker", killArgs...)
 	if err != nil {
-		return errors.InternalWrapError(err)
+		log.Warningf("Ignored error from 'docker kill --signal TERM': %s", err)
 	}
 	waitArgs := append([]string{"wait"}, containerIDs...)
 	waitCmd := exec.Command("docker", waitArgs...)
@@ -108,17 +209,16 @@ func (d *DockerExecutor) Kill(containerIDs []string) error {
 	if err := waitCmd.Start(); err != nil {
 		return errors.InternalWrapError(err)
 	}
-	// waitCmd.Wait() might return error "signal: killed" when we SIGKILL the process
-	// We ignore errors in this case
-	//ignoreWaitError := false
 	timer := time.AfterFunc(execcommon.KillGracePeriod*time.Second, func() {
 		log.Infof("Timed out (%ds) for containers to terminate gracefully. Killing forcefully", execcommon.KillGracePeriod)
 		forceKillArgs := append([]string{"kill", "--signal", "KILL"}, containerIDs...)
 		forceKillCmd := exec.Command("docker", forceKillArgs...)
 		log.Info(forceKillCmd.Args)
-		_ = forceKillCmd.Run()
-		//ignoreWaitError = true
-		//_ = waitCmd.Process.Kill()
+		// same as kill case above, we ignore any error
+		err = forceKillCmd.Run()
+		if err != nil {
+			log.Warningf("Ignored error from 'docker kill --signal KILL': %s", err)
+		}
 	})
 	err = waitCmd.Wait()
 	_ = timer.Stop()

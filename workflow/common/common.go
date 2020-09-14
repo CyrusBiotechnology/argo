@@ -3,14 +3,12 @@ package common
 import (
 	"time"
 
-	"github.com/cyrusbiotechnology/argo/pkg/apis/workflow"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"github.com/argoproj/argo/pkg/apis/workflow"
 )
 
 const (
-	// WorkflowControllerConfigMapKey is the key in the configmap to retrieve workflow configuration from.
-	// Content encoding is expected to be YAML.
-	WorkflowControllerConfigMapKey = "config"
-
 	// DefaultArchivePattern is the default pattern when storing artifacts in an archive repository
 	DefaultArchivePattern = "{{workflow.name}}/{{pod.name}}"
 
@@ -39,6 +37,8 @@ const (
 
 	// AnnotationKeyNodeName is the pod metadata annotation key containing the workflow node name
 	AnnotationKeyNodeName = workflow.WorkflowFullName + "/node-name"
+	// AnnotationKeyNodeName is the node's type
+	AnnotationKeyNodeType = workflow.WorkflowFullName + "/node-type"
 
 	// AnnotationKeyNodeMessage is the pod metadata annotation key the executor will use to
 	// communicate errors encountered by the executor during artifact load/save, etc...
@@ -51,10 +51,6 @@ const (
 	// set by the controller and obeyed by the executor. For example, the controller will use this annotation to
 	// signal the executors of daemoned containers that it should terminate.
 	AnnotationKeyExecutionControl = workflow.WorkflowFullName + "/execution"
-	//AnnotationKeyErrors is the annotation key containing extended fatal error information
-	AnnotationKeyErrors = workflow.WorkflowFullName + "/errors"
-	//AnnotationKeyWarnings is the annotation key containing extended
-	AnnotationKeyWarnings = workflow.WorkflowFullName + "/warnings"
 
 	// LabelKeyControllerInstanceID is the label the controller will carry forward to workflows/pod labels
 	// for the purposes of workflow segregation
@@ -66,10 +62,12 @@ const (
 	LabelKeyWorkflow = workflow.WorkflowFullName + "/workflow"
 	// LabelKeyPhase is a label applied to workflows to indicate the current phase of the workflow (for filtering purposes)
 	LabelKeyPhase = workflow.WorkflowFullName + "/phase"
-	// LabelKeyWorkflowType is the non-appended workflow name
-	LabelKeyWorkflowType = workflow.WorkflowFullName + "/type"
-	// LabelKeyTemplate is the name of the template describing the step
-	LabelKeyTemplate = workflow.WorkflowFullName + "/template"
+	// LabelKeyPreviousWorkflowName is a label applied to resubmitted workflows
+	LabelKeyPreviousWorkflowName = workflow.WorkflowFullName + "/resubmitted-from-workflow"
+	// LabelKeyCronWorkflow is a label applied to Workflows that are started by a CronWorkflow
+	LabelKeyCronWorkflow = workflow.WorkflowFullName + "/cron-workflow"
+	// LabelKeyOnExit is a label applied to Pods that are run from onExit nodes, so that they are not shut down when stopping a Workflow
+	LabelKeyOnExit = workflow.WorkflowFullName + "/on-exit"
 
 	// ExecutorArtifactBaseDir is the base directory in the init container in which artifacts will be copied to.
 	// Each artifact will be named according to its input name (e.g: /argo/inputs/artifacts/CODE)
@@ -100,6 +98,8 @@ const (
 	EnvVarKubeletPort = "ARGO_KUBELET_PORT"
 	// EnvVarKubeletInsecure is used to disable the TLS verification
 	EnvVarKubeletInsecure = "ARGO_KUBELET_INSECURE"
+	// EnvVarArgoTrace is used enable tracing statements in Argo components
+	EnvVarArgoTrace = "ARGO_TRACE"
 
 	// ContainerRuntimeExecutorDocker to use docker as container runtime executor
 	ContainerRuntimeExecutorDocker = "docker"
@@ -119,6 +119,8 @@ const (
 	GlobalVarWorkflowName = "workflow.name"
 	// GlobalVarWorkflowNamespace is a global workflow variable referencing the workflow's metadata.namespace field
 	GlobalVarWorkflowNamespace = "workflow.namespace"
+	// GlobalVarWorkflowServiceAccountName is a global workflow variable referencing the workflow's spec.serviceAccountName field
+	GlobalVarWorkflowServiceAccountName = "workflow.serviceAccountName"
 	// GlobalVarWorkflowUID is a global workflow variable referencing the workflow's metadata.uid field
 	GlobalVarWorkflowUID = "workflow.uid"
 	// GlobalVarWorkflowStatus is a global workflow variable referencing the workflow's status.phase field
@@ -127,8 +129,22 @@ const (
 	GlobalVarWorkflowCreationTimestamp = "workflow.creationTimestamp"
 	// GlobalVarWorkflowPriority is the workflow variable referencing the workflow's priority field
 	GlobalVarWorkflowPriority = "workflow.priority"
+	// GlobalVarWorkflowFailures is a global variable of a JSON map referencing the workflow's failed nodes
+	GlobalVarWorkflowFailures = "workflow.failures"
+	// GlobalVarWorkflowDuration is the current duration of this workflow
+	GlobalVarWorkflowDuration = "workflow.duration"
+	// GlobalVarWorkflowParameters is a JSON string containing all workflow parameters
+	GlobalVarWorkflowParameters = "workflow.parameters"
 	// LocalVarPodName is a step level variable that references the name of the pod
 	LocalVarPodName = "pod.name"
+	// LocalVarRetries is a step level variable that references the retries number if retryStrategy is specified
+	LocalVarRetries = "retries"
+	// LocalVarDuration is a step level variable (currently only available in metric emission) that tracks the duration of the step
+	LocalVarDuration = "duration"
+	// LocalVarStatus is a step level variable (currently only available in metric emission) that tracks the duration of the step
+	LocalVarStatus = "status"
+	// LocalVarResourcesDuration is a step level variable (currently only available in metric emission) that tracks the resources duration of the step
+	LocalVarResourcesDuration = "resourcesDuration"
 
 	KubeConfigDefaultMountPath    = "/kube/config"
 	KubeConfigDefaultVolumeName   = "kubeconfig"
@@ -150,9 +166,9 @@ type ExecutionControl struct {
 	IncludeScriptOutput bool `json:"includeScriptOutput,omitempty"`
 }
 
-type ResourceInterface interface {
-	GetNamespace() string
-	GetSecrets(namespace, name, key string) ([]byte, error)
-	GetSecretFromVolMount(name, key string) ([]byte, error)
-	GetConfigMapKey(namespace, name, key string) (string, error)
+func UnstructuredHasCompletedLabel(obj interface{}) bool {
+	if wf, ok := obj.(*unstructured.Unstructured); ok {
+		return wf.GetLabels()[LabelKeyCompleted] == "true"
+	}
+	return false
 }

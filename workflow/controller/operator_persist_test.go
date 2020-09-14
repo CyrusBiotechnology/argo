@@ -1,25 +1,26 @@
 package controller
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/cyrusbiotechnology/argo/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/cyrusbiotechnology/argo/errors"
+	"github.com/cyrusbiotechnology/argo/persist/sqldb/mocks"
 	wfv1 "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/cyrusbiotechnology/argo/workflow/persist/sqldb"
-	"github.com/cyrusbiotechnology/argo/workflow/persist/sqldb/mocks"
+	"github.com/cyrusbiotechnology/argo/workflow/hydrator"
+	"github.com/cyrusbiotechnology/argo/workflow/packer"
 )
 
-func getMockDBCtx(expectedResullt interface{}, largeWfSupport bool, isInterfaceNil bool) sqldb.DBRepository {
-
-	mockDBRepo := &mocks.DBRepository{}
-
-	mockDBRepo.On("Save", mock.Anything).Return(expectedResullt)
-	mockDBRepo.On("IsNodeStatusOffload").Return(largeWfSupport)
-	mockDBRepo.On("IsInterfaceNil").Return(isInterfaceNil)
-	return mockDBRepo
+func getMockDBCtx(expectedError error, largeWfSupport bool) (*mocks.OffloadNodeStatusRepo, hydrator.Interface) {
+	mockDBRepo := &mocks.OffloadNodeStatusRepo{}
+	mockDBRepo.On("Save", mock.Anything, mock.Anything, mock.Anything).Return("my-offloaded-version", expectedError)
+	mockDBRepo.On("Get", mock.Anything, mock.Anything).Return(wfv1.Nodes{"my-node": wfv1.NodeStatus{}}, nil)
+	mockDBRepo.On("IsEnabled").Return(largeWfSupport)
+	return mockDBRepo, hydrator.New(mockDBRepo)
 }
 
 var helloWorldWfPersist = `
@@ -46,68 +47,89 @@ spec:
 
 // TestPersistWithoutLargeWfSupport verifies persistence with no largeWFsuppport
 func TestPersistWithoutLargeWfSupport(t *testing.T) {
-	controller := newController()
+	defer makeMax()()
+	cancel, controller := newController()
+	defer cancel()
 	wfcset := controller.wfclientset.ArgoprojV1alpha1().Workflows("")
 	wf := unmarshalWF(helloWorldWfPersist)
 	wf, err := wfcset.Create(wf)
-	if err != nil {
-
-	}
-	controller.wfDBctx = getMockDBCtx(sqldb.DBUpdateNoRowFoundError(nil, "test"), false, false)
+	assert.NoError(t, err)
+	controller.offloadNodeStatusRepo, controller.hydrator = getMockDBCtx(fmt.Errorf("not found"), false)
 	woc := newWorkflowOperationCtx(wf, controller)
 	woc.operate()
-	assert.True(t, woc.wf.Status.Phase == wfv1.NodeRunning)
-
+	wf, err = wfcset.Get(wf.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.False(t, wf.Status.IsOffloadNodeStatus())
+	assert.Equal(t, wfv1.NodeError, woc.wf.Status.Phase)
 }
 
 // TestPersistWithoutLargeWfSupport verifies persistence error with no largeWFsuppport
 func TestPersistErrorWithoutLargeWfSupport(t *testing.T) {
-	controller := newController()
+	defer makeMax()()
+	cancel, controller := newController()
+	defer cancel()
 	wfcset := controller.wfclientset.ArgoprojV1alpha1().Workflows("")
 	wf := unmarshalWF(helloWorldWfPersist)
 	wf, err := wfcset.Create(wf)
-	if err != nil {
-
-	}
-	var err1 error = errors.New("23324", "test")
-	controller.wfDBctx = getMockDBCtx(sqldb.DBUpdateNoRowFoundError(err1, "test"), false, false)
+	assert.NoError(t, err)
+	controller.offloadNodeStatusRepo, controller.hydrator = getMockDBCtx(errors.New("23324", "test"), false)
 	woc := newWorkflowOperationCtx(wf, controller)
-
 	woc.operate()
-	assert.True(t, woc.wf.Status.Phase == wfv1.NodeRunning)
-
+	wf, err = wfcset.Get(wf.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.Equal(t, wfv1.NodeError, wf.Status.Phase)
 }
 
 // TestPersistWithoutLargeWfSupport verifies persistence with largeWFsuppport
 func TestPersistWithLargeWfSupport(t *testing.T) {
-	controller := newController()
+	defer makeMax()()
+	cancel, controller := newController()
+	defer cancel()
 	wfcset := controller.wfclientset.ArgoprojV1alpha1().Workflows("")
 	wf := unmarshalWF(helloWorldWfPersist)
 	wf, err := wfcset.Create(wf)
-	if err != nil {
-
-	}
-	controller.wfDBctx = getMockDBCtx(sqldb.DBUpdateNoRowFoundError(nil, "test"), true, true)
+	assert.NoError(t, err)
+	controller.offloadNodeStatusRepo, controller.hydrator = getMockDBCtx(nil, true)
 	woc := newWorkflowOperationCtx(wf, controller)
 	woc.operate()
-	assert.True(t, woc.wf.Status.Phase == wfv1.NodeRunning)
-
+	wf, err = wfcset.Get(wf.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.Equal(t, wfv1.NodeRunning, woc.wf.Status.Phase)
+	// check the saved version has been offloaded
+	assert.True(t, wf.Status.IsOffloadNodeStatus())
+	assert.Empty(t, wf.Status.Nodes)
+	assert.Empty(t, wf.Status.CompressedNodes)
+	// check the updated in-memory version is pre-offloaded state
+	assert.False(t, woc.wf.Status.IsOffloadNodeStatus())
+	assert.NotEmpty(t, woc.wf.Status.Nodes)
+	assert.Empty(t, woc.wf.Status.CompressedNodes)
 }
 
 // TestPersistWithoutLargeWfSupport verifies persistence error with largeWFsuppport
 func TestPersistErrorWithLargeWfSupport(t *testing.T) {
-	controller := newController()
+	defer makeMax()()
+	cancel, controller := newController()
+	defer cancel()
 	wfcset := controller.wfclientset.ArgoprojV1alpha1().Workflows("")
 	wf := unmarshalWF(helloWorldWfPersist)
 	wf, err := wfcset.Create(wf)
-	if err != nil {
-
-	}
-	var err1 error = errors.New("23324", "test")
-	controller.wfDBctx = getMockDBCtx(sqldb.DBUpdateNoRowFoundError(err1, "test"), true, false)
+	assert.NoError(t, err)
+	controller.offloadNodeStatusRepo, controller.hydrator = getMockDBCtx(errors.New("23324", "test"), true)
 	woc := newWorkflowOperationCtx(wf, controller)
-
 	woc.operate()
-	assert.True(t, woc.wf.Status.Phase == wfv1.NodeFailed)
+	wf, err = wfcset.Get(wf.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.Equal(t, wfv1.NodeError, woc.wf.Status.Phase)
+	// check the saved version has not been offloaded
+	assert.False(t, wf.Status.IsOffloadNodeStatus())
+	assert.NotEmpty(t, woc.wf.Status.Nodes)
+	assert.Empty(t, woc.wf.Status.CompressedNodes)
+	// check the updated in-memory version is pre-offloaded state
+	assert.False(t, woc.wf.Status.IsOffloadNodeStatus())
+	assert.NotEmpty(t, woc.wf.Status.Nodes)
+	assert.Empty(t, woc.wf.Status.CompressedNodes)
+}
 
+func makeMax() func() {
+	return packer.SetMaxWorkflowSize(50)
 }

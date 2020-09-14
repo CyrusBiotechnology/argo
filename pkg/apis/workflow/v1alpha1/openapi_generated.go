@@ -13,51 +13,76 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArchiveStrategy":       schema_pkg_apis_workflow_v1alpha1_ArchiveStrategy(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments":             schema_pkg_apis_workflow_v1alpha1_Arguments(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Artifact":              schema_pkg_apis_workflow_v1alpha1_Artifact(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation":      schema_pkg_apis_workflow_v1alpha1_ArtifactLocation(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactRepositoryRef": schema_pkg_apis_workflow_v1alpha1_ArtifactRepositoryRef(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact":   schema_pkg_apis_workflow_v1alpha1_ArtifactoryArtifact(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactoryAuth":       schema_pkg_apis_workflow_v1alpha1_ArtifactoryAuth(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ContinueOn":            schema_pkg_apis_workflow_v1alpha1_ContinueOn(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTask":               schema_pkg_apis_workflow_v1alpha1_DAGTask(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTemplate":           schema_pkg_apis_workflow_v1alpha1_DAGTemplate(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ExecutorConfig":        schema_pkg_apis_workflow_v1alpha1_ExecutorConfig(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.GitArtifact":           schema_pkg_apis_workflow_v1alpha1_GitArtifact(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.HDFSArtifact":          schema_pkg_apis_workflow_v1alpha1_HDFSArtifact(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.HDFSConfig":            schema_pkg_apis_workflow_v1alpha1_HDFSConfig(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.HDFSKrbConfig":         schema_pkg_apis_workflow_v1alpha1_HDFSKrbConfig(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact":          schema_pkg_apis_workflow_v1alpha1_HTTPArtifact(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Inputs":                schema_pkg_apis_workflow_v1alpha1_Inputs(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Item":                  schema_pkg_apis_workflow_v1alpha1_Item(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Metadata":              schema_pkg_apis_workflow_v1alpha1_Metadata(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.NodeStatus":            schema_pkg_apis_workflow_v1alpha1_NodeStatus(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.NoneStrategy":          schema_pkg_apis_workflow_v1alpha1_NoneStrategy(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Outputs":               schema_pkg_apis_workflow_v1alpha1_Outputs(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Parameter":             schema_pkg_apis_workflow_v1alpha1_Parameter(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.PodGC":                 schema_pkg_apis_workflow_v1alpha1_PodGC(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.RawArtifact":           schema_pkg_apis_workflow_v1alpha1_RawArtifact(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ResourceTemplate":      schema_pkg_apis_workflow_v1alpha1_ResourceTemplate(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.RetryStrategy":         schema_pkg_apis_workflow_v1alpha1_RetryStrategy(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.S3Artifact":            schema_pkg_apis_workflow_v1alpha1_S3Artifact(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.S3Bucket":              schema_pkg_apis_workflow_v1alpha1_S3Bucket(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ScriptTemplate":        schema_pkg_apis_workflow_v1alpha1_ScriptTemplate(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Sequence":              schema_pkg_apis_workflow_v1alpha1_Sequence(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.SuspendTemplate":       schema_pkg_apis_workflow_v1alpha1_SuspendTemplate(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.TarStrategy":           schema_pkg_apis_workflow_v1alpha1_TarStrategy(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Template":              schema_pkg_apis_workflow_v1alpha1_Template(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.TemplateRef":           schema_pkg_apis_workflow_v1alpha1_TemplateRef(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.UserContainer":         schema_pkg_apis_workflow_v1alpha1_UserContainer(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ValueFrom":             schema_pkg_apis_workflow_v1alpha1_ValueFrom(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Workflow":              schema_pkg_apis_workflow_v1alpha1_Workflow(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowList":          schema_pkg_apis_workflow_v1alpha1_WorkflowList(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowSpec":          schema_pkg_apis_workflow_v1alpha1_WorkflowSpec(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowStatus":        schema_pkg_apis_workflow_v1alpha1_WorkflowStatus(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowStep":          schema_pkg_apis_workflow_v1alpha1_WorkflowStep(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplate":      schema_pkg_apis_workflow_v1alpha1_WorkflowTemplate(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplateList":  schema_pkg_apis_workflow_v1alpha1_WorkflowTemplateList(ref),
-		"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplateSpec":  schema_pkg_apis_workflow_v1alpha1_WorkflowTemplateSpec(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArchiveStrategy":             schema_pkg_apis_workflow_v1alpha1_ArchiveStrategy(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments":                   schema_pkg_apis_workflow_v1alpha1_Arguments(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Artifact":                    schema_pkg_apis_workflow_v1alpha1_Artifact(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation":            schema_pkg_apis_workflow_v1alpha1_ArtifactLocation(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactRepositoryRef":       schema_pkg_apis_workflow_v1alpha1_ArtifactRepositoryRef(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact":         schema_pkg_apis_workflow_v1alpha1_ArtifactoryArtifact(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryAuth":             schema_pkg_apis_workflow_v1alpha1_ArtifactoryAuth(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Backoff":                     schema_pkg_apis_workflow_v1alpha1_Backoff(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ClusterWorkflowTemplate":     schema_pkg_apis_workflow_v1alpha1_ClusterWorkflowTemplate(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ClusterWorkflowTemplateList": schema_pkg_apis_workflow_v1alpha1_ClusterWorkflowTemplateList(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Condition":                   schema_pkg_apis_workflow_v1alpha1_Condition(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ContinueOn":                  schema_pkg_apis_workflow_v1alpha1_ContinueOn(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Counter":                     schema_pkg_apis_workflow_v1alpha1_Counter(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.CronWorkflow":                schema_pkg_apis_workflow_v1alpha1_CronWorkflow(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.CronWorkflowList":            schema_pkg_apis_workflow_v1alpha1_CronWorkflowList(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.CronWorkflowSpec":            schema_pkg_apis_workflow_v1alpha1_CronWorkflowSpec(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.CronWorkflowStatus":          schema_pkg_apis_workflow_v1alpha1_CronWorkflowStatus(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.DAGTask":                     schema_pkg_apis_workflow_v1alpha1_DAGTask(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.DAGTemplate":                 schema_pkg_apis_workflow_v1alpha1_DAGTemplate(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ExecutorConfig":              schema_pkg_apis_workflow_v1alpha1_ExecutorConfig(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSArtifact":                 schema_pkg_apis_workflow_v1alpha1_GCSArtifact(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSBucket":                   schema_pkg_apis_workflow_v1alpha1_GCSBucket(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Gauge":                       schema_pkg_apis_workflow_v1alpha1_Gauge(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GitArtifact":                 schema_pkg_apis_workflow_v1alpha1_GitArtifact(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HDFSArtifact":                schema_pkg_apis_workflow_v1alpha1_HDFSArtifact(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HDFSConfig":                  schema_pkg_apis_workflow_v1alpha1_HDFSConfig(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HDFSKrbConfig":               schema_pkg_apis_workflow_v1alpha1_HDFSKrbConfig(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact":                schema_pkg_apis_workflow_v1alpha1_HTTPArtifact(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Histogram":                   schema_pkg_apis_workflow_v1alpha1_Histogram(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Inputs":                      schema_pkg_apis_workflow_v1alpha1_Inputs(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Item":                        schema_pkg_apis_workflow_v1alpha1_Item(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ItemValue":                   schema_pkg_apis_workflow_v1alpha1_ItemValue(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Link":                        schema_pkg_apis_workflow_v1alpha1_Link(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Metadata":                    schema_pkg_apis_workflow_v1alpha1_Metadata(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.MetricLabel":                 schema_pkg_apis_workflow_v1alpha1_MetricLabel(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Metrics":                     schema_pkg_apis_workflow_v1alpha1_Metrics(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.NodeStatus":                  schema_pkg_apis_workflow_v1alpha1_NodeStatus(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.NoneStrategy":                schema_pkg_apis_workflow_v1alpha1_NoneStrategy(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.OSSArtifact":                 schema_pkg_apis_workflow_v1alpha1_OSSArtifact(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.OSSBucket":                   schema_pkg_apis_workflow_v1alpha1_OSSBucket(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Outputs":                     schema_pkg_apis_workflow_v1alpha1_Outputs(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ParallelSteps":               schema_pkg_apis_workflow_v1alpha1_ParallelSteps(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Parameter":                   schema_pkg_apis_workflow_v1alpha1_Parameter(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.PodGC":                       schema_pkg_apis_workflow_v1alpha1_PodGC(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Prometheus":                  schema_pkg_apis_workflow_v1alpha1_Prometheus(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RawArtifact":                 schema_pkg_apis_workflow_v1alpha1_RawArtifact(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ResourceTemplate":            schema_pkg_apis_workflow_v1alpha1_ResourceTemplate(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RetryStrategy":               schema_pkg_apis_workflow_v1alpha1_RetryStrategy(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.S3Artifact":                  schema_pkg_apis_workflow_v1alpha1_S3Artifact(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.S3Bucket":                    schema_pkg_apis_workflow_v1alpha1_S3Bucket(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ScriptTemplate":              schema_pkg_apis_workflow_v1alpha1_ScriptTemplate(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Sequence":                    schema_pkg_apis_workflow_v1alpha1_Sequence(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.SubmitOpts":                  schema_pkg_apis_workflow_v1alpha1_SubmitOpts(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.SuspendTemplate":             schema_pkg_apis_workflow_v1alpha1_SuspendTemplate(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TTLStrategy":                 schema_pkg_apis_workflow_v1alpha1_TTLStrategy(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TarStrategy":                 schema_pkg_apis_workflow_v1alpha1_TarStrategy(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Template":                    schema_pkg_apis_workflow_v1alpha1_Template(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TemplateRef":                 schema_pkg_apis_workflow_v1alpha1_TemplateRef(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.UserContainer":               schema_pkg_apis_workflow_v1alpha1_UserContainer(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ValueFrom":                   schema_pkg_apis_workflow_v1alpha1_ValueFrom(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Version":                     schema_pkg_apis_workflow_v1alpha1_Version(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Workflow":                    schema_pkg_apis_workflow_v1alpha1_Workflow(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowList":                schema_pkg_apis_workflow_v1alpha1_WorkflowList(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowSpec":                schema_pkg_apis_workflow_v1alpha1_WorkflowSpec(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowStatus":              schema_pkg_apis_workflow_v1alpha1_WorkflowStatus(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowStep":                schema_pkg_apis_workflow_v1alpha1_WorkflowStep(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplate":            schema_pkg_apis_workflow_v1alpha1_WorkflowTemplate(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplateList":        schema_pkg_apis_workflow_v1alpha1_WorkflowTemplateList(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplateRef":         schema_pkg_apis_workflow_v1alpha1_WorkflowTemplateRef(ref),
+		"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplateSpec":        schema_pkg_apis_workflow_v1alpha1_WorkflowTemplateSpec(ref),
 	}
 }
 
@@ -70,19 +95,19 @@ func schema_pkg_apis_workflow_v1alpha1_ArchiveStrategy(ref common.ReferenceCallb
 				Properties: map[string]spec.Schema{
 					"tar": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.TarStrategy"),
+							Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TarStrategy"),
 						},
 					},
 					"none": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.NoneStrategy"),
+							Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.NoneStrategy"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.NoneStrategy", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.TarStrategy"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.NoneStrategy", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TarStrategy"},
 	}
 }
 
@@ -106,7 +131,7 @@ func schema_pkg_apis_workflow_v1alpha1_Arguments(ref common.ReferenceCallback) c
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Parameter"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Parameter"),
 									},
 								},
 							},
@@ -125,7 +150,7 @@ func schema_pkg_apis_workflow_v1alpha1_Arguments(ref common.ReferenceCallback) c
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Artifact"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Artifact"),
 									},
 								},
 							},
@@ -135,7 +160,7 @@ func schema_pkg_apis_workflow_v1alpha1_Arguments(ref common.ReferenceCallback) c
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Artifact", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Parameter"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Artifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Parameter"},
 	}
 }
 
@@ -184,37 +209,49 @@ func schema_pkg_apis_workflow_v1alpha1_Artifact(ref common.ReferenceCallback) co
 					"s3": {
 						SchemaProps: spec.SchemaProps{
 							Description: "S3 contains S3 artifact location details",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.S3Artifact"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.S3Artifact"),
 						},
 					},
 					"git": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Git contains git artifact location details",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.GitArtifact"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GitArtifact"),
 						},
 					},
 					"http": {
 						SchemaProps: spec.SchemaProps{
 							Description: "HTTP contains HTTP artifact location details",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact"),
 						},
 					},
 					"artifactory": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Artifactory contains artifactory artifact location details",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact"),
 						},
 					},
 					"hdfs": {
 						SchemaProps: spec.SchemaProps{
 							Description: "HDFS contains HDFS artifact location details",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.HDFSArtifact"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HDFSArtifact"),
 						},
 					},
 					"raw": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Raw contains raw artifact location details",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.RawArtifact"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RawArtifact"),
+						},
+					},
+					"oss": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OSS contains OSS artifact location details",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.OSSArtifact"),
+						},
+					},
+					"gcs": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GCS contains GCS artifact location details",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSArtifact"),
 						},
 					},
 					"globalName": {
@@ -227,7 +264,7 @@ func schema_pkg_apis_workflow_v1alpha1_Artifact(ref common.ReferenceCallback) co
 					"archive": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Archive controls how the artifact will be saved to the artifact repository.",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArchiveStrategy"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArchiveStrategy"),
 						},
 					},
 					"optional": {
@@ -242,7 +279,7 @@ func schema_pkg_apis_workflow_v1alpha1_Artifact(ref common.ReferenceCallback) co
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArchiveStrategy", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.GitArtifact", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.HDFSArtifact", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.RawArtifact", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.S3Artifact"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArchiveStrategy", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GitArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HDFSArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.OSSArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RawArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.S3Artifact"},
 	}
 }
 
@@ -263,44 +300,56 @@ func schema_pkg_apis_workflow_v1alpha1_ArtifactLocation(ref common.ReferenceCall
 					"s3": {
 						SchemaProps: spec.SchemaProps{
 							Description: "S3 contains S3 artifact location details",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.S3Artifact"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.S3Artifact"),
 						},
 					},
 					"git": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Git contains git artifact location details",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.GitArtifact"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GitArtifact"),
 						},
 					},
 					"http": {
 						SchemaProps: spec.SchemaProps{
 							Description: "HTTP contains HTTP artifact location details",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact"),
 						},
 					},
 					"artifactory": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Artifactory contains artifactory artifact location details",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact"),
 						},
 					},
 					"hdfs": {
 						SchemaProps: spec.SchemaProps{
 							Description: "HDFS contains HDFS artifact location details",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.HDFSArtifact"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HDFSArtifact"),
 						},
 					},
 					"raw": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Raw contains raw artifact location details",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.RawArtifact"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RawArtifact"),
+						},
+					},
+					"oss": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OSS contains OSS artifact location details",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.OSSArtifact"),
+						},
+					},
+					"gcs": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GCS contains GCS artifact location details",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSArtifact"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.GitArtifact", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.HDFSArtifact", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.RawArtifact", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.S3Artifact"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactoryArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GCSArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.GitArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HDFSArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.HTTPArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.OSSArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RawArtifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.S3Artifact"},
 	}
 }
 
@@ -390,6 +439,160 @@ func schema_pkg_apis_workflow_v1alpha1_ArtifactoryAuth(ref common.ReferenceCallb
 	}
 }
 
+func schema_pkg_apis_workflow_v1alpha1_Backoff(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Backoff is a backoff strategy to use within retryStrategy",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"duration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Duration is the amount to back off. Default unit is seconds, but could also be a duration (e.g. \"2m\", \"1h\")",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"factor": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Factor is a factor to multiply the base duration after each failed retry",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"maxDuration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MaxDuration is the maximum amount of time allowed for the backoff strategy",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_ClusterWorkflowTemplate(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ClusterWorkflowTemplate is the definition of a workflow template resource in cluster scope",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplateSpec"),
+						},
+					},
+				},
+				Required: []string{"spec"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplateSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_ClusterWorkflowTemplateList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ClusterWorkflowTemplateList is list of ClusterWorkflowTemplate resources",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ClusterWorkflowTemplate"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"metadata", "items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ClusterWorkflowTemplate", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_Condition(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Type is the type of condition",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Status is the status of the condition",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"message": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Message is the condition message",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_pkg_apis_workflow_v1alpha1_ContinueOn(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -412,6 +615,243 @@ func schema_pkg_apis_workflow_v1alpha1_ContinueOn(ref common.ReferenceCallback) 
 				},
 			},
 		},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_Counter(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Counter is a Counter prometheus metric",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Value is the value of the metric",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"value"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_CronWorkflow(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CronWorkflow is the definition of a scheduled workflow resource",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.CronWorkflowSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.CronWorkflowStatus"),
+						},
+					},
+				},
+				Required: []string{"spec", "status"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.CronWorkflowSpec", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.CronWorkflowStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_CronWorkflowList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CronWorkflowList is list of CronWorkflow resources",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.CronWorkflow"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"metadata", "items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.CronWorkflow", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_CronWorkflowSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CronWorkflowSpec is the specification of a CronWorkflow",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"workflowSpec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "WorkflowSpec is the spec of the workflow to be run",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowSpec"),
+						},
+					},
+					"schedule": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Schedule is a schedule to run the Workflow in Cron format",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"concurrencyPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ConcurrencyPolicy is the K8s-style concurrency policy that will be used",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"suspend": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Suspend is a flag that will stop new CronWorkflows from running if set to true",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"startingDeadlineSeconds": {
+						SchemaProps: spec.SchemaProps{
+							Description: "StartingDeadlineSeconds is the K8s-style deadline that will limit the time a CronWorkflow will be run after its original scheduled time if it is missed.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"successfulJobsHistoryLimit": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SuccessfulJobsHistoryLimit is the number of successful jobs to be kept at a time",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"failedJobsHistoryLimit": {
+						SchemaProps: spec.SchemaProps{
+							Description: "FailedJobsHistoryLimit is the number of successful jobs to be kept at a time",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"timezone": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Timezone is the timezone against which the cron schedule will be calculated, e.g. \"Asia/Tokyo\". Default is machine's local time.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"workflowMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "WorkflowMetadata contains some metadata of the workflow to be run",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+				},
+				Required: []string{"workflowSpec", "schedule"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_CronWorkflowStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CronWorkflowStatus is the status of a CronWorkflow",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"active": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Active is a list of active workflows stemming from this CronWorkflow",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.ObjectReference"),
+									},
+								},
+							},
+						},
+					},
+					"lastScheduledTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastScheduleTime is the last time the CronWorkflow was scheduled",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"conditions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Conditions is a list of conditions the CronWorkflow may have",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Condition"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Condition", "k8s.io/api/core/v1.ObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -439,13 +879,13 @@ func schema_pkg_apis_workflow_v1alpha1_DAGTask(ref common.ReferenceCallback) com
 					"arguments": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Arguments are the parameter and artifact arguments to the template",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments"),
 						},
 					},
 					"templateRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TemplateRef is the reference to the template resource to execute.",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.TemplateRef"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TemplateRef"),
 						},
 					},
 					"dependencies": {
@@ -469,7 +909,7 @@ func schema_pkg_apis_workflow_v1alpha1_DAGTask(ref common.ReferenceCallback) com
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Item"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Item"),
 									},
 								},
 							},
@@ -485,7 +925,7 @@ func schema_pkg_apis_workflow_v1alpha1_DAGTask(ref common.ReferenceCallback) com
 					"withSequence": {
 						SchemaProps: spec.SchemaProps{
 							Description: "WithSequence expands a task into a numeric sequence",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Sequence"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Sequence"),
 						},
 					},
 					"when": {
@@ -498,7 +938,21 @@ func schema_pkg_apis_workflow_v1alpha1_DAGTask(ref common.ReferenceCallback) com
 					"continueOn": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ContinueOn makes argo to proceed with the following step even if this step fails. Errors and Failed states can be specified",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ContinueOn"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ContinueOn"),
+						},
+					},
+					"onExit": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OnExit is a template reference which is invoked at the end of the template, irrespective of the success, failure, or error of the primary template.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"depends": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Depends are name of other targets which this depends on",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
@@ -506,7 +960,7 @@ func schema_pkg_apis_workflow_v1alpha1_DAGTask(ref common.ReferenceCallback) com
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ContinueOn", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Item", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Sequence", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.TemplateRef"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ContinueOn", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Item", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Sequence", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TemplateRef"},
 	}
 }
 
@@ -537,7 +991,7 @@ func schema_pkg_apis_workflow_v1alpha1_DAGTemplate(ref common.ReferenceCallback)
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTask"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.DAGTask"),
 									},
 								},
 							},
@@ -545,7 +999,7 @@ func schema_pkg_apis_workflow_v1alpha1_DAGTemplate(ref common.ReferenceCallback)
 					},
 					"failFast": {
 						SchemaProps: spec.SchemaProps{
-							Description: "This flag is for DAG logic. The DAG logic has a built-in \"fail fast\" feature to stop scheduling new steps, as soon as it detects that one of the DAG nodes is failed. Then it waits until all DAG nodes are completed before failing the DAG itself. The FailFast flag default is true,  if set to false, it will allow a DAG to run all branches of the DAG to completion (either success or failure), regardless of the failed outcomes of branches in the DAG. More info and example about this feature at https://github.com/cyrusbiotechnology/argo/issues/1442",
+							Description: "This flag is for DAG logic. The DAG logic has a built-in \"fail fast\" feature to stop scheduling new steps, as soon as it detects that one of the DAG nodes is failed. Then it waits until all DAG nodes are completed before failing the DAG itself. The FailFast flag default is true,  if set to false, it will allow a DAG to run all branches of the DAG to completion (either success or failure), regardless of the failed outcomes of branches in the DAG. More info and example about this feature at https://github.com/argoproj/argo/issues/1442",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -555,7 +1009,7 @@ func schema_pkg_apis_workflow_v1alpha1_DAGTemplate(ref common.ReferenceCallback)
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTask"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.DAGTask"},
 	}
 }
 
@@ -574,6 +1028,99 @@ func schema_pkg_apis_workflow_v1alpha1_ExecutorConfig(ref common.ReferenceCallba
 						},
 					},
 				},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_GCSArtifact(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "GCSArtifact is the location of a GCS artifact",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"bucket": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Bucket is the name of the bucket",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"serviceAccountKeySecret": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ServiceAccountKeySecret is the secret selector to the bucket's service account key",
+							Ref:         ref("k8s.io/api/core/v1.SecretKeySelector"),
+						},
+					},
+					"key": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Key is the path in the bucket where the artifact resides",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"bucket", "key"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.SecretKeySelector"},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_GCSBucket(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "GCSBucket contains the access information for interfacring with a GCS bucket",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"bucket": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Bucket is the name of the bucket",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"serviceAccountKeySecret": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ServiceAccountKeySecret is the secret selector to the bucket's service account key",
+							Ref:         ref("k8s.io/api/core/v1.SecretKeySelector"),
+						},
+					},
+				},
+				Required: []string{"bucket"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.SecretKeySelector"},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_Gauge(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Gauge is a Gauge prometheus metric",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Value is the value of the metric",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"realtime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Realtime emits this metric in real time if applicable",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"value", "realtime"},
 			},
 		},
 	}
@@ -604,7 +1151,7 @@ func schema_pkg_apis_workflow_v1alpha1_GitArtifact(ref common.ReferenceCallback)
 						SchemaProps: spec.SchemaProps{
 							Description: "Depth specifies clones/fetches should be shallow and include the given number of commits from the branch tip",
 							Type:        []string{"integer"},
-							Format:      "int32",
+							Format:      "int64",
 						},
 					},
 					"fetch": {
@@ -896,6 +1443,41 @@ func schema_pkg_apis_workflow_v1alpha1_HTTPArtifact(ref common.ReferenceCallback
 	}
 }
 
+func schema_pkg_apis_workflow_v1alpha1_Histogram(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Histogram is a Histogram prometheus metric",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Value is the value of the metric",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"buckets": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Buckets is a list of bucket divisors for the histogram",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"number"},
+										Format: "double",
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"value", "buckets"},
+			},
+		},
+	}
+}
+
 func schema_pkg_apis_workflow_v1alpha1_Inputs(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -916,7 +1498,7 @@ func schema_pkg_apis_workflow_v1alpha1_Inputs(ref common.ReferenceCallback) comm
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Parameter"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Parameter"),
 									},
 								},
 							},
@@ -935,7 +1517,7 @@ func schema_pkg_apis_workflow_v1alpha1_Inputs(ref common.ReferenceCallback) comm
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Artifact"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Artifact"),
 									},
 								},
 							},
@@ -945,7 +1527,7 @@ func schema_pkg_apis_workflow_v1alpha1_Inputs(ref common.ReferenceCallback) comm
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Artifact", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Parameter"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Artifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Parameter"},
 	}
 }
 
@@ -956,6 +1538,111 @@ func schema_pkg_apis_workflow_v1alpha1_Item(ref common.ReferenceCallback) common
 				Description: "Item expands a single workflow step into multiple parallel steps The value of Item can be a map, string, bool, or number",
 				Type:        Item{}.OpenAPISchemaType(),
 				Format:      Item{}.OpenAPISchemaFormat(),
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_ItemValue(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Type": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+					"NumVal": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"BoolVal": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"StrVal": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"MapVal": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"ListVal": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "byte",
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"Type", "NumVal", "BoolVal", "StrVal", "MapVal", "ListVal"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_Link(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "A link to another app.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The name of the link, E.g. \"Workflow Logs\" or \"Pod Logs\"",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"scope": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Either \"workflow\" or \"pod\"",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"url": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The URL. May contain \"${metadata.namespace}\" and \"${metadata.name}\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"name", "scope", "url"},
+			},
+			VendorExtensible: spec.VendorExtensible{
+				Extensions: spec.Extensions{
+					"x-kubernetes-patch-merge-key": "name",
+					"x-kubernetes-patch-strategy":  "merge",
+				},
 			},
 		},
 	}
@@ -999,6 +1686,61 @@ func schema_pkg_apis_workflow_v1alpha1_Metadata(ref common.ReferenceCallback) co
 				},
 			},
 		},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_MetricLabel(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MetricLabel is a single label for a prometheus metric",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"key": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"key", "value"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_Metrics(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Metrics are a list of metrics emitted from a Workflow/Template",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"prometheus": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Prometheus is a list of prometheus metrics to be emitted",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Prometheus"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"prometheus"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Prometheus"},
 	}
 }
 
@@ -1047,7 +1789,7 @@ func schema_pkg_apis_workflow_v1alpha1_NodeStatus(ref common.ReferenceCallback) 
 					"templateRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TemplateRef is the reference to the template resource which this node corresponds to. Not applicable to virtual nodes (e.g. Retry, StepGroup)",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.TemplateRef"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TemplateRef"),
 						},
 					},
 					"storedTemplateID": {
@@ -1104,6 +1846,21 @@ func schema_pkg_apis_workflow_v1alpha1_NodeStatus(ref common.ReferenceCallback) 
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
+					"resourcesDuration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ResourcesDuration is indicative, but not accurate, resource duration. This is populated when the nodes completes.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"integer"},
+										Format: "int64",
+									},
+								},
+							},
+						},
+					},
 					"podIP": {
 						SchemaProps: spec.SchemaProps{
 							Description: "PodIP captures the IP of the pod for daemoned steps",
@@ -1121,13 +1878,13 @@ func schema_pkg_apis_workflow_v1alpha1_NodeStatus(ref common.ReferenceCallback) 
 					"inputs": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Inputs captures input parameter values and artifact locations supplied to this template invocation",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Inputs"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Inputs"),
 						},
 					},
 					"outputs": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Outputs captures output parameter values and artifact locations produced by this template invocation",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Outputs"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Outputs"),
 						},
 					},
 					"children": {
@@ -1158,12 +1915,19 @@ func schema_pkg_apis_workflow_v1alpha1_NodeStatus(ref common.ReferenceCallback) 
 							},
 						},
 					},
+					"hostNodeName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HostNodeName name of the Kubernetes node on which the Pod is running, if applicable",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"id", "name", "displayName", "type"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Inputs", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Outputs", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.TemplateRef", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Inputs", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Outputs", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TemplateRef", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -1175,6 +1939,97 @@ func schema_pkg_apis_workflow_v1alpha1_NoneStrategy(ref common.ReferenceCallback
 				Type:        []string{"object"},
 			},
 		},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_OSSArtifact(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "OSSArtifact is the location of an Alibaba Cloud OSS artifact",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"endpoint": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Endpoint is the hostname of the bucket endpoint",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"bucket": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Bucket is the name of the bucket",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"accessKeySecret": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AccessKeySecret is the secret selector to the bucket's access key",
+							Ref:         ref("k8s.io/api/core/v1.SecretKeySelector"),
+						},
+					},
+					"secretKeySecret": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SecretKeySecret is the secret selector to the bucket's secret key",
+							Ref:         ref("k8s.io/api/core/v1.SecretKeySelector"),
+						},
+					},
+					"key": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Key is the path in the bucket where the artifact resides",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"endpoint", "bucket", "accessKeySecret", "secretKeySecret", "key"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.SecretKeySelector"},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_OSSBucket(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "OSSBucket contains the access information required for interfacing with an Alibaba Cloud OSS bucket",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"endpoint": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Endpoint is the hostname of the bucket endpoint",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"bucket": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Bucket is the name of the bucket",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"accessKeySecret": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AccessKeySecret is the secret selector to the bucket's access key",
+							Ref:         ref("k8s.io/api/core/v1.SecretKeySelector"),
+						},
+					},
+					"secretKeySecret": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SecretKeySecret is the secret selector to the bucket's secret key",
+							Ref:         ref("k8s.io/api/core/v1.SecretKeySelector"),
+						},
+					},
+				},
+				Required: []string{"endpoint", "bucket", "accessKeySecret", "secretKeySecret"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.SecretKeySelector"},
 	}
 }
 
@@ -1198,7 +2053,7 @@ func schema_pkg_apis_workflow_v1alpha1_Outputs(ref common.ReferenceCallback) com
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Parameter"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Parameter"),
 									},
 								},
 							},
@@ -1217,7 +2072,7 @@ func schema_pkg_apis_workflow_v1alpha1_Outputs(ref common.ReferenceCallback) com
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Artifact"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Artifact"),
 									},
 								},
 							},
@@ -1230,11 +2085,45 @@ func schema_pkg_apis_workflow_v1alpha1_Outputs(ref common.ReferenceCallback) com
 							Format:      "",
 						},
 					},
+					"exitCode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ExitCode holds the exit code of a script template",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Artifact", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Parameter"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Artifact", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Parameter"},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_ParallelSteps(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Steps": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowStep"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"Steps"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowStep"},
 	}
 }
 
@@ -1254,7 +2143,7 @@ func schema_pkg_apis_workflow_v1alpha1_Parameter(ref common.ReferenceCallback) c
 					},
 					"default": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Default is the default value to use for an input parameter if a value was not supplied",
+							Description: "Default is the default value to use for an input parameter if a value was not supplied DEPRECATED: This field is not used",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -1269,7 +2158,7 @@ func schema_pkg_apis_workflow_v1alpha1_Parameter(ref common.ReferenceCallback) c
 					"valueFrom": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ValueFrom is the source for the output parameter's value",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ValueFrom"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ValueFrom"),
 						},
 					},
 					"globalName": {
@@ -1284,7 +2173,7 @@ func schema_pkg_apis_workflow_v1alpha1_Parameter(ref common.ReferenceCallback) c
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ValueFrom"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ValueFrom"},
 	}
 }
 
@@ -1297,13 +2186,82 @@ func schema_pkg_apis_workflow_v1alpha1_PodGC(ref common.ReferenceCallback) commo
 				Properties: map[string]spec.Schema{
 					"strategy": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "Strategy is the strategy to use. One of \"OnPodCompletion\", \"OnPodSuccess\", \"OnWorkflowCompletion\", \"OnWorkflowSuccess\"",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
 			},
 		},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_Prometheus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Prometheus is a prometheus metric to be emitted",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the name of the metric",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"labels": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Labels is a list of metric labels",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.MetricLabel"),
+									},
+								},
+							},
+						},
+					},
+					"help": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Help is a string that describes the metric",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"when": {
+						SchemaProps: spec.SchemaProps{
+							Description: "When is a conditional statement that decides when to emit the metric",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"gauge": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Gauge is a gauge metric",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Gauge"),
+						},
+					},
+					"histogram": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Histogram is a histogram metric",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Histogram"),
+						},
+					},
+					"counter": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Counter is a counter metric",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Counter"),
+						},
+					},
+				},
+				Required: []string{"name", "labels", "help", "when", "gauge", "histogram", "counter"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Counter", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Gauge", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Histogram", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.MetricLabel"},
 	}
 }
 
@@ -1377,6 +2335,20 @@ func schema_pkg_apis_workflow_v1alpha1_ResourceTemplate(ref common.ReferenceCall
 							Format:      "",
 						},
 					},
+					"flags": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Flags is a set of additional options passed to kubectl before submitting a resource I.e. to disable resource validation: flags: [\n\t\"--validate=false\"  # disable resource validation\n]",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
 				},
 				Required: []string{"action", "manifest"},
 			},
@@ -1398,9 +2370,24 @@ func schema_pkg_apis_workflow_v1alpha1_RetryStrategy(ref common.ReferenceCallbac
 							Format:      "int32",
 						},
 					},
+					"retryPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RetryPolicy is a policy of NodePhase statuses that will be retried",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"backoff": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Backoff is a backoff strategy",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Backoff"),
+						},
+					},
 				},
 			},
 		},
+		Dependencies: []string{
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Backoff"},
 	}
 }
 
@@ -1455,6 +2442,13 @@ func schema_pkg_apis_workflow_v1alpha1_S3Artifact(ref common.ReferenceCallback) 
 						SchemaProps: spec.SchemaProps{
 							Description: "RoleARN is the Amazon Resource Name (ARN) of the role to assume.",
 							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"useSDKCreds": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UseSDKCreds tells the driver to figure out credentials based on sdk defaults.",
+							Type:        []string{"boolean"},
 							Format:      "",
 						},
 					},
@@ -1525,6 +2519,13 @@ func schema_pkg_apis_workflow_v1alpha1_S3Bucket(ref common.ReferenceCallback) co
 						SchemaProps: spec.SchemaProps{
 							Description: "RoleARN is the Amazon Resource Name (ARN) of the role to assume.",
 							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"useSDKCreds": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UseSDKCreds tells the driver to figure out credentials based on sdk defaults.",
+							Type:        []string{"boolean"},
 							Format:      "",
 						},
 					},
@@ -1705,6 +2706,12 @@ func schema_pkg_apis_workflow_v1alpha1_ScriptTemplate(ref common.ReferenceCallba
 							Ref:         ref("k8s.io/api/core/v1.Probe"),
 						},
 					},
+					"startupProbe": {
+						SchemaProps: spec.SchemaProps{
+							Description: "StartupProbe indicates that the Pod has successfully initialized. If specified, no other probes are executed until this completes successfully. If this probe fails, the Pod will be restarted, just as if the livenessProbe failed. This can be used to provide different probe parameters at the beginning of a Pod's lifecycle, when it might take a long time to load data or warm a cache, than during steady-state operation. This cannot be updated. This is an alpha feature enabled by the StartupProbe feature flag. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+							Ref:         ref("k8s.io/api/core/v1.Probe"),
+						},
+					},
 					"lifecycle": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Actions that the management system should take in response to container lifecycle events. Cannot be updated.",
@@ -1816,6 +2823,97 @@ func schema_pkg_apis_workflow_v1alpha1_Sequence(ref common.ReferenceCallback) co
 	}
 }
 
+func schema_pkg_apis_workflow_v1alpha1_SubmitOpts(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SubmitOpts are workflow submission options",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name overrides metadata.name",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"generateName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GenerateName overrides metadata.generateName",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"entryPoint": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Entrypoint overrides spec.entrypoint",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"parameters": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Parameters passes input parameters to workflow",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"parameterFile": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ParameterFile holds a reference to a parameter file. This option is not supported in API",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"serviceAccount": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ServiceAccount runs all pods in the workflow using specified ServiceAccount.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"dryRun": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DryRun validates the workflow on the client-side without creating it. This option is not supported in API",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"serverDryRun": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ServerDryRun validates the workflow on the server-side without creating it",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"labels": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Labels adds to metadata.labels",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"ownerReference": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OwnerReference creates a metadata.ownerReference",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.OwnerReference"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.OwnerReference"},
+	}
+}
+
 func schema_pkg_apis_workflow_v1alpha1_SuspendTemplate(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1826,6 +2924,40 @@ func schema_pkg_apis_workflow_v1alpha1_SuspendTemplate(ref common.ReferenceCallb
 					"duration": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Duration is the seconds to wait before automatically resuming a template",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_TTLStrategy(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TTLStrategy is the strategy for the time to live depending on if the workflow succeeded or failed",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"secondsAfterCompletion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SecondsAfterCompletion is the number of seconds to live after completion",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"secondsAfterSuccess": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SecondsAfterSuccess is the number of seconds to live after success",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"secondsAfterFailure": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SecondsAfterFailure is the number of seconds to live after failure",
 							Type:        []string{"integer"},
 							Format:      "int32",
 						},
@@ -1842,6 +2974,15 @@ func schema_pkg_apis_workflow_v1alpha1_TarStrategy(ref common.ReferenceCallback)
 			SchemaProps: spec.SchemaProps{
 				Description: "TarStrategy will tar and gzip the file or directory when saving",
 				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"compressionLevel": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CompressionLevel specifies the gzip compression level to use for the artifact. Defaults to gzip.DefaultCompression.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+				},
 			},
 		},
 	}
@@ -1863,33 +3004,33 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 					},
 					"template": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Template is the name of the template which is used as the base of this template.",
+							Description: "Template is the name of the template which is used as the base of this template. DEPRECATED: This field is not used.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"arguments": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Arguments hold arguments to the template.",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments"),
+							Description: "Arguments hold arguments to the template. DEPRECATED: This field is not used.",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments"),
 						},
 					},
 					"templateRef": {
 						SchemaProps: spec.SchemaProps{
-							Description: "TemplateRef is the reference to the template resource which is used as the base of this template.",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.TemplateRef"),
+							Description: "TemplateRef is the reference to the template resource which is used as the base of this template. DEPRECATED: This field is not used.",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TemplateRef"),
 						},
 					},
 					"inputs": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Inputs describe what inputs parameters and artifacts are supplied to this template",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Inputs"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Inputs"),
 						},
 					},
 					"outputs": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Outputs describe the parameters and artifacts that this template produces",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Outputs"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Outputs"),
 						},
 					},
 					"nodeSelector": {
@@ -1916,7 +3057,7 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Metdata sets the pods's metadata, i.e. annotations and labels",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Metadata"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Metadata"),
 						},
 					},
 					"daemon": {
@@ -1933,14 +3074,7 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type: []string{"array"},
-										Items: &spec.SchemaOrArray{
-											Schema: &spec.Schema{
-												SchemaProps: spec.SchemaProps{
-													Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowStep"),
-												},
-											},
-										},
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ParallelSteps"),
 									},
 								},
 							},
@@ -1955,25 +3089,25 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 					"script": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Script runs a portion of code against an interpreter",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ScriptTemplate"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ScriptTemplate"),
 						},
 					},
 					"resource": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Resource template subtype which can run k8s resources",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ResourceTemplate"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ResourceTemplate"),
 						},
 					},
 					"dag": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DAG template subtype which runs a DAG",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTemplate"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.DAGTemplate"),
 						},
 					},
 					"suspend": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Suspend template subtype which can suspend a workflow when reaching the step",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.SuspendTemplate"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.SuspendTemplate"),
 						},
 					},
 					"volumes": {
@@ -2008,7 +3142,7 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.UserContainer"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.UserContainer"),
 									},
 								},
 							},
@@ -2027,7 +3161,7 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.UserContainer"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.UserContainer"),
 									},
 								},
 							},
@@ -2036,7 +3170,7 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 					"archiveLocation": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Location in which all files related to the step will be stored (logs, artifacts, etc...). Can be overridden by individual items in Outputs. If omitted, will use the default artifact repository location configured in the controller, appended with the <workflowname>/<nodename> in the key.",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation"),
 						},
 					},
 					"activeDeadlineSeconds": {
@@ -2049,7 +3183,7 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 					"retryStrategy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RetryStrategy describes how to retry a template when it fails",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.RetryStrategy"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RetryStrategy"),
 						},
 					},
 					"parallelism": {
@@ -2116,7 +3250,7 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 					"executor": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Executor holds configurations of the executor container.",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ExecutorConfig"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ExecutorConfig"),
 						},
 					},
 					"hostAliases": {
@@ -2151,12 +3285,25 @@ func schema_pkg_apis_workflow_v1alpha1_Template(ref common.ReferenceCallback) co
 							Format:      "",
 						},
 					},
+					"resubmitPendingPods": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ResubmitPendingPods is a flag to enable resubmitting pods that remain Pending after initial submission",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"metrics": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Metrics are a list of metrics emitted from this template",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Metrics"),
+						},
+					},
 				},
 				Required: []string{"name"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.DAGTemplate", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ExecutorConfig", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Inputs", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Metadata", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Outputs", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ResourceTemplate", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.RetryStrategy", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ScriptTemplate", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.SuspendTemplate", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.TemplateRef", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.UserContainer", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowStep", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.HostAlias", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.Volume"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactLocation", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.DAGTemplate", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ExecutorConfig", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Inputs", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Metadata", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Metrics", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Outputs", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ParallelSteps", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ResourceTemplate", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.RetryStrategy", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ScriptTemplate", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.SuspendTemplate", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TemplateRef", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.UserContainer", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.HostAlias", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.Volume"},
 	}
 }
 
@@ -2184,6 +3331,13 @@ func schema_pkg_apis_workflow_v1alpha1_TemplateRef(ref common.ReferenceCallback)
 					"runtimeResolution": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RuntimeResolution skips validation at creation time. By enabling this option, you can create the referred workflow template before the actual runtime.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"clusterScope": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ClusterScope indicates the referred template is cluster scoped (i.e. a ClusterWorkflowTemplate).",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -2362,6 +3516,12 @@ func schema_pkg_apis_workflow_v1alpha1_UserContainer(ref common.ReferenceCallbac
 							Ref:         ref("k8s.io/api/core/v1.Probe"),
 						},
 					},
+					"startupProbe": {
+						SchemaProps: spec.SchemaProps{
+							Description: "StartupProbe indicates that the Pod has successfully initialized. If specified, no other probes are executed until this completes successfully. If this probe fails, the Pod will be restarted, just as if the livenessProbe failed. This can be used to provide different probe parameters at the beginning of a Pod's lifecycle, when it might take a long time to load data or warm a cache, than during steady-state operation. This cannot be updated. This is an alpha feature enabled by the StartupProbe feature flag. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
+							Ref:         ref("k8s.io/api/core/v1.Probe"),
+						},
+					},
 					"lifecycle": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Actions that the management system should take in response to container lifecycle events. Cannot be updated.",
@@ -2467,7 +3627,75 @@ func schema_pkg_apis_workflow_v1alpha1_ValueFrom(ref common.ReferenceCallback) c
 							Format:      "",
 						},
 					},
+					"default": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Default specifies a value to be used if retrieving the value from the specified source fails",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_Version(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"buildDate": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"gitCommit": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"gitTag": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"gitTreeState": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"goVersion": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"compiler": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"platform": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"version", "buildDate", "gitCommit", "gitTag", "gitTreeState", "goVersion", "compiler", "platform"},
 			},
 		},
 	}
@@ -2482,14 +3710,14 @@ func schema_pkg_apis_workflow_v1alpha1_Workflow(ref common.ReferenceCallback) co
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -2501,12 +3729,12 @@ func schema_pkg_apis_workflow_v1alpha1_Workflow(ref common.ReferenceCallback) co
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowSpec"),
+							Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowStatus"),
+							Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowStatus"),
 						},
 					},
 				},
@@ -2514,7 +3742,7 @@ func schema_pkg_apis_workflow_v1alpha1_Workflow(ref common.ReferenceCallback) co
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowSpec", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowSpec", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -2527,14 +3755,14 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowList(ref common.ReferenceCallback
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -2550,7 +3778,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowList(ref common.ReferenceCallback
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Workflow"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Workflow"),
 									},
 								},
 							},
@@ -2561,7 +3789,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowList(ref common.ReferenceCallback
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Workflow", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Workflow", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -2585,7 +3813,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowSpec(ref common.ReferenceCallback
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Template"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Template"),
 									},
 								},
 							},
@@ -2593,7 +3821,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowSpec(ref common.ReferenceCallback
 					},
 					"entrypoint": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Entrypoint is a template reference to the starting point of the workflow",
+							Description: "Entrypoint is a template reference to the starting point of the workflow.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -2601,7 +3829,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowSpec(ref common.ReferenceCallback
 					"arguments": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Arguments contain the parameters and artifacts sent to the workflow entrypoint Parameters are referencable globally using the 'workflow' variable prefix. e.g. {{workflow.parameters.myparam}}",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments"),
 						},
 					},
 					"serviceAccountName": {
@@ -2621,7 +3849,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowSpec(ref common.ReferenceCallback
 					"executor": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Executor holds configurations of executor containers of the workflow.",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ExecutorConfig"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ExecutorConfig"),
 						},
 					},
 					"volumes": {
@@ -2672,7 +3900,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowSpec(ref common.ReferenceCallback
 					"artifactRepositoryRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ArtifactRepositoryRef specifies the configMap name and key containing the artifact repository config.",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactRepositoryRef"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactRepositoryRef"),
 						},
 					},
 					"suspend": {
@@ -2770,9 +3998,15 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowSpec(ref common.ReferenceCallback
 					},
 					"ttlSecondsAfterFinished": {
 						SchemaProps: spec.SchemaProps{
-							Description: "TTLSecondsAfterFinished limits the lifetime of a Workflow that has finished execution (Succeeded, Failed, Error). If this field is set, once the Workflow finishes, it will be deleted after ttlSecondsAfterFinished expires. If this field is unset, ttlSecondsAfterFinished will not expire. If this field is set to zero, ttlSecondsAfterFinished expires immediately after the Workflow finishes.",
+							Description: "TTLSecondsAfterFinished limits the lifetime of a Workflow that has finished execution (Succeeded, Failed, Error). If this field is set, once the Workflow finishes, it will be deleted after ttlSecondsAfterFinished expires. If this field is unset, ttlSecondsAfterFinished will not expire. If this field is set to zero, ttlSecondsAfterFinished expires immediately after the Workflow finishes. DEPRECATED: Use TTLStrategy.SecondsAfterCompletion instead.",
 							Type:        []string{"integer"},
 							Format:      "int32",
+						},
+					},
+					"ttlStrategy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TTLStrategy limits the lifetime of a Workflow that has finished execution depending on if it Succeeded or Failed. If this struct is set, once the Workflow finishes, it will be deleted after the time to live expires. If this field is unset, the controller config map will hold the default values.",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TTLStrategy"),
 						},
 					},
 					"activeDeadlineSeconds": {
@@ -2799,7 +4033,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowSpec(ref common.ReferenceCallback
 					"podGC": {
 						SchemaProps: spec.SchemaProps{
 							Description: "PodGC describes the strategy to use when to deleting completed pods",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.PodGC"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.PodGC"),
 						},
 					},
 					"podPriorityClassName": {
@@ -2824,8 +4058,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowSpec(ref common.ReferenceCallback
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "HostAliases is an optional list of hosts and IPs that will be injected into the pod spec",
-							Type:        []string{"array"},
+							Type: []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
@@ -2848,12 +4081,36 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowSpec(ref common.ReferenceCallback
 							Format:      "",
 						},
 					},
+					"podDisruptionBudget": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodDisruptionBudget holds the number of concurrent disruptions that you allow for Workflow's Pods. Controller will automatically add the selector with workflow name, if selector is empty. Optional: Defaults to empty.",
+							Ref:         ref("k8s.io/api/policy/v1beta1.PodDisruptionBudgetSpec"),
+						},
+					},
+					"metrics": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Metrics are a list of metrics emitted from this Workflow",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Metrics"),
+						},
+					},
+					"shutdown": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Shutdown will shutdown the workflow according to its ShutdownStrategy",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"workflowTemplateRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "WorkflowTemplateRef holds a reference to a WorkflowTemplate for execution",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplateRef"),
+						},
+					},
 				},
-				Required: []string{"templates", "entrypoint"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ArtifactRepositoryRef", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ExecutorConfig", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.PodGC", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Template", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.HostAlias", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaim", "k8s.io/api/core/v1.PodDNSConfig", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.Volume"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactRepositoryRef", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ExecutorConfig", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Metrics", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.PodGC", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TTLStrategy", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Template", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplateRef", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.HostAlias", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaim", "k8s.io/api/core/v1.PodDNSConfig", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.Volume", "k8s.io/api/policy/v1beta1.PodDisruptionBudgetSpec"},
 	}
 }
 
@@ -2905,10 +4162,17 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowStatus(ref common.ReferenceCallba
 								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.NodeStatus"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.NodeStatus"),
 									},
 								},
 							},
+						},
+					},
+					"offloadNodeStatusVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Whether on not node status has been offloaded to a database. If exists, then Nodes and CompressedNodes will be empty. This will actually be populated with a hash of the offloaded data.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"storedTemplates": {
@@ -2919,7 +4183,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowStatus(ref common.ReferenceCallba
 								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Template"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Template"),
 									},
 								},
 							},
@@ -2941,14 +4205,48 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowStatus(ref common.ReferenceCallba
 					"outputs": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Outputs captures output values and artifact locations produced by the workflow via global outputs",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Outputs"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Outputs"),
+						},
+					},
+					"conditions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Conditions is a list of conditions the Workflow may have",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Condition"),
+									},
+								},
+							},
+						},
+					},
+					"resourcesDuration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ResourcesDuration is the total for the workflow",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"integer"},
+										Format: "int64",
+									},
+								},
+							},
+						},
+					},
+					"storedWorkflowTemplateSpec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "StoredWorkflowSpec stores the WorkflowTemplate spec for future execution.",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.NodeStatus", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Outputs", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Template", "k8s.io/api/core/v1.Volume", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Condition", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.NodeStatus", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Outputs", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Template", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowSpec", "k8s.io/api/core/v1.Volume", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -2976,13 +4274,13 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowStep(ref common.ReferenceCallback
 					"arguments": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Arguments hold arguments to the template",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments"),
 						},
 					},
 					"templateRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TemplateRef is the reference to the template resource to execute as the step.",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.TemplateRef"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TemplateRef"),
 						},
 					},
 					"withItems": {
@@ -2992,7 +4290,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowStep(ref common.ReferenceCallback
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Item"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Item"),
 									},
 								},
 							},
@@ -3008,7 +4306,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowStep(ref common.ReferenceCallback
 					"withSequence": {
 						SchemaProps: spec.SchemaProps{
 							Description: "WithSequence expands a step into a numeric sequence",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Sequence"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Sequence"),
 						},
 					},
 					"when": {
@@ -3021,14 +4319,21 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowStep(ref common.ReferenceCallback
 					"continueOn": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ContinueOn makes argo to proceed with the following step even if this step fails. Errors and Failed states can be specified",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ContinueOn"),
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ContinueOn"),
+						},
+					},
+					"onExit": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OnExit is a template reference which is invoked at the end of the template, irrespective of the success, failure, or error of the primary template.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.ContinueOn", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Item", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Sequence", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.TemplateRef"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ContinueOn", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Item", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Sequence", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TemplateRef"},
 	}
 }
 
@@ -3041,14 +4346,14 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowTemplate(ref common.ReferenceCall
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -3060,7 +4365,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowTemplate(ref common.ReferenceCall
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplateSpec"),
+							Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplateSpec"),
 						},
 					},
 				},
@@ -3068,7 +4373,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowTemplate(ref common.ReferenceCall
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplateSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplateSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -3081,14 +4386,14 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowTemplateList(ref common.Reference
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -3104,7 +4409,7 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowTemplateList(ref common.Reference
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplate"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplate"),
 									},
 								},
 							},
@@ -3115,7 +4420,34 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowTemplateList(ref common.Reference
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplate", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplate", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_pkg_apis_workflow_v1alpha1_WorkflowTemplateRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "WorkflowTemplateRef is a reference to a WorkflowTemplate resource.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the resource name of the workflow template.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"clusterScope": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ClusterScope indicates the referred template is cluster scoped (i.e. a ClusterWorkflowTemplate).",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -3127,29 +4459,315 @@ func schema_pkg_apis_workflow_v1alpha1_WorkflowTemplateSpec(ref common.Reference
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"templates": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "name",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
 						SchemaProps: spec.SchemaProps{
-							Description: "Templates is a list of workflow templates.",
+							Description: "Templates is a list of workflow templates used in a workflow",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Template"),
+										Ref: ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Template"),
 									},
 								},
 							},
 						},
 					},
+					"entrypoint": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Entrypoint is a template reference to the starting point of the workflow.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"arguments": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Arguments hold arguments to the template.",
-							Ref:         ref("github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments"),
+							Description: "Arguments contain the parameters and artifacts sent to the workflow entrypoint Parameters are referencable globally using the 'workflow' variable prefix. e.g. {{workflow.parameters.myparam}}",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments"),
+						},
+					},
+					"serviceAccountName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ServiceAccountName is the name of the ServiceAccount to run all pods of the workflow as.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"automountServiceAccountToken": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AutomountServiceAccountToken indicates whether a service account token should be automatically mounted in pods. ServiceAccountName of ExecutorConfig must be specified if this value is false.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"executor": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Executor holds configurations of executor containers of the workflow.",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ExecutorConfig"),
+						},
+					},
+					"volumes": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "name",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Volumes is a list of volumes that can be mounted by containers in a workflow.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.Volume"),
+									},
+								},
+							},
+						},
+					},
+					"volumeClaimTemplates": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "name",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeClaimTemplates is a list of claims that containers are allowed to reference. The Workflow controller will create the claims at the beginning of the workflow and delete the claims upon completion of the workflow",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.PersistentVolumeClaim"),
+									},
+								},
+							},
+						},
+					},
+					"parallelism": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Parallelism limits the max total parallel pods that can execute at the same time in a workflow",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"artifactRepositoryRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ArtifactRepositoryRef specifies the configMap name and key containing the artifact repository config.",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactRepositoryRef"),
+						},
+					},
+					"suspend": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Suspend will suspend the workflow and prevent execution of any future steps in the workflow",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"nodeSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NodeSelector is a selector which will result in all pods of the workflow to be scheduled on the selected node(s). This is able to be overridden by a nodeSelector specified in the template.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"affinity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Affinity sets the scheduling constraints for all pods in the workflow. Can be overridden by an affinity specified in the template",
+							Ref:         ref("k8s.io/api/core/v1.Affinity"),
+						},
+					},
+					"tolerations": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "key",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Tolerations to apply to workflow pods.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.Toleration"),
+									},
+								},
+							},
+						},
+					},
+					"imagePullSecrets": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "name",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "ImagePullSecrets is a list of references to secrets in the same namespace to use for pulling any images in pods that reference this ServiceAccount. ImagePullSecrets are distinct from Secrets because Secrets can be mounted in the pod, but ImagePullSecrets are only accessed by the kubelet. More info: https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.LocalObjectReference"),
+									},
+								},
+							},
+						},
+					},
+					"hostNetwork": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Host networking requested for this workflow pod. Default to false.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"dnsPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Set DNS policy for the pod. Defaults to \"ClusterFirst\". Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'. DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy. To have DNS options set along with hostNetwork, you have to specify DNS policy explicitly to 'ClusterFirstWithHostNet'.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"dnsConfig": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.",
+							Ref:         ref("k8s.io/api/core/v1.PodDNSConfig"),
+						},
+					},
+					"onExit": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OnExit is a template reference which is invoked at the end of the workflow, irrespective of the success, failure, or error of the primary workflow.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"ttlSecondsAfterFinished": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TTLSecondsAfterFinished limits the lifetime of a Workflow that has finished execution (Succeeded, Failed, Error). If this field is set, once the Workflow finishes, it will be deleted after ttlSecondsAfterFinished expires. If this field is unset, ttlSecondsAfterFinished will not expire. If this field is set to zero, ttlSecondsAfterFinished expires immediately after the Workflow finishes. DEPRECATED: Use TTLStrategy.SecondsAfterCompletion instead.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"ttlStrategy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TTLStrategy limits the lifetime of a Workflow that has finished execution depending on if it Succeeded or Failed. If this struct is set, once the Workflow finishes, it will be deleted after the time to live expires. If this field is unset, the controller config map will hold the default values.",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TTLStrategy"),
+						},
+					},
+					"activeDeadlineSeconds": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Optional duration in seconds relative to the workflow start time which the workflow is allowed to run before the controller terminates the workflow. A value of zero is used to terminate a Running workflow",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"priority": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Priority is used if controller is configured to process limited number of workflows in parallel. Workflows with higher priority are processed first.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"schedulerName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Set scheduler name for all pods. Will be overridden if container/script template's scheduler name is set. Default scheduler will be used if neither specified.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"podGC": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodGC describes the strategy to use when to deleting completed pods",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.PodGC"),
+						},
+					},
+					"podPriorityClassName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PriorityClassName to apply to workflow pods.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"podPriority": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Priority to apply to workflow pods.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"hostAliases": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "ip",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.HostAlias"),
+									},
+								},
+							},
+						},
+					},
+					"securityContext": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SecurityContext holds pod-level security attributes and common container settings. Optional: Defaults to empty.  See type description for default values of each field.",
+							Ref:         ref("k8s.io/api/core/v1.PodSecurityContext"),
+						},
+					},
+					"podSpecPatch": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodSpecPatch holds strategic merge patch to apply against the pod spec. Allows parameterization of container fields which are not strings (e.g. resource limits).",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"podDisruptionBudget": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodDisruptionBudget holds the number of concurrent disruptions that you allow for Workflow's Pods. Controller will automatically add the selector with workflow name, if selector is empty. Optional: Defaults to empty.",
+							Ref:         ref("k8s.io/api/policy/v1beta1.PodDisruptionBudgetSpec"),
+						},
+					},
+					"metrics": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Metrics are a list of metrics emitted from this Workflow",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Metrics"),
+						},
+					},
+					"shutdown": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Shutdown will shutdown the workflow according to its ShutdownStrategy",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"workflowTemplateRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "WorkflowTemplateRef holds a reference to a WorkflowTemplate for execution",
+							Ref:         ref("github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplateRef"),
 						},
 					},
 				},
-				Required: []string{"templates"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Arguments", "github.com/cyrusbiotechnology/argo/pkg/apis/workflow/v1alpha1.Template"},
+			"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Arguments", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ArtifactRepositoryRef", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.ExecutorConfig", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Metrics", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.PodGC", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.TTLStrategy", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.Template", "github.com/argoproj/argo/pkg/apis/workflow/v1alpha1.WorkflowTemplateRef", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.HostAlias", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaim", "k8s.io/api/core/v1.PodDNSConfig", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.Volume", "k8s.io/api/policy/v1beta1.PodDisruptionBudgetSpec"},
 	}
 }

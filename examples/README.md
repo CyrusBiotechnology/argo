@@ -1,4 +1,4 @@
-# Argo Workflow Templates by Example
+# Argo Workflows: Documentation by Example
 
 ## Welcome!
 
@@ -6,41 +6,41 @@ Argo is an open source project that provides container-native workflows for Kube
 
 Argo is implemented as a Kubernetes CRD (Custom Resource Definition). As a result, Argo workflows can be managed using `kubectl` and natively integrates with other Kubernetes services such as volumes, secrets, and RBAC. The new Argo software is light-weight and installs in under a minute, and provides complete workflow features including parameter substitution, artifacts, fixtures, loops and recursive workflows.
 
-Many of the Argo examples used in this walkthrough are available at https://github.com/argoproj/argo/tree/master/examples. If you like this project, please give us a star!
+Many of the Argo examples used in this walkthrough are available at in this directory. If you like this project, please give us a star!
 
-For a complete description of the Argo workflow spec, please refer to https://github.com/argoproj/argo/blob/master/pkg/apis/workflow/v1alpha1/workflow_types.go
+For a complete description of the Argo workflow spec, please refer to [our spec definitions](https://github.com/argoproj/argo/blob/master/pkg/apis/workflow/v1alpha1/workflow_types.go).
 
 ## Table of Contents
 
-- [Argo CLI](#argo-cli)
-- [Hello World!](#hello-world)
-- [Parameters](#parameters)
-- [Steps](#steps)
-- [DAG](#dag)
-- [Artifacts](#artifacts)
-- [The Structure of Workflow Specs](#the-structure-of-workflow-specs)
-- [Secrets](#secrets)
-- [Scripts & Results](#scripts--results)
-- [Output Parameters](#output-parameters)
-- [Loops](#loops)
-- [Conditionals](#conditionals)
-- [Recursion](#recursion)
-- [Exit handlers](#exit-handlers)
-- [Timeouts](#timeouts)
-- [Volumes](#volumes)
-- [Daemon Containers](#daemon-containers)
-- [Sidecars](#sidecars)
-- [Hardwired Artifacts](#hardwired-artifacts)
-- [Kubernetes Resources](#kubernetes-resources)
-- [Docker-in-Docker Using Sidecars](#docker-in-docker-using-sidecars)
-- [Custom Template Variable Reference](#custom-template-variable-reference)
-- [Continuous Integration Example](#continuous-integration-example)
+1. [Argo CLI](#argo-cli)
+1. [Hello World!](#hello-world)
+1. [Parameters](#parameters)
+1. [Steps](#steps)
+1. [DAG](#dag)
+1. [Artifacts](#artifacts)
+1. [The Structure of Workflow Specs](#the-structure-of-workflow-specs)
+1. [Secrets](#secrets)
+1. [Scripts & Results](#scripts--results)
+1. [Output Parameters](#output-parameters)
+1. [Loops](#loops)
+1. [Conditionals](#conditionals)
+1. [Retrying Failed or Errored Steps](#retrying-failed-or-errored-steps)
+1. [Recursion](#recursion)
+1. [Exit Handlers](#exit-handlers)
+1. [Timeouts](#timeouts)
+1. [Volumes](#volumes)
+1. [Suspending](#suspending)
+1. [Daemon Containers](#daemon-containers)
+1. [Sidecars](#sidecars)
+1. [Hardwired Artifacts](#hardwired-artifacts)
+1. [Kubernetes Resources](#kubernetes-resources)
+1. [Docker-in-Docker Using Sidecars](#docker-in-docker-using-sidecars)
+1. [Custom Template Variable Reference](#custom-template-variable-reference)
+1. [Continuous Integration Example](#continuous-integration-example)
 
 ## Argo CLI
 
 In case you want to follow along with this walkthrough, here's a quick overview of the most useful argo command line interface (CLI) commands.
-
-[Install Argo here](https://github.com/cyrusbiotechnology/argo/blob/master/demo.md)
 
 ```sh
 argo submit hello-world.yaml    # submit a workflow spec to Kubernetes
@@ -66,12 +66,10 @@ kubectl delete wf hello-world-xxx
 
 Let's start by creating a very simple workflow template to echo "hello world" using the docker/whalesay container image from DockerHub.
 
-<img src="whalesay.png" width="600">
-
 You can run this directly from your shell with a simple docker command:
 
 ```sh
-bash% docker run docker/whalesay cowsay "hello world"
+$ docker run docker/whalesay cowsay "hello world"
  _____________
 < hello world >
  -------------
@@ -319,7 +317,7 @@ The [FailFast](./dag-disable-failFast.yaml) flag default is `true`,  if set to `
 
 **Note:**
 You will need to configure an artifact repository to run this example.
-[Configuring an artifact repository here](https://github.com/argoproj/argo/blob/master/ARTIFACT_REPO.md).
+[Configuring an artifact repository here](../docs/configure-artifact-repository.md).
 
 When running workflows, it is very common to have steps that generate or consume artifacts. Often, the output artifacts of one step may be used as input artifacts to a subsequent step.
 
@@ -374,6 +372,36 @@ spec:
 The `whalesay` template uses the `cowsay` command to generate a file named `/tmp/hello-world.txt`. It then `outputs` this file as an artifact named `hello-art`. In general, the artifact's `path` may be a directory rather than just a file. The `print-message` template takes an input artifact named `message`, unpacks it at the `path` named `/tmp/message` and then prints the contents of `/tmp/message` using the `cat` command.
 The `artifact-example` template passes the `hello-art` artifact generated as an output of the `generate-artifact` step as the `message` input artifact to the `print-message` step. DAG templates use the tasks prefix to refer to another task, for example `{{tasks.generate-artifact.outputs.artifacts.hello-art}}`.
 
+Artifacts are packaged as Tarballs and gzipped by default. You may customize this behavior by specifying an archive strategy, using the `archive` field. For example:
+
+```yaml
+<... snipped ...>
+    outputs:
+      artifacts:
+        # default behavior - tar+gzip default compression.
+      - name: hello-art-1
+        path: /tmp/hello_world.txt
+
+        # disable archiving entirely - upload the file / directory as is.
+        # this is useful when the container layout matches the desired target repository layout.   
+      - name: hello-art-2
+        path: /tmp/hello_world.txt
+        archive:
+          none: {}
+
+        # customize the compression behavior (disabling it here).
+        # this is useful for files with varying compression benefits, 
+        # e.g. disabling compression for a cached build workspace and large binaries, 
+        # or increasing compression for "perfect" textual data - like a json/xml export of a large database.
+      - name: hello-art-3
+        path: /tmp/hello_world.txt
+        archive:
+          tar:
+            # no compression (also accepts the standard gzip 1 to 9 values)
+            compressionLevel: 0
+<... snipped ...>
+``` 
+
 ## The Structure of Workflow Specs
 
 We now know enough about the basic components of a workflow spec to review its basic structure:
@@ -392,7 +420,7 @@ We now know enough about the basic components of a workflow spec to review its b
 
 To summarize, workflow specs are composed of a set of Argo templates where each template consists of an optional input section, an optional output section and either a container invocation or a list of steps where each step invokes another template.
 
-Note that the controller section of the workflow spec will accept the same options as the controller section of a pod spec, including but not limited to environment variables, secrets, and volume mounts. Similarly, for volume claims and volumes.
+Note that the container section of the workflow spec will accept the same options as the container section of a pod spec, including but not limited to environment variables, secrets, and volume mounts. Similarly, for volume claims and volumes.
 
 ## Secrets
 
@@ -753,6 +781,41 @@ spec:
       args: ["echo \"it was tails\""]
 ```
 
+## Retrying Failed or Errored Steps
+
+You can specify a `retryStrategy` that will dictate how failed or errored steps are retried:
+
+```yaml
+# This example demonstrates the use of retry back offs
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: retry-backoff-
+spec:
+  entrypoint: retry-backoff
+  templates:
+  - name: retry-backoff
+    retryStrategy:
+      limit: 10
+      retryPolicy: "Always"
+      backoff:
+        duration: "1"      # Must be a string. Default unit is seconds. Could also be a Duration, e.g.: "2m", "6h", "1d"
+        factor: 2
+        maxDuration: "1m"  # Must be a string. Default unit is seconds. Could also be a Duration, e.g.: "2m", "6h", "1d"
+    container:
+      image: python:alpine3.6
+      command: ["python", -c]
+      # fail with a 66% probability
+      args: ["import random; import sys; exit_code = random.choice([0, 1, 1]); sys.exit(exit_code)"]
+```
+
+* `limit` is the maximum number of times the container will be retried.
+* `retryPolicy` specifies if a container will be retried on failure, error, or both. "Always" retries on both errors and failures. Also available: "OnFailure" (default), "OnError"
+* `backoff` is an exponential backoff
+
+Providing an empty `retryStrategy` (i.e. `retryStrategy: {}`) will cause a container to retry until completion.
+
+
 ## Recursion
 
 Templates can recursively invoke each other! In this variation of the above coin-flip template, we continue to flip coins until it comes up heads.
@@ -1009,6 +1072,145 @@ spec:
         mountPath: /mnt/vol
 ```
 
+It's also possible to declare existing volumes at the template level, instead of the workflow level.
+This can be useful workflows that generate volumes using a `resource` step.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: template-level-volume-
+spec:
+  entrypoint: generate-and-use-volume
+  templates:
+  - name: generate-and-use-volume
+    steps:
+    - - name: generate-volume
+        template: generate-volume
+        arguments:
+          parameters:
+            - name: pvc-size
+              # In a real-world example, this could be generated by a previous workfow step.
+              value: '1Gi'
+    - - name: generate
+        template: whalesay
+        arguments:
+          parameters:
+            - name: pvc-name
+              value: '{{ steps.generate-volume.outputs.parameters.pvc-name }}'
+    - - name: print
+        template: print-message
+        arguments:
+          parameters:
+            - name: pvc-name
+              value: '{{ steps.generate-volume.outputs.parameters.pvc-name }}'
+
+  - name: generate-volume
+    inputs:
+      parameters:
+        - name: pvc-size
+      resource:
+        action: create
+        setOwnerReference: true
+        manifest: |
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            generateName: pvc-example-
+          spec:
+            accessModes: ['ReadWriteOnce', 'ReadOnlyMany']
+            resources:
+              requests:
+                storage: '{{inputs.parameters.pvc-size}}'
+      outputs:
+        parameters:
+          - name: pvc-name
+            valueFrom:
+              jsonPath: '{.metadata.name}'
+
+  - name: whalesay
+    inputs:
+      parameters:
+        - name: pvc-name
+    volumes:
+      - name: workdir
+        persistentVolumeClaim:
+          claimName: '{{inputs.parameters.pvc-name}}'
+    container:
+      image: docker/whalesay:latest
+      command: [sh, -c]
+      args: ["echo generating message in volume; cowsay hello world | tee /mnt/vol/hello_world.txt"]
+      volumeMounts:
+      - name: workdir
+        mountPath: /mnt/vol
+
+  - name: print-message
+    inputs:
+        parameters:
+          - name: pvc-name
+    volumes:
+      - name: workdir
+        persistentVolumeClaim:
+          claimName: '{{inputs.parameters.pvc-name}}'
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args: ["echo getting message from volume; find /mnt/vol; cat /mnt/vol/hello_world.txt"]
+      volumeMounts:
+      - name: workdir
+        mountPath: /mnt/vol
+
+```
+
+## Suspending
+
+Workflows can be suspended by
+
+```sh
+argo suspend WORKFLOW
+```
+
+Or by specifying a `suspend` step on the workflow:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: suspend-template-
+spec:
+  entrypoint: suspend
+  templates:
+  - name: suspend
+    steps:
+    - - name: build
+        template: whalesay
+    - - name: approve
+        template: approve
+    - - name: delay
+        template: delay
+    - - name: release
+        template: whalesay
+
+  - name: approve
+    suspend: {}
+
+  - name: delay
+    suspend:
+      duration: 20    # Default unit is seconds. Could also be a Duration, e.g.: "2m", "6h", "1d"
+
+  - name: whalesay
+    container:
+      image: docker/whalesay
+      command: [cowsay]
+      args: ["hello world"]
+```
+
+Once suspended, a Workflow will not schedule any new steps until it is resumed. It can be resumed manually by
+```sh
+argo resume WORKFLOW
+```
+Or automatically with a `duration` limit as the example above.
+
 ## Daemon Containers
 
 Argo workflows can start containers that run in the background (also known as `daemon containers`) while the workflow itself continues execution. Note that the daemons will be *automatically destroyed* when the workflow exits the template scope in which the daemon was invoked. Daemon containers are useful for starting up services to be tested or to be used in testing (e.g., fixtures). We also find it very useful when running large simulations to spin up a database as a daemon for collecting and organizing the results. The big advantage of daemons compared with sidecars is that their existence can persist across multiple steps or even the entire workflow.
@@ -1061,9 +1263,10 @@ spec:
 
   - name: influxdb
     daemon: true                        # start influxdb as a daemon
+    retryStrategy:
+      limit: 10                         # retry container if it fails
     container:
       image: influxdb:1.2
-      restartPolicy: Always             # restart container if it fails
       readinessProbe:                   # wait for readinessProbe to succeed
         httpGet:
           path: /ping
@@ -1113,7 +1316,7 @@ In the above example, we create a sidecar container that runs nginx as a simple 
 
 ## Hardwired Artifacts
 
-With Argo, you can use any container image that you like to generate any kind of artifact. In practice, however, we find certain types of artifacts are very common, so there is built-in support for git, http, and s3 artifacts.
+With Argo, you can use any container image that you like to generate any kind of artifact. In practice, however, we find certain types of artifacts are very common, so there is built-in support for git, http, gcs and s3 artifacts.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -1131,7 +1334,7 @@ spec:
       - name: argo-source
         path: /src
         git:
-          repo: https://github.com/cyrusbiotechnology/argo.git
+          repo: https://github.com/argoproj/argo.git
           revision: "master"
       # Download kubectl 1.8.0 and place it at /bin/kubectl
       - name: kubectl
@@ -1139,7 +1342,7 @@ spec:
         mode: 0755
         http:
           url: https://storage.googleapis.com/kubernetes-release/release/v1.8.0/bin/linux/amd64/kubectl
-      # Copy an s3 bucket and place it at /s3
+      # Copy an s3 compatible artifact repository bucket (such as AWS, GCS and Minio) and place it at /s3
       - name: objects
         path: /s3
         s3:
@@ -1315,4 +1518,4 @@ spec:
 
 Continuous integration is a popular application for workflows. Currently, Argo does not provide event triggers for automatically kicking off your CI jobs, but we plan to do so in the near future. Until then, you can easily write a cron job that checks for new commits and kicks off the needed workflow, or use your existing Jenkins server to kick off the workflow.
 
-A good example of a CI workflow spec is provided at https://github.com/cyrusbiotechnology/argo/tree/master/examples/influxdb-ci.yaml. Because it just uses the concepts that we've already covered and is somewhat long, we don't go into details here.
+A good example of a CI workflow spec is provided at https://github.com/argoproj/argo/tree/master/examples/influxdb-ci.yaml. Because it just uses the concepts that we've already covered and is somewhat long, we don't go into details here.

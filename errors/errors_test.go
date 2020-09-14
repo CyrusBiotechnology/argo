@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/cyrusbiotechnology/argo/errors"
 	pkgerr "github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/cyrusbiotechnology/argo/errors"
 )
 
 // stackTracer is interface for error types that have a stack trace

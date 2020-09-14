@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/argoproj/pkg/cli"
 	kubecli "github.com/argoproj/pkg/kube/cli"
 	"github.com/argoproj/pkg/stats"
@@ -29,15 +31,19 @@ const (
 // NewRootCommand returns an new instance of the workflow-controller main entrypoint
 func NewRootCommand() *cobra.Command {
 	var (
-		clientConfig            clientcmd.ClientConfig
-		configMap               string // --configmap
-		configFile              string // --config-file
-		executorImage           string // --executor-image
-		executorImagePullPolicy string // --executor-image-pull-policy
-		logLevel                string // --loglevel
-		glogLevel               int    // --gloglevel
-		workflowWorkers         int    // --workflow-workers
-		podWorkers              int    // --pod-workers
+		clientConfig             clientcmd.ClientConfig
+		configMap                string // --configmap
+		executorImage            string // --executor-image
+		executorImagePullPolicy  string // --executor-image-pull-policy
+		containerRuntimeExecutor string
+		logLevel                 string // --loglevel
+		glogLevel                int    // --gloglevel
+		workflowWorkers          int    // --workflow-workers
+		podWorkers               int    // --pod-workers
+		burst                    int
+		qps                      float32
+		namespaced               bool   // --namespaced
+		managedNamespace         string // --managed-namespace
 	)
 
 	var command = cobra.Command{
@@ -53,9 +59,8 @@ func NewRootCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			config.Burst = 30
-			config.QPS = 20.0
+			config.Burst = burst
+			config.QPS = qps
 
 			namespace, _, err := clientConfig.Namespace()
 			if err != nil {
@@ -63,25 +68,25 @@ func NewRootCommand() *cobra.Command {
 			}
 
 			kubeclientset := kubernetes.NewForConfigOrDie(config)
-			wflientset := wfclientset.NewForConfigOrDie(config)
+			wfclientset := wfclientset.NewForConfigOrDie(config)
 
-			// start a controller on instances of our custom resource
-			wfController := controller.NewWorkflowController(config, kubeclientset, wflientset, namespace, executorImage, executorImagePullPolicy, configMap, configFile)
-			err = wfController.ResyncConfig()
-			if err != nil {
-				return err
+			if !namespaced && managedNamespace != "" {
+				log.Warn("ignoring --managed-namespace because --namespaced is false")
+				managedNamespace = ""
+			}
+			if namespaced && managedNamespace == "" {
+				managedNamespace = namespace
 			}
 
+			// start a controller on instances of our custom resource
+			wfController := controller.NewWorkflowController(config, kubeclientset, wfclientset, namespace, managedNamespace, executorImage, executorImagePullPolicy, containerRuntimeExecutor, configMap)
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
+
 			go wfController.Run(ctx, workflowWorkers, podWorkers)
-			go wfController.MetricsServer(ctx)
-			go wfController.TelemetryServer(ctx)
-			go wfController.RunTTLController(ctx)
 
 			// Wait forever
 			select {}
-
 		},
 	}
 
@@ -91,10 +96,15 @@ func NewRootCommand() *cobra.Command {
 	command.Flags().StringVar(&configFile, "config-file", "", "Path to a yaml config file. Cannot be specified at the same time as --configmap")
 	command.Flags().StringVar(&executorImage, "executor-image", "", "Executor image to use (overrides value in configmap)")
 	command.Flags().StringVar(&executorImagePullPolicy, "executor-image-pull-policy", "", "Executor imagePullPolicy to use (overrides value in configmap)")
+	command.Flags().StringVar(&containerRuntimeExecutor, "container-runtime-executor", "", "Container runtime executor to use (overrides value in configmap)")
 	command.Flags().StringVar(&logLevel, "loglevel", "info", "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().IntVar(&glogLevel, "gloglevel", 0, "Set the glog logging level")
-	command.Flags().IntVar(&workflowWorkers, "workflow-workers", 8, "Number of workflow workers")
-	command.Flags().IntVar(&podWorkers, "pod-workers", 8, "Number of pod workers")
+	command.Flags().IntVar(&workflowWorkers, "workflow-workers", 32, "Number of workflow workers")
+	command.Flags().IntVar(&podWorkers, "pod-workers", 32, "Number of pod workers")
+	command.Flags().IntVar(&burst, "burst", 30, "Maximum burst for throttle.")
+	command.Flags().Float32Var(&qps, "qps", 20.0, "Queries per second")
+	command.Flags().BoolVar(&namespaced, "namespaced", false, "run workflow-controller as namespaced mode")
+	command.Flags().StringVar(&managedNamespace, "managed-namespace", "", "namespace that workflow-controller watches, default to the installation namespace")
 	return &command
 }
 
